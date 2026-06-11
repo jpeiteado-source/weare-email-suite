@@ -304,7 +304,35 @@ document.getElementById('btn-cal').addEventListener('click',async()=>{
   const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
   const isPDF=archivoTipo.includes('pdf')||archivoNombre.match(/\.pdf$/i);
 
-  const instrucciones=`Marca: ${marca}\nMes: ${mesNombre}\nCanales activos: ${canales.join(', ')}\n\nTONO DE VOZ:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS PREVIOS:\n${tonoEj}`:''}\n\nTAREA: Analizá el archivo con las acciones comerciales y generá un calendario de comunicaciones mensual.\n\nCRITERIO EDITORIAL:\n- Leé solo fecha y acciones comerciales. Ignorá métricas y datos de performance.\n- Acciones de un solo día → comunicar ese día por todos los canales activos\n- Acciones de varios días → inicio + recordatorio a mitad y final si dura más de 4 días\n- Financiación/beneficios always on → solo como complemento\n- Días sin acción → [A DEFINIR POR ANALISTA]\n- Frecuencia: 2-3 newsletters semanales, lunes a viernes\n- Si coinciden newsletter y push el mismo día, push 1 hora después\n- Horarios: Newsletter → 10:00 o 18:00 / Push → según regla anterior\n\nREDACCIÓN (RESPETÁ EL TONO DE LA MARCA):\n- Lenguaje argentino, tildes correctos, signos de apertura ¡ ¿\n- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ, DESCUBRÍ\n- Asunto: máx 45 caracteres\n- Preheader: máx 80 caracteres, complementa sin repetir\n\nPrimero análisis breve (campo "analisis", máx 4 líneas).\nLuego calendario como array "filas".\n\nJSON sin markdown:\n{"analisis":"...","filas":[{"elemento":"01/06 - NOMBRE","canal":"Newsletter","hora":"10:00","asunto":"...","preheader":"..."}]}`;
+  const instrucciones=`Sos un analista de Email Marketing y CRM especializado en e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro sin texto adicional ni markdown.
+
+MARCA: ${marca}
+MES: ${mesNombre}
+CANALES ACTIVOS: ${canales.join(', ')}
+
+TONO DE VOZ DE LA MARCA:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+
+TAREA: Analizá el contenido del archivo adjunto con las acciones comerciales del mes y generá un calendario de comunicaciones.
+
+CRITERIO EDITORIAL:
+- Leé solo columnas de fecha y acciones comerciales. Ignorá métricas, facturación, sesiones y performance.
+- Acciones de un solo día → comunicar ese día por todos los canales activos
+- Acciones de varios días → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
+- Financiación/beneficios always on → usarlos como complemento, no como tema principal
+- Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
+- Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
+- Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
+- Horarios sugeridos: Newsletter → 10:00 o 18:00 / Push → según regla anterior
+
+REDACCIÓN — RESPETÁ SIEMPRE EL TONO DE VOZ DE LA MARCA:
+- Lenguaje argentino, natural y directo. Tildes siempre correctos. Signos de apertura: ¡ ¿
+- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ, DESCUBRÍ
+- Asunto: máximo 45 caracteres, beneficio concreto + CTA
+- Preheader: máximo 80 caracteres, complementa el asunto sin repetirlo
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","asunto":"texto del asunto","preheader":"texto del preheader"}]}`;
 
   const userContent = isPDF ? [
     {type:'text', text: instrucciones},
