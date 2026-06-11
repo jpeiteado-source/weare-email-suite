@@ -257,15 +257,22 @@ document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth
 document.getElementById('finput1').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
 function loadFile(file){
   archivoNombre=file.name;archivoTipo=file.type||'';
+  const isPDF=archivoTipo.includes('pdf')||file.name.match(/\.pdf$/i);
   const reader=new FileReader();
   reader.onload=e=>{
-    archivoBase64=e.target.result.split(',')[1];
+    if(isPDF){
+      archivoBase64=e.target.result.split(',')[1];
+    } else {
+      // Para CSV/Excel guardamos el texto plano
+      archivoBase64=e.target.result;
+    }
     const ub=document.getElementById('ubox1');
     ub.classList.add('has');
     ub.querySelector('.up-lbl').innerHTML=`<strong>${file.name}</strong> cargado`;
     ub.querySelector('.up-sub').textContent='Hacé clic para reemplazar';
   };
-  reader.readAsDataURL(file);
+  if(isPDF) reader.readAsDataURL(file);
+  else reader.readAsText(file,'UTF-8');
 }
 
 // Pills
@@ -293,12 +300,14 @@ document.getElementById('btn-cal').addEventListener('click',async()=>{
   const [yr,mo]=mes.split('-');
   const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
   const isPDF=archivoTipo.includes('pdf')||archivoNombre.match(/\.pdf$/i);
-  const isXLS=archivoNombre.match(/\.xlsx?$/i);
-  const mediaType=isPDF?'application/pdf':isXLS?'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'text/plain';
 
-  const userContent=[
-    {type:'text',text:`Marca: ${marca}\nMes: ${mesNombre}\nCanales activos: ${canales.join(', ')}\n\nTONO DE VOZ:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS PREVIOS:\n${tonoEj}`:''}\n\nTAREA: Analizá el archivo y generá un calendario de comunicaciones mensual.\n\nCRITERIO EDITORIAL:\n- Leé solo fecha y acciones comerciales. Ignorá métricas y datos de performance.\n- Acciones de un solo día → comunicar ese día por todos los canales activos\n- Acciones de varios días → inicio + recordatorio a mitad y final si dura más de 4 días\n- Financiación/beneficios always on → solo como complemento\n- Días sin acción → [A DEFINIR POR ANALISTA]\n- Frecuencia: 2-3 newsletters semanales, lunes a viernes\n- Si coinciden newsletter y push el mismo día, push 1 hora después\n- Horarios: Newsletter → 10:00 o 18:00 / Push → según regla anterior\n\nREDACCIÓN (RESPETÁ EL TONO DE LA MARCA):\n- Lenguaje argentino, tildes correctos, signos de apertura ¡ ¿\n- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ, DESCUBRÍ\n- Asunto: máx 45 caracteres\n- Preheader: máx 80 caracteres, complementa sin repetir\n\nPrimero análisis breve (campo "analisis", máx 4 líneas).\nLuego calendario como array "filas".\n\nJSON sin markdown:\n{"analisis":"...","filas":[{"elemento":"01/06 - NOMBRE","canal":"Newsletter","hora":"10:00","asunto":"...","preheader":"..."}]}`},
-    {type:'document',source:{type:'base64',media_type:mediaType,data:archivoBase64}}
+  const instrucciones=`Marca: ${marca}\nMes: ${mesNombre}\nCanales activos: ${canales.join(', ')}\n\nTONO DE VOZ:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS PREVIOS:\n${tonoEj}`:''}\n\nTAREA: Analizá el archivo con las acciones comerciales y generá un calendario de comunicaciones mensual.\n\nCRITERIO EDITORIAL:\n- Leé solo fecha y acciones comerciales. Ignorá métricas y datos de performance.\n- Acciones de un solo día → comunicar ese día por todos los canales activos\n- Acciones de varios días → inicio + recordatorio a mitad y final si dura más de 4 días\n- Financiación/beneficios always on → solo como complemento\n- Días sin acción → [A DEFINIR POR ANALISTA]\n- Frecuencia: 2-3 newsletters semanales, lunes a viernes\n- Si coinciden newsletter y push el mismo día, push 1 hora después\n- Horarios: Newsletter → 10:00 o 18:00 / Push → según regla anterior\n\nREDACCIÓN (RESPETÁ EL TONO DE LA MARCA):\n- Lenguaje argentino, tildes correctos, signos de apertura ¡ ¿\n- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ, DESCUBRÍ\n- Asunto: máx 45 caracteres\n- Preheader: máx 80 caracteres, complementa sin repetir\n\nPrimero análisis breve (campo "analisis", máx 4 líneas).\nLuego calendario como array "filas".\n\nJSON sin markdown:\n{"analisis":"...","filas":[{"elemento":"01/06 - NOMBRE","canal":"Newsletter","hora":"10:00","asunto":"...","preheader":"..."}]}`;
+
+  const userContent = isPDF ? [
+    {type:'text', text: instrucciones},
+    {type:'document', source:{type:'base64', media_type:'application/pdf', data:archivoBase64}}
+  ] : [
+    {type:'text', text: instrucciones + `\n\nCONTENIDO DEL ARCHIVO (${archivoNombre}):\n${archivoBase64}`}
   ];
 
   try{
