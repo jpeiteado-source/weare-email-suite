@@ -333,15 +333,20 @@ document.getElementById('btn-cal').addEventListener('click',async()=>{
 
     if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
 
-    // Pre-cargar paso 2
-    accs2=[];const seen=new Set();
+    // Pre-cargar paso 2 — agrupar por acción y acumular canales
+    accs2=[];const seen=new Map();
     calRows.forEach(r=>{
       if(!r.elemento) return;
       const parts=r.elemento.split(' - ');
       const fecha=parts[0]||'';
       const nombre=parts.slice(1).join(' - ')||r.elemento;
       const key=nombre.trim().toLowerCase();
-      if(!seen.has(key)){seen.add(key);accs2.push({id:++aid2,n:nombre,f:fecha,t:'Urgencia / tiempo limitado'});}
+      if(!seen.has(key)){
+        const obj={id:++aid2,n:nombre,f:fecha,t:'Urgencia / tiempo limitado',canales:[]};
+        seen.set(key,obj);accs2.push(obj);
+      }
+      const canal=(r.canal||'').trim();
+      if(canal && !seen.get(key).canales.includes(canal)) seen.get(key).canales.push(canal);
     });
     document.getElementById('p2-marca').value=marca;
     document.getElementById('p2-tono-desc').value=tonoDesc;
@@ -376,7 +381,12 @@ function renderP2(){
     const r=document.createElement('div');
     r.className='arow';
     const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${a.t===t?' sel':''}" data-val="${t}" data-id="${a.id}">${t}</button>`).join('');
-    r.innerHTML=`<div><input type="text" placeholder="Nombre de la acción…" value="${esc(a.n)}" data-id="${a.id}" data-f="n" style="font-size:12px;padding:7px 10px;margin-bottom:0"/><div class="tipo-opts">${chipsHTML}</div></div><input type="text" placeholder="ej. 15/06" value="${esc(a.f)}" data-id="${a.id}" data-f="f" style="font-size:12px;padding:7px 10px;margin-top:0"/><button class="rm" data-id="${a.id}">×</button>`;
+    const canales=a.canales||['Newsletter'];
+    const canalBadges=canales.map(c=>{
+      const cls=c.includes('Push')?'b-push':c.includes('WhatsApp')?'b-wa':'b-nl';
+      return `<span class="badge ${cls}" style="font-size:10px;padding:2px 7px">${c}</span>`;
+    }).join('');
+    r.innerHTML=`<div><div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><input type="text" placeholder="Nombre de la acción…" value="${esc(a.n)}" data-id="${a.id}" data-f="n" style="font-size:12px;padding:7px 10px;flex:1"/>${canalBadges}</div><div class="tipo-opts">${chipsHTML}</div></div><input type="text" placeholder="ej. 15/06" value="${esc(a.f)}" data-id="${a.id}" data-f="f" style="font-size:12px;padding:7px 10px;margin-top:0"/><button class="rm" data-id="${a.id}">×</button>`;
     list.appendChild(r);
   });
   list.querySelectorAll('input[data-f]').forEach(el=>el.addEventListener('input',e=>{
@@ -410,7 +420,7 @@ document.getElementById('p2-genbtn').addEventListener('click',async()=>{
   hide('paso2');show('resultado2');
   document.getElementById('resultado2').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Generando asuntos y preheaders…</div></div>`;
 
-  const prompt=`Sos un experto en email marketing.\n\nMARCA: ${marca}\nINDUSTRIA: ${industria||'No especificada'}\nBUYER PERSONA: ${buyer}\n\nTONO DE VOZ DE LA MARCA:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}\n\nACCIONES DEL MES:\n${validos.map((a,i)=>`${i+1}. ${a.n}${a.f?` (${a.f})`:''} — Tipo: ${a.t}`).join('\n')}\n\nREGLAS:\n- 1 asunto + 1 preheader por acción\n- Asunto: máx 50 caracteres, CTAs en mayúsculas, tildes y signos ¡¿ correctos\n- Preheader: máx 90 caracteres, complementa sin repetir\n- El tipo define el objetivo del mensaje\n- El tono de marca define el vocabulario, emojis y estilo\n- Lenguaje argentino\n\nJSON sin markdown:\n{"campanias":[{"nombre":"...","fecha":"...","tipo":"...","asunto":"...","preheader":"..."}]}`;
+  const prompt=`Sos un experto en email marketing y comunicaciones digitales.\n\nMARCA: ${marca}\nINDUSTRIA: ${industria||'No especificada'}\nBUYER PERSONA: ${buyer||'No especificado'}\n\nTONO DE VOZ DE LA MARCA:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}\n\nACCIONES DEL MES (cada una indica sus canales activos):\n${validos.map((a,i)=>{const canales=(a.canales||['Newsletter']).join(', ');return `${i+1}. ${a.n}${a.f?` (${a.f})`:''} — Tipo: ${a.t} — Canales: ${canales}`;}).join('\n')}\n\nREGLAS GENERALES:\n- El tipo define el objetivo del mensaje\n- El tono de marca define vocabulario, emojis y estilo\n- Lenguaje argentino, tildes correctos, signos ¡¿\n- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ\n\nREGLAS POR CANAL:\nEmail → asunto (máx 45 chars) + preheader (máx 80 chars, complementa sin repetir)\nPush → titulo (máx 45 chars) + mensaje (máx 80 chars, directo y con urgencia)\n\nPara cada acción generá los textos solo para los canales que tiene asignados.\n\nJSON sin markdown:\n{"campanias":[{"nombre":"...","fecha":"...","tipo":"...","canales":["Newsletter"],"email":{"asunto":"...","preheader":"..."},"push":{"titulo":"...","mensaje":"..."}}]}\nSi una acción no tiene un canal, omitir ese campo (ej: si no tiene Push, no incluir "push").`;
 
   try{
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:2000})});
@@ -430,15 +440,53 @@ document.getElementById('p2-genbtn').addEventListener('click',async()=>{
     document.getElementById('back2btn').addEventListener('click',()=>{show('paso2');hide('resultado2');});
 
     camps.forEach(c=>{
-      const sl=(c.asunto||'').length,pl=(c.preheader||'').length;
-      allTxt+=`\n▶ ${c.nombre}${c.fecha?` (${c.fecha})`:''}\nAsunto: ${c.asunto}\nPreheader: ${c.preheader}\n`;
+      allTxt+=`\n▶ ${c.nombre}${c.fecha?` (${c.fecha})`:''} · ${c.tipo}\n`;
       const b=document.createElement('div');
       b.className='cb';
-      b.innerHTML=`<div class="ch"><span class="cn">${esc(c.nombre)}</span><div class="cmeta">${c.fecha?`<span class="cdate">${esc(c.fecha)}</span>`:''}<span class="tbadge">${esc(c.tipo||'')}</span></div></div><div class="cbody"><div class="rl"><div class="rlbl">Asunto</div><div class="rval">${esc(c.asunto||'')}</div><div class="chars"><span class="${sl>50?'warn':'good'}">${sl}/50</span></div></div><div class="rl"><div class="rlbl">Preheader</div><div class="rval pre">${esc(c.preheader||'')}</div><div class="chars"><span class="${pl>90?'warn':'good'}">${pl}/90</span></div></div><div class="crow"><button class="cpybtn" data-a="${esc(c.asunto||'')}" data-p="${esc(c.preheader||'')}">Copiar</button></div></div>`;
+
+      // Header
+      let html=`<div class="ch"><span class="cn">${esc(c.nombre)}</span><div class="cmeta">${c.fecha?`<span class="cdate">${esc(c.fecha)}</span>`:''}<span class="tbadge">${esc(c.tipo||'')}</span></div></div><div class="cbody">`;
+
+      // EMAIL
+      if(c.email){
+        const sl=(c.email.asunto||'').length,pl=(c.email.preheader||'').length;
+        allTxt+=`[EMAIL]\nAsunto: ${c.email.asunto}\nPreheader: ${c.email.preheader}\n`;
+        html+=`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--dbrd)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span class="badge b-nl">Newsletter</span>
+          </div>
+          <div class="rl"><div class="rlbl">Asunto</div><div class="rval">${esc(c.email.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div>
+          <div class="rl"><div class="rlbl">Preheader</div><div class="rval pre">${esc(c.email.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>
+          <div class="crow"><button class="cpybtn" data-a="${esc(c.email.asunto||'')}" data-p="${esc(c.email.preheader||'')}" data-tipo="email">Copiar</button></div>
+        </div>`;
+      }
+
+      // PUSH
+      if(c.push){
+        const tl=(c.push.titulo||'').length,ml=(c.push.mensaje||'').length;
+        allTxt+=`[PUSH]\nTítulo: ${c.push.titulo}\nMensaje: ${c.push.mensaje}\n`;
+        html+=`<div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span class="badge b-push">Notificación Push</span>
+          </div>
+          <div class="rl"><div class="rlbl">Título</div><div class="rval">${esc(c.push.titulo||'')}</div><div class="chars"><span class="${tl>45?'warn':'good'}">${tl}/45</span></div></div>
+          <div class="rl"><div class="rlbl">Mensaje</div><div class="rval pre">${esc(c.push.mensaje||'')}</div><div class="chars"><span class="${ml>80?'warn':'good'}">${ml}/80</span></div></div>
+          <div class="crow"><button class="cpybtn" data-a="${esc(c.push.titulo||'')}" data-p="${esc(c.push.mensaje||'')}" data-tipo="push">Copiar</button></div>
+        </div>`;
+      }
+
+      html+=`</div>`;
+      b.innerHTML=html;
       rs.appendChild(b);
-      b.querySelector('.cpybtn').addEventListener('click',function(){
-        navigator.clipboard.writeText(`Asunto: ${this.dataset.a}\nPreheader: ${this.dataset.p}`).then(()=>{this.textContent='¡Copiado!';this.classList.add('ok');setTimeout(()=>{this.textContent='Copiar';this.classList.remove('ok');},1800);});
-      });
+
+      b.querySelectorAll('.cpybtn').forEach(btn=>btn.addEventListener('click',function(){
+        const tipo=this.dataset.tipo==='push'?'Título':'Asunto';
+        const tipo2=this.dataset.tipo==='push'?'Mensaje':'Preheader';
+        navigator.clipboard.writeText(`${tipo}: ${this.dataset.a}\n${tipo2}: ${this.dataset.p}`).then(()=>{
+          this.textContent='¡Copiado!';this.classList.add('ok');
+          setTimeout(()=>{this.textContent='Copiar';this.classList.remove('ok');},1800);
+        });
+      }));
     });
 
     const ft=document.createElement('div');
