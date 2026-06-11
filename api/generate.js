@@ -3,11 +3,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: 'Missing prompt' });
+  const { prompt, messages, max_tokens } = req.body;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key no configurada en el servidor' });
+
+  // Soporta tanto { prompt } como { messages, max_tokens }
+  const finalMessages = messages || [{ role: 'user', content: prompt }];
+  if (!finalMessages || !finalMessages.length) {
+    return res.status(400).json({ error: 'Missing prompt or messages' });
+  }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -19,8 +24,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
+        max_tokens: max_tokens || 4000,
+        messages: finalMessages
       })
     });
 
