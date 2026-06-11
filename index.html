@@ -192,7 +192,9 @@ input[type="file"]{display:none;}
 
   <!-- PASO 2: FORM -->
   <div id="paso2" class="hidden">
-    <div class="card">
+
+    <!-- Solo se muestra si NO viene del paso 1 -->
+    <div id="p2-card-marca" class="card hidden">
       <div class="ct">Contexto de la marca</div>
       <div class="g2">
         <div class="f"><label>Marca / cliente</label><input type="text" id="p2-marca" placeholder="ej. Nike AR…" /></div>
@@ -201,7 +203,7 @@ input[type="file"]{display:none;}
       <div class="f"><label>Buyer persona</label><textarea id="p2-buyer" placeholder="Edad, intereses, qué los motiva a abrir un email…"></textarea></div>
     </div>
 
-    <div class="card">
+    <div id="p2-card-tono" class="card hidden">
       <div class="ct">Tono de voz de la marca</div>
       <div class="f">
         <label>Descripción del tono</label>
@@ -213,10 +215,11 @@ input[type="file"]{display:none;}
       </div>
     </div>
 
+    <!-- Siempre visible -->
     <div class="card">
       <div class="ct">Acciones del mes</div>
       <div id="p2-info-box" class="info-box hidden" style="margin-bottom:12px">
-        ✓ Las acciones se cargaron desde el calendario. Podés editarlas o cambiar el tipo de asunto.
+        ✓ Las acciones se cargaron desde el calendario. Solo revisá el tipo de asunto por acción.
       </div>
       <div class="tbl-hd"><span>Acción y tipo de asunto</span><span>Fecha</span><span></span></div>
       <div id="p2-alist"></div>
@@ -358,6 +361,9 @@ document.getElementById('btn-copy-cal').addEventListener('click',function(){
 document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');updatePills(1);});
 document.getElementById('btn-goto2').addEventListener('click',()=>{
   hide('resultado1');show('paso2');
+  // Viene del paso 1 — ocultamos los cards ya completados
+  hide('p2-card-marca');
+  hide('p2-card-tono');
   if(accs2.length) show('p2-info-box');
   updatePills(2);
 });
@@ -391,13 +397,15 @@ document.getElementById('p2-addbtn').addEventListener('click',()=>addA2());
 if(!accs2.length){addA2();addA2();}
 
 document.getElementById('p2-genbtn').addEventListener('click',async()=>{
-  const marca=document.getElementById('p2-marca').value.trim();
+  const vieneDePaso1 = document.getElementById('p2-card-marca').classList.contains('hidden');
+  const marca=document.getElementById('p2-marca').value.trim() || document.getElementById('marca').value.trim();
   const industria=document.getElementById('p2-industria').value.trim();
   const buyer=document.getElementById('p2-buyer').value.trim();
-  const tonoDesc=document.getElementById('p2-tono-desc').value.trim();
-  const tonoEj=document.getElementById('p2-tono-ejemplos').value.trim();
+  const tonoDesc=document.getElementById('p2-tono-desc').value.trim() || document.getElementById('tono-desc').value.trim();
+  const tonoEj=document.getElementById('p2-tono-ejemplos').value.trim() || document.getElementById('tono-ejemplos').value.trim();
   const validos=accs2.filter(a=>a.n.trim());
-  if(!marca||!buyer||!tonoDesc||!validos.length){alert('Completá: marca, buyer persona, tono de marca y al menos una acción.');return;}
+  if(!marca||!tonoDesc||!validos.length){alert('Completá: marca, tono de marca y al menos una acción.');return;}
+  if(!vieneDePaso1 && !buyer){alert('Completá el buyer persona.');return;}
 
   hide('paso2');show('resultado2');
   document.getElementById('resultado2').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Generando asuntos y preheaders…</div></div>`;
