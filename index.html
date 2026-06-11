@@ -318,7 +318,9 @@ document.getElementById('btn-cal').addEventListener('click',async()=>{
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
     const data=await res.json();
     const txt=data.content.map(i=>i.text||'').join('');
-    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    const jsonMatch=txt.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+    const parsed=JSON.parse(jsonMatch[0]);
     calRows=parsed.filas||[];
 
     document.getElementById('cal-wrap').innerHTML=`<table class="cal-table"><thead><tr><th>Elemento</th><th>Canal</th><th>Hora</th><th>Asunto</th><th>Preheader</th></tr></thead><tbody id="cal-tbody"></tbody></table>`;
@@ -425,9 +427,11 @@ document.getElementById('p2-genbtn').addEventListener('click',async()=>{
   try{
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:2000})});
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
-    const data=await res.json();
-    const txt=data.content.map(i=>i.text||'').join('');
-    const parsed=JSON.parse(txt.replace(/```json|```/g,'').trim());
+    const data2=await res.json();
+    const txt2=data2.content.map(i=>i.text||'').join('');
+    const jsonMatch2=txt2.match(/\{[\s\S]*\}/);
+    if(!jsonMatch2) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+    const parsed=JSON.parse(jsonMatch2[0]);
     const camps=parsed.campanias||[];
     let allTxt=`ASUNTOS & PREHEADERS — ${marca.toUpperCase()}\n${'─'.repeat(48)}\n`;
     const rs=document.getElementById('resultado2');
