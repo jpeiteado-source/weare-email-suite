@@ -313,13 +313,20 @@ CANALES ACTIVOS: ${canales.join(', ')}
 TONO DE VOZ DE LA MARCA:
 ${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
 
-TAREA: Analizá el contenido del archivo adjunto con las acciones comerciales del mes y generá un calendario de comunicaciones.
+TAREA: Analizá el contenido del archivo de gestión comercial y generá un calendario de comunicaciones mensual.
+
+CÓMO LEER EL ARCHIVO:
+El archivo puede tener distintos nombres de columnas y distintas estructuras según la marca. Tu tarea es interpretar inteligentemente su contenido. Buscá y usá:
+- Columna de FECHA (puede llamarse "Fecha", "Día", "Date" o similar)
+- Columna de ACCIONES COMERCIALES (puede llamarse "Acciones AO", "Acción", "Microevento", "Promoción", "Campaña" o similar) → estas son las acciones principales a comunicar
+- Columna de BENEFICIOS (puede llamarse "Beneficios AO", "Beneficio", "Financiación" o similar) → usarlos como complemento, no como tema principal
+- Columna de COMUNICACIONES (puede llamarse "Comunicaciones", "Contenido", "Mensaje sugerido" o similar) → usarla como referencia de lo que el equipo ya pensó comunicar
+Ignorá columnas de métricas, facturación, sesiones, órdenes, CTR y cualquier dato de performance.
 
 CRITERIO EDITORIAL:
-- Leé solo columnas de fecha y acciones comerciales. Ignorá métricas, facturación, sesiones y performance.
 - Acciones de un solo día → comunicar ese día por todos los canales activos
-- Acciones de varios días → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
-- Financiación/beneficios always on → usarlos como complemento, no como tema principal
+- Acciones de varios días consecutivos → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
+- Beneficios always on → usarlos como complemento en el copy, no como tema principal de una pieza
 - Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
 - Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
 - Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
