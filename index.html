@@ -408,82 +408,69 @@ document.getElementById('p3-genbtn').addEventListener('click',async()=>{
 
   hide('paso3'); show('resultado3');
   const rs=document.getElementById('resultado3');
-  rs.innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Analizando seguimiento y generando proyección…</div></div>`;
+  rs.innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Paso 1/2: Analizando seguimiento y calculando benchmarks…</div></div>`;
 
   const [yr,mo]=mes.split('-');
   const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
 
-  const objetivos=objFac||objOrd||objSes||objOR ? `
-OBJETIVOS DE GESTIÓN PARA ${mesNombre.toUpperCase()}:
-${objFac?`- Facturación: ${objFac}`:''}
-${objOrd?`- Órdenes: ${objOrd}`:''}
-${objSes?`- Sesiones: ${objSes}`:''}
-${objOR?`- OR: ${objOR}`:''}` : '';
+  const objetivos=objFac||objOrd||objSes||objOR ? `OBJETIVOS DE GESTIÓN:\n${objFac?`- Facturación: ${objFac}\n`:''}${objOrd?`- Órdenes: ${objOrd}\n`:''}${objSes?`- Sesiones: ${objSes}\n`:''}${objOR?`- OR: ${objOR}\n`:''}` : '';
 
-  const prompt=`Sos un analista de Email Marketing especializado en proyecciones de resultados para e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro sin texto adicional ni markdown.
-
-MARCA: ${marca}
-MES A PROYECTAR: ${mesNombre}
-${objetivos}
-
-ARCHIVO 1 — SEGUIMIENTO DEL MES CORRIENTE (resultados reales):
-${seg64}
-
-ARCHIVO 2 — ACCIONES DEL MES SIGUIENTE (lo que se va a enviar):
-${acc64}
-
-TAREA:
-1. Analizá el seguimiento del mes corriente y calculá promedios de OR, CTOR, CR y ticket promedio agrupando por tipo de campaña y segmento (ej: newsletters masivas, automations, recupero de inactivos, etc)
-2. Para cada acción del mes siguiente, asigná los valores proyectados basándote en esos promedios
-3. Calculá aperturas, clicks, sesiones, órdenes e ingresos derivados de cada fila
-4. Sumá los totales del mes
-5. Si hay objetivos de gestión, comparalos contra tu proyección
-
-REGLAS:
-- OR, CTOR, CR: expresalos como porcentaje (ej: "18%")
-- Ingresos: en pesos con signo $ y puntos de miles (ej: "$1.234.567")
-- Ticket promedio: mantené el del seguimiento si no hay motivo para cambiarlo
-- Sesiones = clicks × tasa de sesiones/clicks promedio del seguimiento
-- Órdenes = sesiones × CR
-- Ingresos = órdenes × ticket promedio
-- Si una acción del mes siguiente no tiene suficiente data histórica similar, usá el promedio general de campañas similares y marcalo con nota "estimado"
-
-RESPONDÉ SOLO JSON sin markdown:
-{
-  "analisis": "3-4 líneas explicando la lógica usada para proyectar",
-  "benchmarks": [{"tipo":"nombre del tipo","or":"x%","ctor":"x%","cr":"x%","ticket":"$x"}],
-  "filas": [{"fecha":"DD/MM","accion":"NOMBRE","envios":0,"aperturas":0,"or":"x%","clicks":0,"ctor":"x%","sesiones":0,"cr":"x%","ordenes":0,"ticket":"$x","ingresos":"$x","nota":""}],
-  "totales": {"envios":0,"aperturas":0,"or":"x%","clicks":0,"ctor":"x%","sesiones":0,"cr":"x%","ordenes":0,"ticket":"$x","ingresos":"$x"},
-  "vs_gestion": {"facturacion":{"proyectado":"$x","objetivo":"$x","diff":"+x%"},"ordenes":{"proyectado":0,"objetivo":0,"diff":"+x%"},"sesiones":{"proyectado":0,"objetivo":0,"diff":"+x%"}}
-}`;
-
-  try{
-    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:6000})});
+  async function callAI(prompt, maxTok){
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTok})});
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
     const data=await res.json();
     const txt=data.content.map(i=>i.text||'').join('');
-    let parsed;
-    try {
-      const jsonMatch=txt.match(/\{[\s\S]*\}/);
-      if(!jsonMatch) throw new Error('no json');
-      parsed=JSON.parse(jsonMatch[0]);
-    } catch(e) {
-      // Si el JSON viene truncado, intentamos repararlo
-      try {
-        let raw=txt.match(/\{[\s\S]*/)?.[0]||'';
-        // Cerrar arrays y objetos abiertos
-        const opens=(raw.match(/\[/g)||[]).length-(raw.match(/\]/g)||[]).length;
-        const openBraces=(raw.match(/\{/g)||[]).length-(raw.match(/\}/g)||[]).length;
-        if(raw.endsWith(',')) raw=raw.slice(0,-1);
-        for(let i=0;i<opens;i++) raw+=']';
-        for(let i=0;i<openBraces;i++) raw+='}';
-        parsed=JSON.parse(raw);
-      } catch(e2) {
-        throw new Error('La respuesta fue muy larga y se truncó. Intentá con un CSV de acciones más corto o menos filas.');
-      }
-    }
+    const jsonMatch=txt.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('La IA no devolvió JSON válido. Intentá de nuevo.');
+    return JSON.parse(jsonMatch[0]);
+  }
 
-    const p=parsed;
+  try{
+    // ── LLAMADO 1: Benchmarks desde el seguimiento ─────────────────────────────
+    const prompt1=`Sos un analista de Email Marketing. Respondés SOLO en JSON puro sin markdown.
+
+Analizá este CSV de seguimiento de email marketing de la marca ${marca} y calculá promedios de métricas agrupando por tipo de campaña.
+
+CSV DE SEGUIMIENTO:
+${seg64}
+
+Identificá los tipos de campaña (newsletter masiva, automation, recupero de inactivos, outlet, cupón, etc) y calculá el promedio de OR, CTOR, CR, ticket promedio y tasa sesiones/clicks para cada tipo.
+
+JSON sin markdown:
+{"analisis":"2-3 líneas resumiendo el mes","benchmarks":[{"tipo":"nombre","envios_prom":0,"or":"x%","ctor":"x%","tasa_ses":"x%","cr":"x%","ticket":"$x"}]}`;
+
+    const r1=await callAI(prompt1, 2000);
+
+    // ── LLAMADO 2: Proyección usando benchmarks ────────────────────────────────
+    rs.querySelector('.stxt').textContent='Paso 2/2: Generando proyección del mes siguiente…';
+
+    const benchStr=JSON.stringify(r1.benchmarks||[]);
+    const prompt2=`Sos un analista de Email Marketing. Respondés SOLO en JSON puro sin markdown.
+
+Usando estos benchmarks calculados del mes corriente de ${marca}:
+${benchStr}
+
+Generá la proyección para ${mesNombre} con estas acciones:
+${acc64}
+
+${objetivos}
+
+Para cada fila del CSV de acciones, asigná el tipo de benchmark más similar y calculá:
+- Aperturas = envíos × OR
+- Clicks = aperturas × CTOR  
+- Sesiones = clicks × tasa_ses
+- Órdenes = sesiones × CR
+- Ingresos = órdenes × ticket
+
+REGLAS: OR/CTOR/CR como porcentaje. Ingresos con $ y puntos de miles. Si no hay benchmark similar, usá el más cercano y marcá nota:"estimado".
+
+JSON sin markdown:
+{"filas":[{"fecha":"DD/MM","accion":"NOMBRE","envios":0,"or":"x%","ctor":"x%","sesiones":0,"cr":"x%","ordenes":0,"ticket":"$x","ingresos":"$x","nota":""}],"totales":{"envios":0,"or":"x%","ctor":"x%","sesiones":0,"cr":"x%","ordenes":0,"ingresos":"$x"}${objetivos?`,"vs_gestion":{"facturacion":{"proyectado":"$x","objetivo":"${objFac}","diff":"+x%"},"ordenes":{"proyectado":0,"objetivo":"${objOrd}","diff":"+x%"},"sesiones":{"proyectado":0,"objetivo":"${objSes}","diff":"+x%"}}`:''}}`; 
+
+    const r2=await callAI(prompt2, 4000);
+
+    // Combinar resultados
+    const p={analisis:r1.analisis,benchmarks:r1.benchmarks,...r2};
     rs.innerHTML='';
 
     // Header
