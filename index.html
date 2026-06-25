@@ -458,14 +458,32 @@ RESPONDÉ SOLO JSON sin markdown:
 }`;
 
   try{
-    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:4000})});
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:6000})});
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
     const data=await res.json();
     const txt=data.content.map(i=>i.text||'').join('');
-    const jsonMatch=txt.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
-    const p=JSON.parse(jsonMatch[0]);
+    let parsed;
+    try {
+      const jsonMatch=txt.match(/\{[\s\S]*\}/);
+      if(!jsonMatch) throw new Error('no json');
+      parsed=JSON.parse(jsonMatch[0]);
+    } catch(e) {
+      // Si el JSON viene truncado, intentamos repararlo
+      try {
+        let raw=txt.match(/\{[\s\S]*/)?.[0]||'';
+        // Cerrar arrays y objetos abiertos
+        const opens=(raw.match(/\[/g)||[]).length-(raw.match(/\]/g)||[]).length;
+        const openBraces=(raw.match(/\{/g)||[]).length-(raw.match(/\}/g)||[]).length;
+        if(raw.endsWith(',')) raw=raw.slice(0,-1);
+        for(let i=0;i<opens;i++) raw+=']';
+        for(let i=0;i<openBraces;i++) raw+='}';
+        parsed=JSON.parse(raw);
+      } catch(e2) {
+        throw new Error('La respuesta fue muy larga y se truncó. Intentá con un CSV de acciones más corto o menos filas.');
+      }
+    }
 
+    const p=parsed;
     rs.innerHTML='';
 
     // Header
