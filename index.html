@@ -261,24 +261,61 @@ input[type="file"]{display:none;}
     </div>
 
     <div class="card">
-      <div class="ct">Seguimiento del mes corriente</div>
-      <div class="upbox" id="ubox3a" onclick="document.getElementById('finput3a').click()">
-        <div class="up-icon">📊</div>
-        <div class="up-lbl"><strong>Subir CSV de seguimiento</strong> o arrastrá acá</div>
-        <div class="up-sub">Resultados reales del mes en curso — para calcular promedios por tipo de envío</div>
+      <div class="ct">Benchmarks de la marca <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px">— métricas esperadas por tipo de campaña</span></div>
+      <div class="hint" style="margin-bottom:12px">Cargá los valores históricos de cada tipo de envío. Estos se usan para calcular la proyección.</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px" id="bench-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Tipo de campaña</th>
+              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">OR %</th>
+              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">CTOR %</th>
+              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Ses/Clicks %</th>
+              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">CR %</th>
+              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Ticket $</th>
+              <th style="padding:6px 8px;background:var(--ds2);border-bottom:1px solid var(--dbrd)"></th>
+            </tr>
+          </thead>
+          <tbody id="bench-body"></tbody>
+        </table>
       </div>
-      <input type="file" id="finput3a" accept=".csv" />
+      <button class="add-lnk" id="bench-addbtn">+ Agregar tipo de campaña</button>
     </div>
 
     <div class="card">
       <div class="ct">Acciones del mes siguiente</div>
-      <div class="upbox" id="ubox3b" onclick="document.getElementById('finput3b').click()">
-        <div class="up-icon">📅</div>
-        <div class="up-lbl"><strong>Subir CSV de acciones</strong> o arrastrá acá</div>
-        <div class="up-sub">Fecha, tipo de campaña, segmento y envíos estimados del mes a proyectar</div>
+      <div class="hint" style="margin-bottom:12px">Cargá cada envío planificado con su fecha, nombre, tipo (debe coincidir con los benchmarks) y envíos estimados.</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd);white-space:nowrap">Fecha</th>
+              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Acción</th>
+              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Tipo</th>
+              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Envíos</th>
+              <th style="padding:6px 8px;background:var(--ds2);border-bottom:1px solid var(--dbrd)"></th>
+            </tr>
+          </thead>
+          <tbody id="acc3-body"></tbody>
+        </table>
       </div>
-      <input type="file" id="finput3b" accept=".csv" />
+      <button class="add-lnk" id="acc3-addbtn">+ Agregar acción</button>
     </div>
+
+    <div class="card">
+      <div class="ct">Objetivos de gestión <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+      <div class="g2">
+        <div class="f"><label>Facturación objetivo</label><input type="text" id="p3-obj-fac" placeholder="ej. 6000000" /></div>
+        <div class="f"><label>Órdenes objetivo</label><input type="text" id="p3-obj-ord" placeholder="ej. 55" /></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Sesiones objetivo</label><input type="text" id="p3-obj-ses" placeholder="ej. 8000" /></div>
+        <div class="f"><label>OR objetivo %</label><input type="text" id="p3-obj-or" placeholder="ej. 22" /></div>
+      </div>
+    </div>
+
+    <button class="btn-or" id="p3-genbtn">Calcular proyección →</button>
+  </div>
 
     <div class="card">
       <div class="ct">Objetivos de gestión <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional — para comparar contra tu proyección)</span></div>
@@ -366,300 +403,218 @@ document.getElementById('pill3').addEventListener('click',()=>{
   show('paso3'); updatePills(3);
 });
 
-// ── SOLAPA 3: UPLOAD ───────────────────────────────────────────────────────────
-let seg64='', acc64='';
+// ── SOLAPA 3: BENCHMARKS Y ACCIONES MANUALES ──────────────────────────────────
+let benchRows=[], benchId=0, acc3Rows=[], acc3Id=0;
 
-function setupUpload3(boxId, inputId, varSetter, label){
-  const ub=document.getElementById(boxId);
-  const fi=document.getElementById(inputId);
-  ub.addEventListener('dragover',e=>{e.preventDefault();ub.style.borderColor='var(--or)';});
-  ub.addEventListener('dragleave',()=>ub.style.borderColor='');
-  ub.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])loadCsv3(e.dataTransfer.files[0],ub,varSetter);});
-  fi.addEventListener('change',e=>{if(e.target.files[0])loadCsv3(e.target.files[0],ub,varSetter);});
+const TIPOS_CAMP=['Newsletter','Automation','Recupero de inactivos','Outlet','Cupón','Lanzamiento','Bienvenida','Otro'];
+
+function renderBench(){
+  const tbody=document.getElementById('bench-body');
+  tbody.innerHTML='';
+  benchRows.forEach(b=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="padding:4px 4px"><input type="text" value="${esc(b.tipo)}" data-id="${b.id}" data-f="tipo" placeholder="ej. Newsletter" style="font-size:12px;padding:5px 8px"/></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(b.or)}" data-id="${b.id}" data-f="or" placeholder="ej. 25" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(b.ctor)}" data-id="${b.id}" data-f="ctor" placeholder="ej. 4" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(b.tases)}" data-id="${b.id}" data-f="tases" placeholder="ej. 90" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(b.cr)}" data-id="${b.id}" data-f="cr" placeholder="ej. 1" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(b.ticket)}" data-id="${b.id}" data-f="ticket" placeholder="ej. 110000" style="font-size:12px;padding:5px 8px;width:90px;text-align:right"/></td>
+      <td style="padding:4px 4px"><button class="rm" data-id="${b.id}">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('input').forEach(el=>el.addEventListener('input',e=>{
+    const b=benchRows.find(x=>x.id===+e.target.dataset.id);
+    if(b) b[e.target.dataset.f]=e.target.value;
+    // Actualizar selector de tipos en acciones
+    renderAcc3();
+  }));
+  tbody.querySelectorAll('.rm').forEach(btn=>btn.addEventListener('click',()=>{
+    benchRows=benchRows.filter(x=>x.id!==+btn.dataset.id);
+    renderBench(); renderAcc3();
+  }));
 }
-function loadCsv3(file,ub,varSetter){
-  const r=new FileReader();
-  r.onload=e=>{
-    let txt=e.target.result;
-    const lines=txt.split(/\r?\n/);
-    const header=lines[0];
-    const dataLines=lines.slice(1).filter(l=>l.replace(/,/g,'').replace(/;/g,'').trim().length>0).slice(0,150);
-    txt=header+'\n'+dataLines.join('\n');
-    varSetter(txt);
-    ub.classList.add('has');
-    ub.querySelector('.up-lbl').innerHTML=`<strong>${file.name}</strong> cargado (${dataLines.length} filas con datos)`;
-    ub.querySelector('.up-sub').textContent='Hacé clic para reemplazar';
-  };
-  r.readAsText(file,'UTF-8');
+function addBench(tipo='',or='',ctor='',tases='',cr='',ticket=''){
+  benchRows.push({id:++benchId,tipo,or,ctor,tases,cr,ticket});
+  renderBench();
 }
-setupUpload3('ubox3a','finput3a',v=>{seg64=v;},'seguimiento');
-setupUpload3('ubox3b','finput3b',v=>{acc64=v;},'acciones');
+document.getElementById('bench-addbtn').addEventListener('click',()=>addBench());
+// Defaults útiles
+addBench('Newsletter','25','4','90','1','110000');
+addBench('Automation','25','15','95','10','110000');
+addBench('Recupero de inactivos','5','1','40','0.5','110000');
+
+function renderAcc3(){
+  const tbody=document.getElementById('acc3-body');
+  const tipoOpts=benchRows.map(b=>`<option value="${esc(b.tipo)}">${esc(b.tipo)}</option>`).join('');
+  tbody.innerHTML='';
+  acc3Rows.forEach(a=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td style="padding:4px 4px"><input type="text" value="${esc(a.fecha)}" data-id="${a.id}" data-f="fecha" placeholder="ej. 01/07" style="font-size:12px;padding:5px 8px;width:75px"/></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(a.accion)}" data-id="${a.id}" data-f="accion" placeholder="Nombre de la acción" style="font-size:12px;padding:5px 8px"/></td>
+      <td style="padding:4px 4px"><select data-id="${a.id}" data-f="tipo" style="font-size:12px;padding:5px 8px"><option value="">Seleccioná</option>${tipoOpts.replace(`value="${esc(a.tipo)}"`,`value="${esc(a.tipo)}" selected`)}</select></td>
+      <td style="padding:4px 4px"><input type="text" value="${esc(a.envios)}" data-id="${a.id}" data-f="envios" placeholder="ej. 55000" style="font-size:12px;padding:5px 8px;width:90px;text-align:right"/></td>
+      <td style="padding:4px 4px"><button class="rm" data-id="${a.id}">×</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',e=>{
+    const a=acc3Rows.find(x=>x.id===+e.target.dataset.id);
+    if(a) a[e.target.dataset.f]=e.target.value;
+  }));
+  tbody.querySelectorAll('.rm').forEach(btn=>btn.addEventListener('click',()=>{
+    acc3Rows=acc3Rows.filter(x=>x.id!==+btn.dataset.id);
+    renderAcc3();
+  }));
+}
+function addAcc3(fecha='',accion='',tipo='',envios=''){
+  acc3Rows.push({id:++acc3Id,fecha,accion,tipo,envios});
+  renderAcc3();
+}
+document.getElementById('acc3-addbtn').addEventListener('click',()=>addAcc3());
+addAcc3(); addAcc3(); addAcc3();
 
 // Mes default para proyección
 document.getElementById('p3-mes').value=`${now.getFullYear()}-${String(now.getMonth()+2>12?1:now.getMonth()+2).padStart(2,'0')}`;
 
-// ── SOLAPA 3: GENERAR PROYECCIÓN ───────────────────────────────────────────────
-document.getElementById('p3-genbtn').addEventListener('click',async()=>{
+// ── SOLAPA 3: CALCULAR PROYECCIÓN (100% JS, sin IA) ────────────────────────────
+document.getElementById('p3-genbtn').addEventListener('click',()=>{
   const marca=document.getElementById('p3-marca').value.trim();
   const mes=document.getElementById('p3-mes').value;
   const objFac=document.getElementById('p3-obj-fac').value.trim();
   const objOrd=document.getElementById('p3-obj-ord').value.trim();
   const objSes=document.getElementById('p3-obj-ses').value.trim();
-  const objOR=document.getElementById('p3-obj-or').value.trim();
 
-  if(!marca||!mes){alert('Completá la marca y el mes a proyectar.');return;}
-  if(!seg64){alert('Subí el CSV de seguimiento del mes corriente.');return;}
-  if(!acc64){alert('Subí el CSV de acciones del mes siguiente.');return;}
-
-  hide('paso3'); show('resultado3');
-  const rs=document.getElementById('resultado3');
-  rs.innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Calculando benchmarks del mes corriente…</div></div>`;
+  if(!marca||!mes){alert('Completá la marca y el mes.');return;}
+  if(!benchRows.length){alert('Cargá al menos un tipo de campaña con sus benchmarks.');return;}
+  const accsValidas=acc3Rows.filter(a=>a.accion.trim()&&a.envios);
+  if(!accsValidas.length){alert('Cargá al menos una acción con envíos.');return;}
 
   const [yr,mo]=mes.split('-');
   const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
 
-  async function callAI(prompt,maxTok){
-    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTok})});
-    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
-    const data=await res.json();
-    const txt=data.content.map(i=>i.text||'').join('');
-    const m=txt.match(/\{[\s\S]*\}/);
-    if(!m) throw new Error('La IA no devolvió JSON válido. Intentá de nuevo.');
-    return JSON.parse(m[0]);
+  function pN(s){return parseFloat(String(s||0).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.'))||0;}
+  function pP(s){return pN(s)/100;}
+  function fP(n){return '$'+Math.round(n).toLocaleString('es-AR');}
+  function fPct(n){return (n*100).toFixed(1)+'%';}
+
+  // Construir mapa de benchmarks
+  const benchMap={};
+  benchRows.forEach(b=>{
+    if(b.tipo) benchMap[b.tipo.toLowerCase()]={
+      or:pP(b.or), ctor:pP(b.ctor), tases:pP(b.tases), cr:pP(b.cr), ticket:pN(b.ticket)
+    };
+  });
+  function getBench(tipo){
+    return benchMap[(tipo||'').toLowerCase()]||Object.values(benchMap)[0]||{or:0.2,ctor:0.04,tases:0.9,cr:0.01,ticket:110000};
   }
 
-  // Parsear CSV de acciones en el frontend
-  function parseAcciones(csv){
-    const lines=csv.trim().split(/\r?\n/).filter(l=>l.replace(/,/g,'').trim());
-    if(!lines.length) return [];
-    const sep=lines[0].includes(';')?';':',';
-    const headers=lines[0].split(sep).map(h=>h.replace(/^["']|["']$/g,'').trim().toLowerCase());
-    return lines.slice(1).map(line=>{
-      const cols=line.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim());
-      const obj={};
-      headers.forEach((h,i)=>obj[h]=cols[i]||'');
-      return obj;
-    }).filter(r=>Object.values(r).some(v=>v.length>0));
+  let totEnv=0,totAp=0,totClk=0,totSes=0,totOrd=0,totIng=0;
+  const filas=accsValidas.map(a=>{
+    const b=getBench(a.tipo);
+    const env=pN(a.envios);
+    const ap=Math.round(env*b.or);
+    const clk=Math.round(ap*b.ctor);
+    const ses=Math.round(clk*b.tases);
+    const ord=Math.round(ses*b.cr);
+    const ing=ord*b.ticket;
+    totEnv+=env;totAp+=ap;totClk+=clk;totSes+=ses;totOrd+=ord;totIng+=ing;
+    return {fecha:a.fecha,accion:a.accion,tipo:a.tipo,envios:env,or:fPct(b.or),ctor:fPct(b.ctor),sesiones:ses,cr:fPct(b.cr),ordenes:ord,ticket:fP(b.ticket),ingresos:fP(ing)};
+  });
+
+  const totOR=totAp&&totEnv?fPct(totAp/totEnv):'—';
+  const totCTOR=totClk&&totAp?fPct(totClk/totAp):'—';
+  const totCR=totOrd&&totSes?fPct(totOrd/totSes):'—';
+
+  hide('paso3'); show('resultado3');
+  const rs=document.getElementById('resultado3');
+  rs.innerHTML='';
+
+  const top=document.createElement('div');
+  top.style='display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem';
+  top.innerHTML=`<div style="font-size:14px;font-weight:500">Proyección ${mesNombre} — ${marca}</div><button class="btn-ghost" id="back3btn">← Editar</button>`;
+  rs.appendChild(top);
+  document.getElementById('back3btn').addEventListener('click',()=>{hide('resultado3');show('paso3');});
+
+  // Benchmarks resumen
+  const bc=document.createElement('div');
+  bc.className='card';bc.style='margin-bottom:1rem';
+  bc.innerHTML=`<div class="ct">Benchmarks utilizados</div><div style="overflow-x:auto"><table class="proj-table">
+    <thead><tr><th style="text-align:left">Tipo</th><th>OR</th><th>CTOR</th><th>Ses/Clicks</th><th>CR</th><th>Ticket</th></tr></thead>
+    <tbody>${benchRows.filter(b=>b.tipo).map(b=>`<tr>
+      <td style="text-align:left">${esc(b.tipo)}</td>
+      <td>${b.or}%</td><td>${b.ctor}%</td><td>${b.tases}%</td><td>${b.cr}%</td><td>${fP(pN(b.ticket))}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+  rs.appendChild(bc);
+
+  // Tabla proyección
+  const tc=document.createElement('div');
+  tc.className='card';tc.style='margin-bottom:1rem';
+  tc.innerHTML=`<div class="ct">Proyección por envío</div><div style="overflow-x:auto"><table class="proj-table">
+    <thead><tr><th style="text-align:left">Fecha</th><th style="text-align:left">Acción</th><th style="text-align:left">Tipo</th><th>Envíos</th><th>OR</th><th>CTOR</th><th>Sesiones</th><th>CR</th><th>Órdenes</th><th>Ticket</th><th>Ingresos</th></tr></thead>
+    <tbody>
+      ${filas.map(f=>`<tr>
+        <td style="text-align:left;white-space:nowrap">${esc(f.fecha)}</td>
+        <td style="text-align:left">${esc(f.accion)}</td>
+        <td style="text-align:left"><span style="font-size:10px;padding:2px 6px;border-radius:20px;background:var(--org);color:var(--or2)">${esc(f.tipo)}</span></td>
+        <td>${f.envios.toLocaleString('es-AR')}</td>
+        <td>${esc(f.or)}</td><td>${esc(f.ctor)}</td>
+        <td>${f.sesiones.toLocaleString('es-AR')}</td>
+        <td>${esc(f.cr)}</td>
+        <td>${f.ordenes.toLocaleString('es-AR')}</td>
+        <td>${esc(f.ticket)}</td>
+        <td>${esc(f.ingresos)}</td>
+      </tr>`).join('')}
+      <tr class="total-row">
+        <td colspan="3" style="text-align:left">TOTAL MES</td>
+        <td>${totEnv.toLocaleString('es-AR')}</td>
+        <td>${totOR}</td><td>${totCTOR}</td>
+        <td>${totSes.toLocaleString('es-AR')}</td>
+        <td>${totCR}</td>
+        <td>${totOrd.toLocaleString('es-AR')}</td>
+        <td>—</td>
+        <td>${fP(totIng)}</td>
+      </tr>
+    </tbody>
+  </table></div>`;
+  rs.appendChild(tc);
+
+  // Vs gestión
+  if(objFac||objOrd||objSes){
+    const vc=document.createElement('div');
+    vc.className='card';vc.style='margin-bottom:1rem';
+    const mkCard=(label,proy,obj)=>{
+      if(!obj) return '';
+      const o=pN(obj), diff=o?((proy-o)/o*100).toFixed(1):0;
+      const pos=diff>0, neg=diff<0;
+      return `<div class="obj-card"><div class="lbl">${label}</div><div class="val">${typeof proy==='number'&&label!=='Sesiones'?fP(proy):proy.toLocaleString('es-AR')}</div><div class="diff ${pos?'diff-up':neg?'diff-dn':'diff-eq'}">${pos?'+':''}${diff}% vs objetivo</div></div>`;
+    };
+    vc.innerHTML=`<div class="ct">Proyección vs objetivos de gestión</div><div class="obj-grid">${mkCard('Facturación',totIng,objFac)}${mkCard('Órdenes',totOrd,objOrd)}${mkCard('Sesiones',totSes,objSes)}</div>`;
+    rs.appendChild(vc);
   }
 
-  function parseNum(s){
-    if(!s) return 0;
-    return parseFloat(String(s).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.')) || 0;
-  }
-  function parsePct(s){
-    if(!s) return 0;
-    return parseFloat(String(s).replace('%','').replace(',','.')) / 100 || 0;
-  }
-  function fmtPesos(n){
-    return '$'+Math.round(n).toLocaleString('es-AR');
-  }
-  function fmtPct(n){
-    return (n*100).toFixed(1)+'%';
-  }
+  // Footer
+  const ft=document.createElement('div');
+  ft.className='frow';
+  ft.innerHTML=`<button class="fo" id="p3-copy">Copiar tabla</button><button class="fd" id="p3-csv">Descargar CSV</button>`;
+  rs.appendChild(ft);
 
-  try{
-    // ── LLAMADO IA: solo benchmarks ───────────────────────────────────────────
-    // Reducir CSV de seguimiento a columnas clave antes de mandar a la IA
-    function reducirCSV(csv){
-      const lines=csv.trim().split(/\r?\n/);
-      if(lines.length<2) return csv;
-      const sep=lines[0].includes(';')?';':',';
-      const headers=lines[0].split(sep).map(h=>h.replace(/^["']|["']$/g,'').trim());
-      const relevantes=/fecha|date|día|dia|accion|acción|canal|campaign|envio|envío|send|base|apertura|open|\bor\b|click|ctor|sesion|session|\bcr\b|orden|order|ticket|tkt|ingreso|revenue|factur/i;
-      const idxs=headers.reduce((acc,h,i)=>{if(relevantes.test(h))acc.push(i);return acc;},[]);
-      if(!idxs.length) return csv; // si no detecta nada, mandar todo
-      return lines.map(l=>{const c=l.split(sep);return idxs.map(i=>c[i]||'').join(',');}).join('\n');
-    }
-    const segReducido=reducirCSV(seg64);
-
-    const prompt1=`Sos un analista de Email Marketing. Respondés SOLO JSON sin markdown.
-
-Analizá este CSV de seguimiento de ${marca} y calculá promedios por tipo de campaña.
-
-${segReducido}
-
-Agrupá por tipo (newsletter, automation, recupero inactivos, outlet, cupón, etc).
-Para cada tipo calculá OR promedio, CTOR promedio, tasa sesiones/clicks (sesiones÷clicks), CR promedio y ticket promedio.
-
-JSON (decimales, no porcentajes — ej: 20% = 0.20):
-{"analisis":"2-3 líneas del mes","benchmarks":[{"tipo":"nombre","or":0.20,"ctor":0.04,"tasa_ses":0.90,"cr":0.01,"ticket":110000}]}`;
-
-    const r1=await callAI(prompt1, 1500);
-
-    // ── CÁLCULO JS: proyección fila por fila ──────────────────────────────────
-    rs.querySelector('.stxt').textContent='Calculando proyección…';
-
-    const benchmarks=r1.benchmarks||[];
-    const accRows=parseAcciones(acc64);
-
-    // Buscar benchmark más similar por nombre
-    function findBench(accion){
-      const a=(accion||'').toLowerCase();
-      // Intentar match por palabras clave
-      for(const b of benchmarks){
-        const t=(b.tipo||'').toLowerCase();
-        if(a.includes(t)||t.includes(a.split(' ')[0])) return b;
-      }
-      // Si no encuentra, usar promedio general
-      if(benchmarks.length){
-        const avg={
-          tipo:'promedio general',
-          or:benchmarks.reduce((s,b)=>s+b.or,0)/benchmarks.length,
-          ctor:benchmarks.reduce((s,b)=>s+b.ctor,0)/benchmarks.length,
-          tasa_ses:benchmarks.reduce((s,b)=>s+b.tasa_ses,0)/benchmarks.length,
-          cr:benchmarks.reduce((s,b)=>s+b.cr,0)/benchmarks.length,
-          ticket:benchmarks.reduce((s,b)=>s+b.ticket,0)/benchmarks.length,
-        };
-        return avg;
-      }
-      return null;
-    }
-
-    // Detectar columnas de fecha, accion, envios
-    const sampleRow=accRows[0]||{};
-    const keys=Object.keys(sampleRow);
-    const fechaKey=keys.find(k=>/fecha|date|día|dia/i.test(k))||keys[0]||'';
-    const accionKey=keys.find(k=>/accion|acción|campaña|campaign|nombre|name|envio|envío/i.test(k))||keys[1]||'';
-    const enviosKey=keys.find(k=>/envio|envío|send|base|volum/i.test(k))||keys.find(k=>/\d{4,}/.test(sampleRow[k]))||keys[2]||'';
-    const ticketKey=keys.find(k=>/ticket|tkt|precio/i.test(k))||'';
-
-    let totalEnvios=0,totalSes=0,totalOrd=0,totalIng=0,totalAp=0,totalClk=0;
-    const filas=accRows.map(row=>{
-      const fecha=row[fechaKey]||'';
-      const accion=row[accionKey]||'';
-      const envios=parseNum(row[enviosKey]);
-      const ticketOverride=ticketKey?parseNum(row[ticketKey]):0;
-      const b=findBench(accion);
-      if(!b||!envios) return {fecha,accion,envios,or:'—',ctor:'—',sesiones:0,cr:'—',ordenes:0,ticket:'—',ingresos:'$0',nota:!envios?'sin envíos':'sin benchmark'};
-      const ticket=ticketOverride||b.ticket;
-      const aperturas=Math.round(envios*b.or);
-      const clicks=Math.round(aperturas*b.ctor);
-      const sesiones=Math.round(clicks*b.tasa_ses);
-      const ordenes=Math.round(sesiones*b.cr);
-      const ingresos=ordenes*ticket;
-      totalEnvios+=envios;totalAp+=aperturas;totalClk+=clicks;
-      totalSes+=sesiones;totalOrd+=ordenes;totalIng+=ingresos;
-      return {fecha,accion,envios,or:fmtPct(b.or),ctor:fmtPct(b.ctor),sesiones,cr:fmtPct(b.cr),ordenes,ticket:fmtPesos(ticket),ingresos:fmtPesos(ingresos),nota:''};
-    });
-
-    const totOR=totalAp&&totalEnvios?fmtPct(totalAp/totalEnvios):'—';
-    const totCTOR=totalClk&&totalAp?fmtPct(totalClk/totalAp):'—';
-    const totCR=totalOrd&&totalSes?fmtPct(totalOrd/totalSes):'—';
-    const totales={envios:totalEnvios,or:totOR,ctor:totCTOR,sesiones:totalSes,cr:totCR,ordenes:totalOrd,ingresos:fmtPesos(totalIng)};
-
-    const p={analisis:r1.analisis,benchmarks,filas,totales};
-    rs.innerHTML='';
-
-    // Header
-    const top=document.createElement('div');
-    top.style='display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem';
-    top.innerHTML=`<div style="font-size:14px;font-weight:500">Proyección ${mesNombre} — ${marca}</div><button class="btn-ghost" id="back3btn">← Editar</button>`;
-    rs.appendChild(top);
-    document.getElementById('back3btn').addEventListener('click',()=>{hide('resultado3');show('paso3');});
-
-    // Análisis
-    if(p.analisis){
-      const ab=document.createElement('div');
-      ab.className='info-box';ab.style='margin-bottom:1rem';ab.textContent=p.analisis;
-      rs.appendChild(ab);
-    }
-
-    // Benchmarks usados
-    if(p.benchmarks&&p.benchmarks.length){
-      const bc=document.createElement('div');
-      bc.className='card';bc.style='margin-bottom:1rem';
-      bc.innerHTML=`<div class="ct">Benchmarks utilizados</div>
-        <div style="overflow-x:auto"><table class="proj-table">
-          <thead><tr><th style="text-align:left">Tipo de campaña</th><th>OR</th><th>CTOR</th><th>CR</th><th>Ticket prom.</th></tr></thead>
-          <tbody>${p.benchmarks.map(b=>`<tr><td style="text-align:left">${esc(b.tipo||'')}</td><td>${esc(b.or||'')}</td><td>${esc(b.ctor||'')}</td><td>${esc(b.cr||'')}</td><td>${esc(b.ticket||'')}</td></tr>`).join('')}</tbody>
-        </table></div>`;
-      rs.appendChild(bc);
-    }
-
-    // Tabla proyección
-    const tc=document.createElement('div');
-    tc.className='card';tc.style='margin-bottom:1rem';
-    const filas=(p.filas||[]).map(f=>`<tr>
-      <td style="text-align:left;white-space:nowrap">${esc(f.fecha||'')}</td>
-      <td style="text-align:left;max-width:160px">${esc(f.accion||'')}${f.nota?` <span style="font-size:10px;color:var(--dt3)">(${esc(f.nota)})</span>`:''}</td>
-      <td>${(f.envios||0).toLocaleString('es-AR')}</td>
-      <td>${esc(f.or||'')}</td>
-      <td>${esc(f.ctor||'')}</td>
-      <td>${(f.sesiones||0).toLocaleString('es-AR')}</td>
-      <td>${esc(f.cr||'')}</td>
-      <td>${(f.ordenes||0).toLocaleString('es-AR')}</td>
-      <td>${esc(f.ingresos||'')}</td>
-    </tr>`).join('');
-    const tot=p.totales||{};
-    tc.innerHTML=`<div class="ct">Proyección por envío</div>
-      <div style="overflow-x:auto"><table class="proj-table">
-        <thead><tr><th style="text-align:left">Fecha</th><th style="text-align:left">Acción</th><th>Envíos</th><th>OR</th><th>CTOR</th><th>Sesiones</th><th>CR</th><th>Órdenes</th><th>Ingresos</th></tr></thead>
-        <tbody>${filas}
-          <tr class="total-row">
-            <td colspan="2" style="text-align:left">TOTAL MES</td>
-            <td>${(tot.envios||0).toLocaleString('es-AR')}</td>
-            <td>${esc(tot.or||'')}</td>
-            <td>${esc(tot.ctor||'')}</td>
-            <td>${(tot.sesiones||0).toLocaleString('es-AR')}</td>
-            <td>${esc(tot.cr||'')}</td>
-            <td>${(tot.ordenes||0).toLocaleString('es-AR')}</td>
-            <td>${esc(tot.ingresos||'')}</td>
-          </tr>
-        </tbody>
-      </table></div>`;
-    rs.appendChild(tc);
-
-    // Vs gestión — calculado en JS
-    if(objFac||objOrd||objSes){
-      const vg={};
-      if(objFac){const obj=parseNum(objFac);const diff=obj?((totalIng-obj)/obj*100).toFixed(1):0;vg.facturacion={proyectado:fmtPesos(totalIng),objetivo:objFac,diff:(diff>0?'+':'')+diff+'%'};}
-      if(objOrd){const obj=parseNum(objOrd);const diff=obj?((totalOrd-obj)/obj*100).toFixed(1):0;vg.ordenes={proyectado:String(totalOrd),objetivo:objOrd,diff:(diff>0?'+':'')+diff+'%'};}
-      if(objSes){const obj=parseNum(objSes);const diff=obj?((totalSes-obj)/obj*100).toFixed(1):0;vg.sesiones={proyectado:String(totalSes),objetivo:objSes,diff:(diff>0?'+':'')+diff+'%'};}
-      const vc=document.createElement('div');
-      vc.className='card';vc.style='margin-bottom:1rem';
-      const mkCard=(label,d)=>{
-        if(!d||!d.proyectado) return '';
-        const pos=d.diff&&d.diff.startsWith('+');
-        const neg=d.diff&&d.diff.startsWith('-');
-        return `<div class="obj-card"><div class="lbl">${label}</div><div class="val">${esc(d.proyectado)}</div><div class="diff ${pos?'diff-up':neg?'diff-dn':'diff-eq'}">${esc(d.diff)} vs objetivo ${esc(d.objetivo)}</div></div>`;
-      };
-      vc.innerHTML=`<div class="ct">Tu proyección vs objetivos de gestión</div><div class="obj-grid">${mkCard('Facturación',vg.facturacion)}${mkCard('Órdenes',vg.ordenes)}${mkCard('Sesiones',vg.sesiones)}</div>`;
-      rs.appendChild(vc);
-    }
-
-    // Footer
-    const ft=document.createElement('div');
-    ft.className='frow';
-    ft.innerHTML=`<button class="fo" id="p3-copy">Copiar tabla</button><button class="fd" id="p3-csv">Descargar CSV</button>`;
-    rs.appendChild(ft);
-
-    // Copiar tabla
-    document.getElementById('p3-copy').addEventListener('click',function(){
-      const headers=['Fecha','Acción','Envíos','OR','CTOR','Sesiones','CR','Órdenes','Ingresos'];
-      const rows=(p.filas||[]).map(f=>[f.fecha,f.accion,f.envios,f.or,f.ctor,f.sesiones,f.cr,f.ordenes,f.ingresos]);
-      const tot2=p.totales||{};
-      rows.push(['TOTAL','',(tot2.envios||''),tot2.or,tot2.ctor,(tot2.sesiones||''),tot2.cr,(tot2.ordenes||''),tot2.ingresos]);
-      const txt=[headers,...rows].map(r=>r.join('\t')).join('\n');
-      navigator.clipboard.writeText(txt).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
-    });
-
-    // Descargar CSV
-    document.getElementById('p3-csv').addEventListener('click',()=>{
-      const headers=['Fecha','Acción','Envíos','OR','CTOR','Sesiones','CR','Órdenes','Ingresos'];
-      const rows=(p.filas||[]).map(f=>[f.fecha,f.accion,f.envios,f.or,f.ctor,f.sesiones,f.cr,f.ordenes,f.ingresos]);
-      const tot2=p.totales||{};
-      rows.push(['TOTAL','',(tot2.envios||''),tot2.or,tot2.ctor,(tot2.sesiones||''),tot2.cr,(tot2.ordenes||''),tot2.ingresos]);
-      const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;a.download=`proyeccion_${marca.toLowerCase().replace(/\s/g,'_')}_${mes}.csv`;
-      a.click();URL.revokeObjectURL(url);
-    });
-
-  }catch(err){
-    rs.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
-  }
+  document.getElementById('p3-copy').addEventListener('click',function(){
+    const hd=['Fecha','Acción','Tipo','Envíos','OR','CTOR','Sesiones','CR','Órdenes','Ticket','Ingresos'];
+    const rows=filas.map(f=>[f.fecha,f.accion,f.tipo,f.envios,f.or,f.ctor,f.sesiones,f.cr,f.ordenes,f.ticket,f.ingresos]);
+    rows.push(['TOTAL','','',totEnv,totOR,totCTOR,totSes,totCR,totOrd,'',fP(totIng)]);
+    navigator.clipboard.writeText([hd,...rows].map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
+  });
+  document.getElementById('p3-csv').addEventListener('click',()=>{
+    const hd=['Fecha','Acción','Tipo','Envíos','OR','CTOR','Sesiones','CR','Órdenes','Ticket','Ingresos'];
+    const rows=filas.map(f=>[f.fecha,f.accion,f.tipo,f.envios,f.or,f.ctor,f.sesiones,f.cr,f.ordenes,f.ticket,f.ingresos]);
+    rows.push(['TOTAL','','',totEnv,totOR,totCTOR,totSes,totCR,totOrd,'',fP(totIng)]);
+    const csv=[hd,...rows].map(r=>r.join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`proyeccion_${marca.toLowerCase().replace(/\s/g,'_')}_${mes}.csv`;a.click();URL.revokeObjectURL(url);
+  });
 });
 
 // ── PASO 1 ─────────────────────────────────────────────────────────────────────
