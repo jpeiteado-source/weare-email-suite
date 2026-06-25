@@ -380,9 +380,15 @@ function setupUpload3(boxId, inputId, varSetter, label){
 function loadCsv3(file,ub,varSetter){
   const r=new FileReader();
   r.onload=e=>{
-    varSetter(e.target.result);
+    let txt=e.target.result;
+    // Cortar a las primeras 150 líneas con contenido real (ignora vacías)
+    const lines=txt.split(/\r?\n/);
+    const header=lines[0];
+    const dataLines=lines.slice(1).filter(l=>l.replace(/,/g,'').trim().length>0).slice(0,150);
+    txt=header+'\n'+dataLines.join('\n');
+    varSetter(txt);
     ub.classList.add('has');
-    ub.querySelector('.up-lbl').innerHTML=`<strong>${file.name}</strong> cargado`;
+    ub.querySelector('.up-lbl').innerHTML=`<strong>${file.name}</strong> cargado (${dataLines.length} filas con datos)`;
     ub.querySelector('.up-sub').textContent='Hacé clic para reemplazar';
   };
   r.readAsText(file,'UTF-8');
