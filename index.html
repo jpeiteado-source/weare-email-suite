@@ -414,69 +414,130 @@ document.getElementById('p3-genbtn').addEventListener('click',async()=>{
 
   hide('paso3'); show('resultado3');
   const rs=document.getElementById('resultado3');
-  rs.innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Paso 1/2: Analizando seguimiento y calculando benchmarks…</div></div>`;
+  rs.innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Calculando benchmarks del mes corriente…</div></div>`;
 
   const [yr,mo]=mes.split('-');
   const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
 
-  const objetivos=objFac||objOrd||objSes||objOR ? `OBJETIVOS DE GESTIÓN:\n${objFac?`- Facturación: ${objFac}\n`:''}${objOrd?`- Órdenes: ${objOrd}\n`:''}${objSes?`- Sesiones: ${objSes}\n`:''}${objOR?`- OR: ${objOR}\n`:''}` : '';
-
-  async function callAI(prompt, maxTok){
+  async function callAI(prompt,maxTok){
     const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:maxTok})});
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
     const data=await res.json();
     const txt=data.content.map(i=>i.text||'').join('');
-    const jsonMatch=txt.match(/\{[\s\S]*\}/);
-    if(!jsonMatch) throw new Error('La IA no devolvió JSON válido. Intentá de nuevo.');
-    return JSON.parse(jsonMatch[0]);
+    const m=txt.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('La IA no devolvió JSON válido. Intentá de nuevo.');
+    return JSON.parse(m[0]);
+  }
+
+  // Parsear CSV de acciones en el frontend
+  function parseAcciones(csv){
+    const lines=csv.trim().split(/\r?\n/).filter(l=>l.replace(/,/g,'').trim());
+    if(!lines.length) return [];
+    const sep=lines[0].includes(';')?';':',';
+    const headers=lines[0].split(sep).map(h=>h.replace(/^["']|["']$/g,'').trim().toLowerCase());
+    return lines.slice(1).map(line=>{
+      const cols=line.split(sep).map(c=>c.replace(/^["']|["']$/g,'').trim());
+      const obj={};
+      headers.forEach((h,i)=>obj[h]=cols[i]||'');
+      return obj;
+    }).filter(r=>Object.values(r).some(v=>v.length>0));
+  }
+
+  function parseNum(s){
+    if(!s) return 0;
+    return parseFloat(String(s).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.')) || 0;
+  }
+  function parsePct(s){
+    if(!s) return 0;
+    return parseFloat(String(s).replace('%','').replace(',','.')) / 100 || 0;
+  }
+  function fmtPesos(n){
+    return '$'+Math.round(n).toLocaleString('es-AR');
+  }
+  function fmtPct(n){
+    return (n*100).toFixed(1)+'%';
   }
 
   try{
-    // ── LLAMADO 1: Benchmarks desde el seguimiento ─────────────────────────────
-    const prompt1=`Sos un analista de Email Marketing. Respondés SOLO en JSON puro sin markdown.
+    // ── LLAMADO IA: solo benchmarks ───────────────────────────────────────────
+    const prompt1=`Sos un analista de Email Marketing. Respondés SOLO JSON sin markdown.
 
-Analizá este CSV de seguimiento de email marketing de la marca ${marca} y calculá promedios de métricas agrupando por tipo de campaña.
+Analizá este CSV de seguimiento de ${marca} y calculá promedios por tipo de campaña.
 
-CSV DE SEGUIMIENTO:
 ${seg64}
 
-Identificá los tipos de campaña (newsletter masiva, automation, recupero de inactivos, outlet, cupón, etc) y calculá el promedio de OR, CTOR, CR, ticket promedio y tasa sesiones/clicks para cada tipo.
+Agrupá por tipo (newsletter, automation, recupero inactivos, outlet, cupón, etc).
+Para cada tipo calculá OR promedio, CTOR promedio, tasa sesiones/clicks (sesiones÷clicks), CR promedio y ticket promedio.
 
-JSON sin markdown:
-{"analisis":"2-3 líneas resumiendo el mes","benchmarks":[{"tipo":"nombre","envios_prom":0,"or":"x%","ctor":"x%","tasa_ses":"x%","cr":"x%","ticket":"$x"}]}`;
+JSON:
+{"analisis":"2-3 líneas del mes","benchmarks":[{"tipo":"nombre","or":0.20,"ctor":0.04,"tasa_ses":0.90,"cr":0.01,"ticket":110000}]}
 
-    const r1=await callAI(prompt1, 2000);
+Nota: OR, CTOR, tasa_ses, CR como decimales (ej: 20% = 0.20). Ticket como número sin formato.`;
 
-    // ── LLAMADO 2: Proyección usando benchmarks ────────────────────────────────
-    rs.querySelector('.stxt').textContent='Paso 2/2: Generando proyección del mes siguiente…';
+    const r1=await callAI(prompt1, 1500);
 
-    const benchStr=JSON.stringify(r1.benchmarks||[]);
-    const prompt2=`Sos un analista de Email Marketing. Respondés SOLO en JSON puro sin markdown.
+    // ── CÁLCULO JS: proyección fila por fila ──────────────────────────────────
+    rs.querySelector('.stxt').textContent='Calculando proyección…';
 
-Usando estos benchmarks calculados del mes corriente de ${marca}:
-${benchStr}
+    const benchmarks=r1.benchmarks||[];
+    const accRows=parseAcciones(acc64);
 
-Generá la proyección para ${mesNombre} con estas acciones:
-${acc64}
+    // Buscar benchmark más similar por nombre
+    function findBench(accion){
+      const a=(accion||'').toLowerCase();
+      // Intentar match por palabras clave
+      for(const b of benchmarks){
+        const t=(b.tipo||'').toLowerCase();
+        if(a.includes(t)||t.includes(a.split(' ')[0])) return b;
+      }
+      // Si no encuentra, usar promedio general
+      if(benchmarks.length){
+        const avg={
+          tipo:'promedio general',
+          or:benchmarks.reduce((s,b)=>s+b.or,0)/benchmarks.length,
+          ctor:benchmarks.reduce((s,b)=>s+b.ctor,0)/benchmarks.length,
+          tasa_ses:benchmarks.reduce((s,b)=>s+b.tasa_ses,0)/benchmarks.length,
+          cr:benchmarks.reduce((s,b)=>s+b.cr,0)/benchmarks.length,
+          ticket:benchmarks.reduce((s,b)=>s+b.ticket,0)/benchmarks.length,
+        };
+        return avg;
+      }
+      return null;
+    }
 
-${objetivos}
+    // Detectar columnas de fecha, accion, envios
+    const sampleRow=accRows[0]||{};
+    const keys=Object.keys(sampleRow);
+    const fechaKey=keys.find(k=>/fecha|date|día|dia/i.test(k))||keys[0]||'';
+    const accionKey=keys.find(k=>/accion|acción|campaña|campaign|nombre|name|envio|envío/i.test(k))||keys[1]||'';
+    const enviosKey=keys.find(k=>/envio|envío|send|base|volum/i.test(k))||keys.find(k=>/\d{4,}/.test(sampleRow[k]))||keys[2]||'';
+    const ticketKey=keys.find(k=>/ticket|tkt|precio/i.test(k))||'';
 
-Para cada fila del CSV de acciones, asigná el tipo de benchmark más similar y calculá:
-- Aperturas = envíos × OR
-- Clicks = aperturas × CTOR  
-- Sesiones = clicks × tasa_ses
-- Órdenes = sesiones × CR
-- Ingresos = órdenes × ticket
+    let totalEnvios=0,totalSes=0,totalOrd=0,totalIng=0,totalAp=0,totalClk=0;
+    const filas=accRows.map(row=>{
+      const fecha=row[fechaKey]||'';
+      const accion=row[accionKey]||'';
+      const envios=parseNum(row[enviosKey]);
+      const ticketOverride=ticketKey?parseNum(row[ticketKey]):0;
+      const b=findBench(accion);
+      if(!b||!envios) return {fecha,accion,envios,or:'—',ctor:'—',sesiones:0,cr:'—',ordenes:0,ticket:'—',ingresos:'$0',nota:!envios?'sin envíos':'sin benchmark'};
+      const ticket=ticketOverride||b.ticket;
+      const aperturas=Math.round(envios*b.or);
+      const clicks=Math.round(aperturas*b.ctor);
+      const sesiones=Math.round(clicks*b.tasa_ses);
+      const ordenes=Math.round(sesiones*b.cr);
+      const ingresos=ordenes*ticket;
+      totalEnvios+=envios;totalAp+=aperturas;totalClk+=clicks;
+      totalSes+=sesiones;totalOrd+=ordenes;totalIng+=ingresos;
+      return {fecha,accion,envios,or:fmtPct(b.or),ctor:fmtPct(b.ctor),sesiones,cr:fmtPct(b.cr),ordenes,ticket:fmtPesos(ticket),ingresos:fmtPesos(ingresos),nota:''};
+    });
 
-REGLAS: OR/CTOR/CR como porcentaje. Ingresos con $ y puntos de miles. Si no hay benchmark similar, usá el más cercano y marcá nota:"estimado".
+    const totOR=totalAp&&totalEnvios?fmtPct(totalAp/totalEnvios):'—';
+    const totCTOR=totalClk&&totalAp?fmtPct(totalClk/totalAp):'—';
+    const totCR=totalOrd&&totalSes?fmtPct(totalOrd/totalSes):'—';
+    const totales={envios:totalEnvios,or:totOR,ctor:totCTOR,sesiones:totalSes,cr:totCR,ordenes:totalOrd,ingresos:fmtPesos(totalIng)};
 
-JSON sin markdown:
-{"filas":[{"fecha":"DD/MM","accion":"NOMBRE","envios":0,"or":"x%","ctor":"x%","sesiones":0,"cr":"x%","ordenes":0,"ticket":"$x","ingresos":"$x","nota":""}],"totales":{"envios":0,"or":"x%","ctor":"x%","sesiones":0,"cr":"x%","ordenes":0,"ingresos":"$x"}${objetivos?`,"vs_gestion":{"facturacion":{"proyectado":"$x","objetivo":"${objFac}","diff":"+x%"},"ordenes":{"proyectado":0,"objetivo":"${objOrd}","diff":"+x%"},"sesiones":{"proyectado":0,"objetivo":"${objSes}","diff":"+x%"}}`:''}}`; 
-
-    const r2=await callAI(prompt2, 4000);
-
-    // Combinar resultados
-    const p={analisis:r1.analisis,benchmarks:r1.benchmarks,...r2};
+    const p={analisis:r1.analisis,benchmarks,filas,totales};
     rs.innerHTML='';
 
     // Header
@@ -538,27 +599,21 @@ JSON sin markdown:
       </table></div>`;
     rs.appendChild(tc);
 
-    // Vs gestión
-    if(p.vs_gestion&&(objFac||objOrd||objSes)){
-      const vg=p.vs_gestion;
+    // Vs gestión — calculado en JS
+    if(objFac||objOrd||objSes){
+      const vg={};
+      if(objFac){const obj=parseNum(objFac);const diff=obj?((totalIng-obj)/obj*100).toFixed(1):0;vg.facturacion={proyectado:fmtPesos(totalIng),objetivo:objFac,diff:(diff>0?'+':'')+diff+'%'};}
+      if(objOrd){const obj=parseNum(objOrd);const diff=obj?((totalOrd-obj)/obj*100).toFixed(1):0;vg.ordenes={proyectado:String(totalOrd),objetivo:objOrd,diff:(diff>0?'+':'')+diff+'%'};}
+      if(objSes){const obj=parseNum(objSes);const diff=obj?((totalSes-obj)/obj*100).toFixed(1):0;vg.sesiones={proyectado:String(totalSes),objetivo:objSes,diff:(diff>0?'+':'')+diff+'%'};}
       const vc=document.createElement('div');
       vc.className='card';vc.style='margin-bottom:1rem';
       const mkCard=(label,d)=>{
         if(!d||!d.proyectado) return '';
         const pos=d.diff&&d.diff.startsWith('+');
         const neg=d.diff&&d.diff.startsWith('-');
-        return `<div class="obj-card">
-          <div class="lbl">${label}</div>
-          <div class="val">${esc(d.proyectado||'')}</div>
-          <div class="diff ${pos?'diff-up':neg?'diff-dn':'diff-eq'}">${esc(d.diff||'')} vs objetivo ${esc(d.objetivo||'')}</div>
-        </div>`;
+        return `<div class="obj-card"><div class="lbl">${label}</div><div class="val">${esc(d.proyectado)}</div><div class="diff ${pos?'diff-up':neg?'diff-dn':'diff-eq'}">${esc(d.diff)} vs objetivo ${esc(d.objetivo)}</div></div>`;
       };
-      vc.innerHTML=`<div class="ct">Tu proyección vs objetivos de gestión</div>
-        <div class="obj-grid">
-          ${mkCard('Facturación',vg.facturacion)}
-          ${mkCard('Órdenes',vg.ordenes)}
-          ${mkCard('Sesiones',vg.sesiones)}
-        </div>`;
+      vc.innerHTML=`<div class="ct">Tu proyección vs objetivos de gestión</div><div class="obj-grid">${mkCard('Facturación',vg.facturacion)}${mkCard('Órdenes',vg.ordenes)}${mkCard('Sesiones',vg.sesiones)}</div>`;
       rs.appendChild(vc);
     }
 
