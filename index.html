@@ -381,10 +381,9 @@ function loadCsv3(file,ub,varSetter){
   const r=new FileReader();
   r.onload=e=>{
     let txt=e.target.result;
-    // Cortar a las primeras 150 líneas con contenido real (ignora vacías)
     const lines=txt.split(/\r?\n/);
     const header=lines[0];
-    const dataLines=lines.slice(1).filter(l=>l.replace(/,/g,'').trim().length>0).slice(0,150);
+    const dataLines=lines.slice(1).filter(l=>l.replace(/,/g,'').replace(/;/g,'').trim().length>0).slice(0,150);
     txt=header+'\n'+dataLines.join('\n');
     varSetter(txt);
     ub.classList.add('has');
@@ -460,19 +459,30 @@ document.getElementById('p3-genbtn').addEventListener('click',async()=>{
 
   try{
     // ── LLAMADO IA: solo benchmarks ───────────────────────────────────────────
+    // Reducir CSV de seguimiento a columnas clave antes de mandar a la IA
+    function reducirCSV(csv){
+      const lines=csv.trim().split(/\r?\n/);
+      if(lines.length<2) return csv;
+      const sep=lines[0].includes(';')?';':',';
+      const headers=lines[0].split(sep).map(h=>h.replace(/^["']|["']$/g,'').trim());
+      const relevantes=/fecha|date|día|dia|accion|acción|canal|campaign|envio|envío|send|base|apertura|open|\bor\b|click|ctor|sesion|session|\bcr\b|orden|order|ticket|tkt|ingreso|revenue|factur/i;
+      const idxs=headers.reduce((acc,h,i)=>{if(relevantes.test(h))acc.push(i);return acc;},[]);
+      if(!idxs.length) return csv; // si no detecta nada, mandar todo
+      return lines.map(l=>{const c=l.split(sep);return idxs.map(i=>c[i]||'').join(',');}).join('\n');
+    }
+    const segReducido=reducirCSV(seg64);
+
     const prompt1=`Sos un analista de Email Marketing. Respondés SOLO JSON sin markdown.
 
 Analizá este CSV de seguimiento de ${marca} y calculá promedios por tipo de campaña.
 
-${seg64}
+${segReducido}
 
 Agrupá por tipo (newsletter, automation, recupero inactivos, outlet, cupón, etc).
 Para cada tipo calculá OR promedio, CTOR promedio, tasa sesiones/clicks (sesiones÷clicks), CR promedio y ticket promedio.
 
-JSON:
-{"analisis":"2-3 líneas del mes","benchmarks":[{"tipo":"nombre","or":0.20,"ctor":0.04,"tasa_ses":0.90,"cr":0.01,"ticket":110000}]}
-
-Nota: OR, CTOR, tasa_ses, CR como decimales (ej: 20% = 0.20). Ticket como número sin formato.`;
+JSON (decimales, no porcentajes — ej: 20% = 0.20):
+{"analisis":"2-3 líneas del mes","benchmarks":[{"tipo":"nombre","or":0.20,"ctor":0.04,"tasa_ses":0.90,"cr":0.01,"ticket":110000}]}`;
 
     const r1=await callAI(prompt1, 1500);
 
