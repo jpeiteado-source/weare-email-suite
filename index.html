@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WeAre — Email Marketing Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --db:#0D1117;--ds:#161B22;--ds2:#1C2330;
+  --dbrd:rgba(255,255,255,0.07);--dbrd2:rgba(255,255,255,0.13);
+  --dt:#FFFFFF;--dt2:#8B949E;--dt3:#4A5568;
+  --or:#FF5C00;--or2:#FF7A2E;--org:rgba(255,92,0,0.1);--orb:rgba(255,92,0,0.25);
+  --ok:#3FB950;--okb:rgba(63,185,80,0.12);
+  --warn:#F0A742;--info:#58A6FF;--infob:rgba(88,166,255,0.1);
+  --r:8px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--db);color:var(--dt);min-height:100vh;font-size:15px;line-height:1.6;}
+.hdr{background:var(--ds);border-bottom:1px solid var(--dbrd);padding:0.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.logo{background:var(--or);color:#fff;font-size:10px;font-weight:500;padding:4px 8px;border-radius:4px;letter-spacing:0.06em;}
+.pipe{width:1px;height:14px;background:var(--dbrd2);}
+.tool{font-size:13px;color:var(--dt2);}
+.pills{display:flex;gap:6px;}
+.pill{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt3);transition:all 0.2s;}
+.pill.active{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.pill.done{background:var(--okb);border-color:rgba(63,185,80,0.3);color:var(--ok);}
+.main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 4rem;}
+.card{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:1rem;}
+.ct{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--dt3);margin-bottom:1rem;}
+.f{margin-bottom:0.8rem;}
+.f:last-child{margin-bottom:0;}
+.f label{font-size:12px;color:var(--dt2);display:block;margin-bottom:4px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+input[type="text"],input[type="month"],textarea,select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;transition:border-color 0.15s;box-sizing:border-box;}
+input:focus,textarea:focus,select:focus{border-color:var(--or);}
+textarea{resize:vertical;min-height:72px;line-height:1.55;}
+select{cursor:pointer;}
+.hint{font-size:11px;color:var(--dt3);margin-top:4px;}
+.canal-grid{display:flex;gap:8px;flex-wrap:wrap;}
+.canal-toggle{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt3);cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;}
+.canal-toggle.on{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.upbox{border:1.5px dashed var(--dbrd2);border-radius:var(--r);padding:1.2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--ds2);}
+.upbox:hover{border-color:var(--or);background:var(--org);}
+.upbox.has{border-style:solid;border-color:var(--ok);background:var(--okb);}
+.up-icon{font-size:22px;margin-bottom:4px;}
+.up-lbl{font-size:13px;color:var(--dt2);}
+.up-lbl strong{color:var(--dt);}
+.up-sub{font-size:11px;color:var(--dt3);margin-top:3px;}
+input[type="file"]{display:none;}
+.btn-or{width:100%;padding:12px;background:var(--or);color:#fff;border:none;border-radius:var(--r);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background 0.15s;}
+.btn-or:hover{background:var(--or2);}
+.btn-or:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-ghost{padding:8px 14px;background:transparent;border:1px solid var(--dbrd);border-radius:6px;font-family:inherit;font-size:12px;color:var(--dt2);cursor:pointer;transition:all 0.15s;}
+.btn-ghost:hover{border-color:var(--dbrd2);color:var(--dt);}
+.btn-ok{padding:8px 14px;background:var(--okb);border:1px solid rgba(63,185,80,0.3);border-radius:6px;font-family:inherit;font-size:12px;color:var(--ok);cursor:pointer;}
+.spin-wrap{text-align:center;padding:3rem 2rem;}
+.spinner{width:30px;height:30px;border:2px solid var(--dbrd2);border-top-color:var(--or);border-radius:50%;animation:sp 0.7s linear infinite;margin:0 auto 1rem;}
+@keyframes sp{to{transform:rotate(360deg);}}
+.stxt{font-size:13px;color:var(--dt2);}
+.cal-wrap{overflow-x:auto;margin-top:1rem;}
+.cal-table{width:100%;border-collapse:collapse;font-size:12px;}
+.cal-table th{background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;padding:8px 10px;text-align:left;border-bottom:1px solid var(--dbrd);white-space:nowrap;}
+.cal-table td{padding:8px 10px;border-bottom:1px solid var(--dbrd);vertical-align:top;color:var(--dt2);}
+.cal-table tr:hover td{background:var(--ds2);}
+.cal-table td:first-child{color:var(--dt);font-weight:500;white-space:nowrap;}
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;white-space:nowrap;}
+.b-nl{background:var(--infob);color:var(--info);border:1px solid rgba(88,166,255,0.2);}
+.b-push{background:rgba(240,167,66,0.1);color:var(--warn);border:1px solid rgba(240,167,66,0.2);}
+.b-wa{background:rgba(63,185,80,0.1);color:var(--ok);border:1px solid rgba(63,185,80,0.2);}
+.td-s{color:var(--dt);max-width:180px;}
+.td-p{max-width:180px;font-style:italic;}
+.indef{color:var(--dt3);font-style:italic;}
+.info-box{background:var(--infob);border:1px solid rgba(88,166,255,0.2);border-radius:var(--r);padding:0.9rem 1rem;color:var(--info);font-size:13px;margin-bottom:1rem;line-height:1.6;}
+.tbl-hd{display:grid;grid-template-columns:minmax(0,1fr) 90px 26px;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--dbrd);margin-bottom:8px;}
+.tbl-hd span{font-size:10px;color:var(--dt3);text-transform:uppercase;letter-spacing:0.08em;}
+.arow{display:grid;grid-template-columns:minmax(0,1fr) 90px 26px;gap:8px;align-items:start;margin-bottom:12px;}
+.arow:last-child{margin-bottom:0;}
+.rm{width:26px;height:34px;border:1px solid var(--dbrd);border-radius:5px;background:transparent;cursor:pointer;color:var(--dt3);font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rm:hover{border-color:#f85149;color:#f85149;background:rgba(248,81,73,0.1);}
+.add-lnk{font-size:12px;color:var(--or);cursor:pointer;background:none;border:none;padding:5px 0;font-family:inherit;margin-top:8px;display:inline-block;}
+.tipo-opts{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.tipo-opt{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt3);cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.tipo-opt.sel{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.cb{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
+.ch{background:var(--ds2);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--dbrd);}
+.cn{font-size:13px;font-weight:500;}
+.cmeta{display:flex;gap:8px;align-items:center;}
+.cdate{font-size:11px;color:var(--dt3);}
+.tbadge{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--org);color:var(--or2);border:1px solid var(--orb);}
+.cbody{padding:12px 14px;}
+.rl{margin-bottom:10px;}
+.rl:last-of-type{margin-bottom:0;}
+.rlbl{font-size:10px;color:var(--dt3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;}
+.rval{font-size:14px;font-weight:500;color:var(--dt);}
+.rval.pre{font-weight:400;font-style:italic;color:var(--dt2);}
+.chars{font-size:11px;color:var(--dt3);margin-top:2px;}
+.chars .warn{color:var(--warn);}
+.chars .good{color:var(--ok);}
+.crow{display:flex;justify-content:flex-end;margin-top:8px;}
+.cpybtn{font-size:12px;color:var(--dt2);cursor:pointer;background:none;border:1px solid var(--dbrd);border-radius:5px;padding:3px 10px;font-family:inherit;transition:all 0.15s;}
+.cpybtn:hover{border-color:var(--dbrd2);color:var(--dt);}
+.cpybtn.ok{color:var(--ok);border-color:var(--ok);background:var(--okb);}
+.frow{display:flex;gap:8px;margin-top:4px;}
+.fo{flex:1;padding:10px;background:transparent;border:1px solid var(--dbrd);border-radius:var(--r);font-family:inherit;font-size:13px;cursor:pointer;color:var(--dt2);}
+.fo:hover{border-color:var(--dbrd2);color:var(--dt);}
+.fd{flex:1;padding:10px;background:var(--or);border:none;border-radius:var(--r);font-family:inherit;font-size:13px;cursor:pointer;color:#fff;font-weight:500;}
+.fd:hover{background:var(--or2);}
+.pill.tab{cursor:pointer;}
+.proj-table{width:100%;border-collapse:collapse;font-size:11px;}
+.proj-table th{background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;padding:7px 8px;text-align:right;border-bottom:1px solid var(--dbrd);white-space:nowrap;}
+.proj-table th:first-child,.proj-table th:nth-child(2){text-align:left;}
+.proj-table td{padding:7px 8px;border-bottom:1px solid var(--dbrd);color:var(--dt2);text-align:right;white-space:nowrap;}
+.proj-table td:first-child,.proj-table td:nth-child(2){text-align:left;color:var(--dt);}
+.proj-table tr:hover td{background:var(--ds2);}
+.proj-table tr.total-row td{background:var(--ds2);color:var(--dt);font-weight:500;border-top:1px solid var(--dbrd2);}
+.obj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:1rem;}
+.obj-card{background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:10px 12px;}
+.obj-card .lbl{font-size:10px;color:var(--dt3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
+.obj-card .val{font-size:16px;font-weight:500;color:var(--dt);}
+.obj-card .diff{font-size:11px;margin-top:2px;}
+.diff-up{color:var(--ok);}
+.diff-dn{color:#f85149;}
+.diff-eq{color:var(--dt3);}
+
+.brand-select-wrap{display:flex;gap:8px;align-items:center;}
+.brand-select-wrap select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;}
+.brand-select-wrap select:focus{border-color:var(--or);}
+.brand-actions{display:flex;gap:6px;margin-top:10px;}
+.brand-chip{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt2);cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.brand-chip:hover{border-color:var(--dbrd2);color:var(--dt);}
+.brand-chip.save{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.brand-chip.save:hover{background:var(--orb);}
+.brand-chip.del{color:#f85149;border-color:rgba(248,81,73,0.3);}
+.brand-chip.del:hover{background:rgba(248,81,73,0.1);}
+
+@media(max-width:560px){.g2{grid-template-columns:1fr;}.tbl-hd,.arow{grid-template-columns:minmax(0,1fr) 26px;}.tbl-hd span:nth-child(2){display:none;}}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <span class="logo">WE ARE</span>
+    <div class="pipe"></div>
+    <span class="tool">Email Marketing Suite</span>
+  </div>
+  <div class="pills">
+    <div class="pill active" id="pill1">1 · Calendario</div>
+    <div class="pill" id="pill2">2 · Asuntos & Preheaders</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- PASO 1: FORM -->
+  <div id="paso1">
+
+    <!-- SELECTOR DE MARCA GUARDADA -->
+    <div class="card">
+      <div class="ct">Perfiles de marca guardados</div>
+      <div class="brand-select-wrap">
+        <select id="brand-select">
+          <option value="">— Seleccioná una marca —</option>
+        </select>
+        <button class="brand-chip" id="brand-load-btn">Cargar</button>
+      </div>
+      <div class="brand-actions">
+        <button class="brand-chip save" id="brand-save-btn">Guardar perfil actual</button>
+        <button class="brand-chip del" id="brand-del-btn">Eliminar seleccionada</button>
+      </div>
+      <div class="hint" style="margin-top:8px">Los perfiles se guardan en este navegador. Incluyen nombre, tono y ejemplos de comunicación.</div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Datos de la marca</div>
+      <div class="g2">
+        <div class="f"><label>Nombre de la marca</label><input type="text" id="marca" placeholder="ej. SELÚ, Nike AR…" /></div>
+        <div class="f"><label>Mes a planificar</label><input type="month" id="mes" /></div>
+      </div>
+      <div class="f">
+        <label>Canales activos</label>
+        <div class="canal-grid">
+          <button class="canal-toggle on" data-canal="Newsletter">Newsletter</button>
+          <button class="canal-toggle" data-canal="Notificación Push">Notificación Push</button>
+          <button class="canal-toggle" data-canal="WhatsApp">WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Tono de voz de la marca</div>
+      <div class="f">
+        <label>Descripción del tono</label>
+        <textarea id="tono-desc" style="min-height:68px" placeholder="Ej: Marca de ropa juvenil, lenguaje informal y cercano, tuteo, emojis frecuentes, referencias a tendencias. Nada de español neutro ni formalidades."></textarea>
+      </div>
+      <div class="f">
+        <label>Ejemplos de comunicaciones previas <span style="color:var(--dt3);font-size:11px">(opcional pero muy recomendado)</span></label>
+        <textarea id="tono-ejemplos" style="min-height:80px" placeholder="Pegá asuntos o mensajes que representen bien cómo habla la marca.&#10;Ej:&#10;¡Llegó lo nuevo! MIRÁ la colección 🔥&#10;Últimas horas para aprovechar tu 20% OFF ⏰"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Archivo de gestión comercial</div>
+      <div class="upbox" id="ubox1" onclick="document.getElementById('finput1').click()">
+        <div class="up-icon">📎</div>
+        <div class="up-lbl"><strong>Subir archivo</strong> o arrastrá acá</div>
+        <div class="up-sub">Excel (.xlsx), CSV o PDF con las acciones comerciales del mes</div>
+      </div>
+      <input type="file" id="finput1" accept=".csv,.xlsx,.xls,.pdf" />
+      <div class="hint" style="margin-top:8px">La IA lee las columnas de fecha y acciones comerciales, ignorando métricas de performance.</div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Notas y consideraciones del mes <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+      <textarea id="notas-mes" style="min-height:80px" placeholder="Ej: Este mes vamos a hacer 2 envíos a base inactiva. Hay un lanzamiento de colección la primera semana. Evitar comunicar los fines de semana."></textarea>
+      <div class="hint">La IA va a tener en cuenta estas indicaciones al armar el calendario.</div>
+    </div>
+
+    <button class="btn-or" id="btn-cal">Generar calendario →</button>
+  </div>
+
+  <!-- PASO 1: RESULTADO -->
+  <div id="resultado1" class="hidden">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div class="ct" style="margin-bottom:0">Calendario generado</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" id="btn-edit-cal">← Rehacer</button>
+          <button class="btn-ok" id="btn-goto2">Refinar asuntos →</button>
+        </div>
+      </div>
+      <div id="analisis-box" class="info-box hidden"></div>
+      <div class="cal-wrap" id="cal-wrap"></div>
+      <div style="margin-top:1rem">
+        <button class="btn-ghost" id="btn-copy-cal">Copiar tabla</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASO 2: FORM -->
+  <div id="paso2" class="hidden">
+
+    <!-- SELECTOR DE MARCA -->
+    <div class="card">
+      <div class="ct">Perfil de marca</div>
+      <div class="brand-select-wrap">
+        <select id="brand-select-p2">
+          <option value="">— Seleccioná una marca —</option>
+        </select>
+        <button class="brand-chip" id="brand-load-btn-p2">Cargar</button>
+      </div>
+      <div class="hint" style="margin-top:8px">Cargá un perfil guardado o completá los campos manualmente.</div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Contexto de la marca</div>
+      <div class="g2">
+        <div class="f"><label>Marca / cliente</label><input type="text" id="p2-marca" placeholder="ej. Nike AR…" /></div>
+        <div class="f"><label>Industria</label><input type="text" id="p2-industria" placeholder="ej. Retail, Moda…" /></div>
+      </div>
+      <div class="f"><label>Buyer persona</label><textarea id="p2-buyer" placeholder="Edad, intereses, qué los motiva a abrir un email…"></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Tono de voz de la marca</div>
+      <div class="f">
+        <label>Descripción del tono</label>
+        <textarea id="p2-tono-desc" style="min-height:68px" placeholder="Ej: Marca de lencería para mujeres 20-50 años. Sofisticado pero cercano, empoderamiento femenino, emojis moderados."></textarea>
+      </div>
+      <div class="f">
+        <label>Ejemplos de comunicaciones previas <span style="color:var(--dt3);font-size:11px">(opcional)</span></label>
+        <textarea id="p2-tono-ejemplos" style="min-height:72px" placeholder="Pegá asuntos o mensajes que representen bien cómo habla la marca."></textarea>
+      </div>
+    </div>
+
+    <!-- Siempre visible -->
+    <div class="card">
+      <div class="ct">Acciones del mes</div>
+      <div id="p2-info-box" class="info-box hidden" style="margin-bottom:12px">
+        ✓ Las acciones se cargaron desde el calendario. Solo revisá el tipo de asunto por acción.
+      </div>
+      <div class="tbl-hd"><span>Acción y tipo de asunto</span><span>Fecha</span><span></span></div>
+      <div id="p2-alist"></div>
+      <button class="add-lnk" id="p2-addbtn">+ Agregar acción</button>
+    </div>
+
+    <button class="btn-or" id="p2-genbtn">Generar asuntos y preheaders →</button>
+  </div>
+
+  <!-- PASO 2: RESULTADO -->
+  <div id="resultado2" class="hidden"></div>
+
+</main>
+
+<script>
+const TIPOS=['Urgencia / tiempo limitado','Lanzamiento / novedad','Beneficio / oferta','Aspiracional / inspiracional','Curiosidad / intriga','Racional / informativo','Emocional / cercano'];
+let accs2=[],aid2=0,archivoBase64='',archivoTipo='',archivoNombre='',calRows=[];
+
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+
+// Canales
+document.querySelectorAll('.canal-toggle').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
+function canalesActivos(){return [...document.querySelectorAll('.canal-toggle.on')].map(b=>b.dataset.canal);}
+
+// Mes default
+const now=new Date();
+document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+// Upload
+['ubox1'].forEach(id=>{
+  const ub=document.getElementById(id);
+  ub.addEventListener('dragover',e=>{e.preventDefault();ub.style.borderColor='var(--or)';});
+  ub.addEventListener('dragleave',()=>ub.style.borderColor='');
+  ub.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+});
+document.getElementById('finput1').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+function loadFile(file){
+  archivoNombre=file.name;archivoTipo=file.type||'';
+  const isPDF=archivoTipo.includes('pdf')||file.name.match(/\.pdf$/i);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    if(isPDF){
+      archivoBase64=e.target.result.split(',')[1];
+    } else {
+      // Para CSV/Excel guardamos el texto plano
+      archivoBase64=e.target.result;
+    }
+    const ub=document.getElementById('ubox1');
+    ub.classList.add('has');
+    ub.querySelector('.up-lbl').innerHTML=`<strong>${file.name}</strong> cargado`;
+    ub.querySelector('.up-sub').textContent='Hacé clic para reemplazar';
+  };
+  if(isPDF) reader.readAsDataURL(file);
+  else reader.readAsText(file,'UTF-8');
+}
+
+// Pills — ahora son 2 tabs
+function updatePills(active){
+  document.getElementById('pill1').className='pill'+(active===1?' active':'');
+  document.getElementById('pill2').className='pill'+(active===2?' active':'');
+}
+
+// ── PERFILES DE MARCA ──────────────────────────────────────────────────────────
+const BRANDS_KEY='weare_brand_profiles';
+
+function getBrands(){
+  try{ return JSON.parse(localStorage.getItem(BRANDS_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveBrands(brands){
+  localStorage.setItem(BRANDS_KEY, JSON.stringify(brands));
+}
+
+function renderBrandSelect(){
+  const brands=getBrands();
+  ['brand-select','brand-select-p2'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel) return;
+    const current=sel.value;
+    sel.innerHTML='<option value="">— Seleccioná una marca —</option>';
+    Object.keys(brands).sort().forEach(name=>{
+      const opt=document.createElement('option');
+      opt.value=name; opt.textContent=name;
+      if(name===current) opt.selected=true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function loadBrandProfile(name){
+  const brands=getBrands();
+  const b=brands[name];
+  if(!b) return;
+  document.getElementById('marca').value=b.nombre||'';
+  document.getElementById('tono-desc').value=b.tonoDesc||'';
+  document.getElementById('tono-ejemplos').value=b.tonoEj||'';
+  document.getElementById('p2-marca').value=b.nombre||'';
+  document.getElementById('p2-tono-desc').value=b.tonoDesc||'';
+  document.getElementById('p2-tono-ejemplos').value=b.tonoEj||'';
+  if(b.industria) document.getElementById('p2-industria').value=b.industria;
+  if(b.buyer) document.getElementById('p2-buyer').value=b.buyer;
+}
+
+document.getElementById('brand-load-btn').addEventListener('click',()=>{
+  const name=document.getElementById('brand-select').value;
+  if(!name){ alert('Seleccioná una marca primero.'); return; }
+  loadBrandProfile(name);
+  document.getElementById('brand-select-p2').value=name;
+});
+
+document.getElementById('brand-load-btn-p2').addEventListener('click',()=>{
+  const name=document.getElementById('brand-select-p2').value;
+  if(!name){ alert('Seleccioná una marca primero.'); return; }
+  loadBrandProfile(name);
+  document.getElementById('brand-select').value=name;
+});
+
+document.getElementById('brand-save-btn').addEventListener('click',()=>{
+  const nombre=document.getElementById('marca').value.trim();
+  if(!nombre){ alert('Completá el nombre de la marca antes de guardar.'); return; }
+  const brands=getBrands();
+  brands[nombre]={
+    nombre,
+    tonoDesc: document.getElementById('tono-desc').value.trim(),
+    tonoEj: document.getElementById('tono-ejemplos').value.trim(),
+    industria: document.getElementById('p2-industria').value.trim(),
+    buyer: document.getElementById('p2-buyer').value.trim(),
+  };
+  saveBrands(brands);
+  renderBrandSelect();
+  document.getElementById('brand-select').value=nombre;
+  document.getElementById('brand-select-p2').value=nombre;
+  const btn=document.getElementById('brand-save-btn');
+  const orig=btn.textContent;
+  btn.textContent='¡Guardado!';
+  setTimeout(()=>btn.textContent=orig, 1800);
+});
+
+document.getElementById('brand-del-btn').addEventListener('click',()=>{
+  const name=document.getElementById('brand-select').value;
+  if(!name){ alert('Seleccioná una marca para eliminar.'); return; }
+  if(!confirm(`¿Eliminar el perfil de "${name}"?`)) return;
+  const brands=getBrands();
+  delete brands[name];
+  saveBrands(brands);
+  renderBrandSelect();
+});
+
+(()=>{
+  renderBrandSelect();
+  const brands=getBrands();
+  const names=Object.keys(brands);
+  if(names.length===1){
+    document.getElementById('brand-select').value=names[0];
+    document.getElementById('brand-select-p2').value=names[0];
+    loadBrandProfile(names[0]);
+  }
+})();
+
+// Tab navigation
+document.getElementById('pill1').addEventListener('click',()=>{
+  ['paso2','resultado2','resultado1'].forEach(hide);
+  show('paso1'); updatePills(1);
+});
+document.getElementById('pill2').addEventListener('click',()=>{
+  ['paso1','resultado1'].forEach(hide);
+  show('paso2');
+  updatePills(2);
+});
+
+
+// ── PASO 1 ─────────────────────────────────────────────────────────────────────
+document.getElementById('btn-cal').addEventListener('click',async()=>{
+  const marca=document.getElementById('marca').value.trim();
+  const mes=document.getElementById('mes').value;
+  const tonoDesc=document.getElementById('tono-desc').value.trim();
+  const tonoEj=document.getElementById('tono-ejemplos').value.trim();
+  const notas=document.getElementById('notas-mes').value.trim();
+  const canales=canalesActivos();
+  if(!marca||!mes){alert('Completá nombre de la marca y mes.');return;}
+  if(!tonoDesc){alert('Describí el tono de voz de la marca.');return;}
+  if(!archivoBase64){alert('Subí el archivo de gestión comercial.');return;}
+  if(!canales.length){alert('Seleccioná al menos un canal activo.');return;}
+
+  hide('paso1');show('resultado1');
+  hide('analisis-box');
+  document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Analizando el archivo y armando el calendario…</div></div>`;
+
+  const [yr,mo]=mes.split('-');
+  const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
+  const isPDF=archivoTipo.includes('pdf')||archivoNombre.match(/\.pdf$/i);
+
+  const instrucciones=`Sos un analista de Email Marketing y CRM especializado en e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro sin texto adicional ni markdown.
+
+MARCA: ${marca}
+MES: ${mesNombre}
+CANALES ACTIVOS: ${canales.join(', ')}
+
+TONO DE VOZ DE LA MARCA:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+
+${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
+TAREA: Analizá el contenido del archivo de gestión comercial y generá un calendario de comunicaciones mensual.
+
+CÓMO LEER EL ARCHIVO:
+El archivo puede tener distintos nombres de columnas y distintas estructuras según la marca. Tu tarea es interpretar inteligentemente su contenido. Buscá y usá:
+- Columna de FECHA (puede llamarse "Fecha", "Día", "Date" o similar)
+- Columna de ACCIONES COMERCIALES (puede llamarse "Acciones AO", "Acción", "Microevento", "Promoción", "Campaña" o similar) → estas son las acciones principales a comunicar
+- Columna de BENEFICIOS (puede llamarse "Beneficios AO", "Beneficio", "Financiación" o similar) → usarlos como complemento, no como tema principal
+- Columna de COMUNICACIONES (puede llamarse "Comunicaciones", "Contenido", "Mensaje sugerido" o similar) → usarla como referencia de lo que el equipo ya pensó comunicar
+Ignorá columnas de métricas, facturación, sesiones, órdenes, CTR y cualquier dato de performance.
+
+CRITERIO EDITORIAL:
+- Acciones de un solo día → comunicar ese día por todos los canales activos
+- Acciones de varios días consecutivos → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
+- Beneficios always on → usarlos como complemento en el copy, no como tema principal de una pieza
+- Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
+- Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
+- Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
+- Horarios sugeridos: Newsletter → 10:00 o 18:00 / Push → según regla anterior
+
+REDACCIÓN — RESPETÁ SIEMPRE EL TONO DE VOZ DE LA MARCA:
+- Lenguaje argentino, natural y directo. Tildes siempre correctos. Signos de apertura: ¡ ¿
+- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ, DESCUBRÍ
+- Asunto: máximo 45 caracteres, beneficio concreto + CTA
+- Preheader: máximo 80 caracteres, complementa el asunto sin repetirlo
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","asunto":"texto del asunto","preheader":"texto del preheader"}]}`;
+
+  const userContent = isPDF ? [
+    {type:'text', text: instrucciones},
+    {type:'document', source:{type:'base64', media_type:'application/pdf', data:archivoBase64}}
+  ] : [
+    {type:'text', text: instrucciones + `\n\nCONTENIDO DEL ARCHIVO (${archivoNombre}):\n${archivoBase64}`}
+  ];
+
+  try{
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:userContent}],max_tokens:4000})});
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+    const data=await res.json();
+    const txt=data.content.map(i=>i.text||'').join('');
+    const jsonMatch=txt.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+    const parsed=JSON.parse(jsonMatch[0]);
+    calRows=parsed.filas||[];
+
+    document.getElementById('cal-wrap').innerHTML=`<table class="cal-table"><thead><tr><th>Elemento</th><th>Canal</th><th>Hora</th><th>Asunto</th><th>Preheader</th></tr></thead><tbody id="cal-tbody"></tbody></table>`;
+    const tbody=document.getElementById('cal-tbody');
+    calRows.forEach(r=>{
+      const tr=document.createElement('tr');
+      const bc=r.canal&&r.canal.includes('Push')?'b-push':r.canal&&r.canal.includes('WhatsApp')?'b-wa':'b-nl';
+      const indef=(r.asunto||'').includes('A DEFINIR');
+      tr.innerHTML=`<td>${esc(r.elemento||'')}</td><td><span class="badge ${bc}">${esc(r.canal||'')}</span></td><td style="white-space:nowrap">${esc(r.hora||'')}</td><td class="td-s${indef?' indef':''}">${esc(r.asunto||'')}</td><td class="td-p${indef?' indef':''}">${esc(r.preheader||'')}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
+
+    // Pre-cargar paso 2 — agrupar por acción y acumular canales
+    accs2=[];const seen=new Map();
+    calRows.forEach(r=>{
+      if(!r.elemento) return;
+      const parts=r.elemento.split(' - ');
+      const fecha=parts[0]||'';
+      const nombre=parts.slice(1).join(' - ')||r.elemento;
+      const key=nombre.trim().toLowerCase();
+      if(!seen.has(key)){
+        const obj={id:++aid2,n:nombre,f:fecha,t:'Urgencia / tiempo limitado',canales:[]};
+        seen.set(key,obj);accs2.push(obj);
+      }
+      const canal=(r.canal||'').trim();
+      if(canal && !seen.get(key).canales.includes(canal)) seen.get(key).canales.push(canal);
+    });
+    document.getElementById('p2-marca').value=marca;
+    document.getElementById('p2-tono-desc').value=tonoDesc;
+    document.getElementById('p2-tono-ejemplos').value=tonoEj;
+    renderP2();
+
+  }catch(err){
+    document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+  }
+});
+
+document.getElementById('btn-copy-cal').addEventListener('click',function(){
+  const rows=[['Elemento','Canal','Hora','Asunto','Preheader'],...calRows.map(r=>[r.elemento,r.canal,r.hora,r.asunto,r.preheader])];
+  navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
+});
+
+document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');updatePills(1);});
+document.getElementById('btn-goto2').addEventListener('click',()=>{
+  hide('resultado1');show('paso2');
+  if(accs2.length) show('p2-info-box');
+  updatePills(2);
+});
+
+// ── PASO 2 ─────────────────────────────────────────────────────────────────────
+function renderP2(){
+  const list=document.getElementById('p2-alist');
+  list.innerHTML='';
+  accs2.forEach(a=>{
+    const r=document.createElement('div');
+    r.className='arow';
+    const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${a.t===t?' sel':''}" data-val="${t}" data-id="${a.id}">${t}</button>`).join('');
+    const canales=a.canales||['Newsletter'];
+    const canalBadges=canales.map(c=>{
+      const cls=c.includes('Push')?'b-push':c.includes('WhatsApp')?'b-wa':'b-nl';
+      return `<span class="badge ${cls}" style="font-size:10px;padding:2px 7px">${c}</span>`;
+    }).join('');
+    r.innerHTML=`<div><div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><input type="text" placeholder="Nombre de la acción…" value="${esc(a.n)}" data-id="${a.id}" data-f="n" style="font-size:12px;padding:7px 10px;flex:1"/>${canalBadges}</div><div class="tipo-opts">${chipsHTML}</div></div><input type="text" placeholder="ej. 15/06" value="${esc(a.f)}" data-id="${a.id}" data-f="f" style="font-size:12px;padding:7px 10px;margin-top:0"/><button class="rm" data-id="${a.id}">×</button>`;
+    list.appendChild(r);
+  });
+  list.querySelectorAll('input[data-f]').forEach(el=>el.addEventListener('input',e=>{
+    const a=accs2.find(x=>x.id===+e.target.dataset.id);
+    if(a) a[e.target.dataset.f]=e.target.value;
+  }));
+  list.querySelectorAll('.tipo-opt').forEach(btn=>btn.addEventListener('click',()=>{
+    const id=+btn.dataset.id;
+    list.querySelectorAll(`.tipo-opt[data-id="${id}"]`).forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    const a=accs2.find(x=>x.id===id);
+    if(a) a.t=btn.dataset.val;
+  }));
+  list.querySelectorAll('.rm').forEach(b=>b.addEventListener('click',()=>{accs2=accs2.filter(x=>x.id!==+b.dataset.id);renderP2();}));
+}
+function addA2(n='',f='',t='Urgencia / tiempo limitado'){accs2.push({id:++aid2,n,f,t});renderP2();}
+document.getElementById('p2-addbtn').addEventListener('click',()=>addA2());
+if(!accs2.length){addA2();addA2();}
+
+document.getElementById('p2-genbtn').addEventListener('click',async()=>{
+  const marca=document.getElementById('p2-marca').value.trim() || document.getElementById('marca').value.trim();
+  const industria=document.getElementById('p2-industria').value.trim();
+  const buyer=document.getElementById('p2-buyer').value.trim();
+  const tonoDesc=document.getElementById('p2-tono-desc').value.trim() || document.getElementById('tono-desc').value.trim();
+  const tonoEj=document.getElementById('p2-tono-ejemplos').value.trim() || document.getElementById('tono-ejemplos').value.trim();
+  const validos=accs2.filter(a=>a.n.trim());
+  if(!marca||!tonoDesc||!validos.length){alert('Completá: marca, tono de marca y al menos una acción.');return;}
+
+  hide('paso2');show('resultado2');
+  document.getElementById('resultado2').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Generando asuntos y preheaders…</div></div>`;
+
+  const prompt=`Sos un experto en email marketing y comunicaciones digitales.\n\nMARCA: ${marca}\nINDUSTRIA: ${industria||'No especificada'}\nBUYER PERSONA: ${buyer||'No especificado'}\n\nTONO DE VOZ DE LA MARCA:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}\n\nACCIONES DEL MES (cada una indica sus canales activos):\n${validos.map((a,i)=>{const canales=(a.canales||['Newsletter']).join(', ');return `${i+1}. ${a.n}${a.f?` (${a.f})`:''} — Tipo: ${a.t} — Canales: ${canales}`;}).join('\n')}\n\nREGLAS GENERALES:\n- El tipo define el objetivo del mensaje\n- El tono de marca define vocabulario, emojis y estilo\n- Lenguaje argentino, tildes correctos, signos ¡¿\n- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ\n\nREGLAS POR CANAL:\nEmail → asunto (máx 45 chars) + preheader (máx 80 chars, complementa sin repetir)\nPush → titulo (máx 45 chars) + mensaje (máx 80 chars, directo y con urgencia)\n\nPara cada acción generá los textos solo para los canales que tiene asignados.\n\nJSON sin markdown:\n{"campanias":[{"nombre":"...","fecha":"...","tipo":"...","canales":["Newsletter"],"email":{"asunto":"...","preheader":"..."},"push":{"titulo":"...","mensaje":"..."}}]}\nSi una acción no tiene un canal, omitir ese campo (ej: si no tiene Push, no incluir "push").`;
+
+  try{
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:2000})});
+    if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+    const data2=await res.json();
+    const txt2=data2.content.map(i=>i.text||'').join('');
+    const jsonMatch2=txt2.match(/\{[\s\S]*\}/);
+    if(!jsonMatch2) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+    const parsed=JSON.parse(jsonMatch2[0]);
+    const camps=parsed.campanias||[];
+    let allTxt=`ASUNTOS & PREHEADERS — ${marca.toUpperCase()}\n${'─'.repeat(48)}\n`;
+    const rs=document.getElementById('resultado2');
+    rs.innerHTML='';
+
+    const top=document.createElement('div');
+    top.style='display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem';
+    top.innerHTML=`<div style="font-size:14px;font-weight:500">${camps.length} campañas generadas</div><button class="btn-ghost" id="back2btn">← Editar</button>`;
+    rs.appendChild(top);
+    document.getElementById('back2btn').addEventListener('click',()=>{show('paso2');hide('resultado2');});
+
+    camps.forEach(c=>{
+      allTxt+=`\n▶ ${c.nombre}${c.fecha?` (${c.fecha})`:''} · ${c.tipo}\n`;
+      const b=document.createElement('div');
+      b.className='cb';
+
+      // Header
+      let html=`<div class="ch"><span class="cn">${esc(c.nombre)}</span><div class="cmeta">${c.fecha?`<span class="cdate">${esc(c.fecha)}</span>`:''}<span class="tbadge">${esc(c.tipo||'')}</span></div></div><div class="cbody">`;
+
+      // EMAIL
+      if(c.email){
+        const sl=(c.email.asunto||'').length,pl=(c.email.preheader||'').length;
+        allTxt+=`[EMAIL]\nAsunto: ${c.email.asunto}\nPreheader: ${c.email.preheader}\n`;
+        html+=`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--dbrd)">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span class="badge b-nl">Newsletter</span>
+          </div>
+          <div class="rl"><div class="rlbl">Asunto</div><div class="rval">${esc(c.email.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div>
+          <div class="rl"><div class="rlbl">Preheader</div><div class="rval pre">${esc(c.email.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>
+          <div class="crow"><button class="cpybtn" data-a="${esc(c.email.asunto||'')}" data-p="${esc(c.email.preheader||'')}" data-tipo="email">Copiar</button></div>
+        </div>`;
+      }
+
+      // PUSH
+      if(c.push){
+        const tl=(c.push.titulo||'').length,ml=(c.push.mensaje||'').length;
+        allTxt+=`[PUSH]\nTítulo: ${c.push.titulo}\nMensaje: ${c.push.mensaje}\n`;
+        html+=`<div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span class="badge b-push">Notificación Push</span>
+          </div>
+          <div class="rl"><div class="rlbl">Título</div><div class="rval">${esc(c.push.titulo||'')}</div><div class="chars"><span class="${tl>45?'warn':'good'}">${tl}/45</span></div></div>
+          <div class="rl"><div class="rlbl">Mensaje</div><div class="rval pre">${esc(c.push.mensaje||'')}</div><div class="chars"><span class="${ml>80?'warn':'good'}">${ml}/80</span></div></div>
+          <div class="crow"><button class="cpybtn" data-a="${esc(c.push.titulo||'')}" data-p="${esc(c.push.mensaje||'')}" data-tipo="push">Copiar</button></div>
+        </div>`;
+      }
+
+      html+=`</div>`;
+      b.innerHTML=html;
+      rs.appendChild(b);
+
+      b.querySelectorAll('.cpybtn').forEach(btn=>btn.addEventListener('click',function(){
+        const tipo=this.dataset.tipo==='push'?'Título':'Asunto';
+        const tipo2=this.dataset.tipo==='push'?'Mensaje':'Preheader';
+        navigator.clipboard.writeText(`${tipo}: ${this.dataset.a}\n${tipo2}: ${this.dataset.p}`).then(()=>{
+          this.textContent='¡Copiado!';this.classList.add('ok');
+          setTimeout(()=>{this.textContent='Copiar';this.classList.remove('ok');},1800);
+        });
+      }));
+    });
+
+    const ft=document.createElement('div');
+    ft.className='frow';
+    ft.innerHTML=`<button class="fo" id="cpyall2">Copiar todo</button><button class="fd" id="regen2">Regenerar →</button>`;
+    rs.appendChild(ft);
+    document.getElementById('cpyall2').addEventListener('click',function(){
+      navigator.clipboard.writeText(allTxt.trim()).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar todo',2000);});
+    });
+    document.getElementById('regen2').addEventListener('click',()=>document.getElementById('p2-genbtn').click());
+
+  }catch(err){
+    document.getElementById('resultado2').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+  }
+});
+</script>
+</body>
+</html>
