@@ -139,7 +139,6 @@ input[type="file"]{display:none;}
   <div class="pills">
     <div class="pill active" id="pill1">1 · Calendario</div>
     <div class="pill" id="pill2">2 · Asuntos & Preheaders</div>
-    <div class="pill" id="pill3">3 · Proyección</div>
   </div>
 </header>
 
@@ -184,6 +183,12 @@ input[type="file"]{display:none;}
       </div>
       <input type="file" id="finput1" accept=".csv,.xlsx,.xls,.pdf" />
       <div class="hint" style="margin-top:8px">La IA lee las columnas de fecha y acciones comerciales, ignorando métricas de performance.</div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Notas y consideraciones del mes <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+      <textarea id="notas-mes" style="min-height:80px" placeholder="Ej: Este mes vamos a hacer 2 envíos a base inactiva. Hay un lanzamiento de colección la primera semana. Evitar comunicar los fines de semana."></textarea>
+      <div class="hint">La IA va a tener en cuenta estas indicaciones al armar el calendario.</div>
     </div>
 
     <button class="btn-or" id="btn-cal">Generar calendario →</button>
@@ -249,92 +254,6 @@ input[type="file"]{display:none;}
   <!-- PASO 2: RESULTADO -->
   <div id="resultado2" class="hidden"></div>
 
-  <!-- SOLAPA 3: PROYECCIÓN -->
-  <div id="paso3" class="hidden">
-
-    <div class="card">
-      <div class="ct">Datos de la marca</div>
-      <div class="g2">
-        <div class="f"><label>Marca / cliente</label><input type="text" id="p3-marca" placeholder="ej. Seven, Rainbow…" /></div>
-        <div class="f"><label>Mes a proyectar</label><input type="month" id="p3-mes" /></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="ct">Benchmarks de la marca <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px">— métricas esperadas por tipo de campaña</span></div>
-      <div class="hint" style="margin-bottom:12px">Cargá los valores históricos de cada tipo de envío. Estos se usan para calcular la proyección.</div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px" id="bench-table">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Tipo de campaña</th>
-              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">OR %</th>
-              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">CTOR %</th>
-              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Ses/Clicks %</th>
-              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">CR %</th>
-              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Ticket $</th>
-              <th style="padding:6px 8px;background:var(--ds2);border-bottom:1px solid var(--dbrd)"></th>
-            </tr>
-          </thead>
-          <tbody id="bench-body"></tbody>
-        </table>
-      </div>
-      <button class="add-lnk" id="bench-addbtn">+ Agregar tipo de campaña</button>
-    </div>
-
-    <div class="card">
-      <div class="ct">Acciones del mes siguiente</div>
-      <div class="hint" style="margin-bottom:12px">Cargá cada envío planificado con su fecha, nombre, tipo (debe coincidir con los benchmarks) y envíos estimados.</div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd);white-space:nowrap">Fecha</th>
-              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Acción</th>
-              <th style="text-align:left;padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Tipo</th>
-              <th style="padding:6px 8px;background:var(--ds2);color:var(--dt3);font-size:10px;text-transform:uppercase;letter-spacing:0.07em;border-bottom:1px solid var(--dbrd)">Envíos</th>
-              <th style="padding:6px 8px;background:var(--ds2);border-bottom:1px solid var(--dbrd)"></th>
-            </tr>
-          </thead>
-          <tbody id="acc3-body"></tbody>
-        </table>
-      </div>
-      <button class="add-lnk" id="acc3-addbtn">+ Agregar acción</button>
-    </div>
-
-    <div class="card">
-      <div class="ct">Objetivos de gestión <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
-      <div class="g2">
-        <div class="f"><label>Facturación objetivo</label><input type="text" id="p3-obj-fac" placeholder="ej. 6000000" /></div>
-        <div class="f"><label>Órdenes objetivo</label><input type="text" id="p3-obj-ord" placeholder="ej. 55" /></div>
-      </div>
-      <div class="g2">
-        <div class="f"><label>Sesiones objetivo</label><input type="text" id="p3-obj-ses" placeholder="ej. 8000" /></div>
-        <div class="f"><label>OR objetivo %</label><input type="text" id="p3-obj-or" placeholder="ej. 22" /></div>
-      </div>
-    </div>
-
-    <button class="btn-or" id="p3-genbtn">Calcular proyección →</button>
-  </div>
-
-    <div class="card">
-      <div class="ct">Objetivos de gestión <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional — para comparar contra tu proyección)</span></div>
-      <div class="g2">
-        <div class="f"><label>Facturación objetivo</label><input type="text" id="p3-obj-fac" placeholder="ej. $6.000.000" /></div>
-        <div class="f"><label>Órdenes objetivo</label><input type="text" id="p3-obj-ord" placeholder="ej. 55" /></div>
-      </div>
-      <div class="g2">
-        <div class="f"><label>Sesiones objetivo</label><input type="text" id="p3-obj-ses" placeholder="ej. 8.000" /></div>
-        <div class="f"><label>OR objetivo</label><input type="text" id="p3-obj-or" placeholder="ej. 22%" /></div>
-      </div>
-    </div>
-
-    <button class="btn-or" id="p3-genbtn">Generar proyección →</button>
-  </div>
-
-  <!-- SOLAPA 3: RESULTADO -->
-  <div id="resultado3" class="hidden"></div>
-
 </main>
 
 <script>
@@ -383,238 +302,19 @@ function loadFile(file){
 
 // Pills — ahora son 3 tabs independientes
 function updatePills(active){
-  ['pill1','pill2','pill3'].forEach((id,i)=>{
-    document.getElementById(id).className='pill tab'+(active===i+1?' active':'');
-  });
+  document.getElementById('pill1').className='pill'+(active===1?' active':'');
+  document.getElementById('pill2').className='pill'+(active===2?' active':'');
 }
 
 // Tab navigation
 document.getElementById('pill1').addEventListener('click',()=>{
-  ['paso2','resultado2','paso3','resultado3','resultado1'].forEach(hide);
+  ['paso2','resultado2','resultado1'].forEach(hide);
   show('paso1'); updatePills(1);
 });
 document.getElementById('pill2').addEventListener('click',()=>{
-  ['paso1','resultado1','paso3','resultado3'].forEach(hide);
+  ['paso1','resultado1'].forEach(hide);
   show('paso2'); show('p2-card-marca'); show('p2-card-tono');
   updatePills(2);
-});
-document.getElementById('pill3').addEventListener('click',()=>{
-  ['paso1','resultado1','paso2','resultado2'].forEach(hide);
-  show('paso3'); updatePills(3);
-});
-
-// ── SOLAPA 3: BENCHMARKS Y ACCIONES MANUALES ──────────────────────────────────
-let benchRows=[], benchId=0, acc3Rows=[], acc3Id=0;
-
-const TIPOS_CAMP=['Newsletter','Automation','Recupero de inactivos','Outlet','Cupón','Lanzamiento','Bienvenida','Otro'];
-
-function renderBench(){
-  const tbody=document.getElementById('bench-body');
-  tbody.innerHTML='';
-  benchRows.forEach(b=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td style="padding:4px 4px"><input type="text" value="${esc(b.tipo)}" data-id="${b.id}" data-f="tipo" placeholder="ej. Newsletter" style="font-size:12px;padding:5px 8px"/></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(b.or)}" data-id="${b.id}" data-f="or" placeholder="ej. 25" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(b.ctor)}" data-id="${b.id}" data-f="ctor" placeholder="ej. 4" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(b.tases)}" data-id="${b.id}" data-f="tases" placeholder="ej. 90" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(b.cr)}" data-id="${b.id}" data-f="cr" placeholder="ej. 1" style="font-size:12px;padding:5px 8px;width:60px;text-align:right"/></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(b.ticket)}" data-id="${b.id}" data-f="ticket" placeholder="ej. 110000" style="font-size:12px;padding:5px 8px;width:90px;text-align:right"/></td>
-      <td style="padding:4px 4px"><button class="rm" data-id="${b.id}">×</button></td>`;
-    tbody.appendChild(tr);
-  });
-  tbody.querySelectorAll('input').forEach(el=>el.addEventListener('input',e=>{
-    const b=benchRows.find(x=>x.id===+e.target.dataset.id);
-    if(b) b[e.target.dataset.f]=e.target.value;
-    // Actualizar selector de tipos en acciones
-    renderAcc3();
-  }));
-  tbody.querySelectorAll('.rm').forEach(btn=>btn.addEventListener('click',()=>{
-    benchRows=benchRows.filter(x=>x.id!==+btn.dataset.id);
-    renderBench(); renderAcc3();
-  }));
-}
-function addBench(tipo='',or='',ctor='',tases='',cr='',ticket=''){
-  benchRows.push({id:++benchId,tipo,or,ctor,tases,cr,ticket});
-  renderBench();
-}
-document.getElementById('bench-addbtn').addEventListener('click',()=>addBench());
-// Defaults útiles
-addBench('Newsletter','25','4','90','1','110000');
-addBench('Automation','25','15','95','10','110000');
-addBench('Recupero de inactivos','5','1','40','0.5','110000');
-
-function renderAcc3(){
-  const tbody=document.getElementById('acc3-body');
-  const tipoOpts=benchRows.map(b=>`<option value="${esc(b.tipo)}">${esc(b.tipo)}</option>`).join('');
-  tbody.innerHTML='';
-  acc3Rows.forEach(a=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td style="padding:4px 4px"><input type="text" value="${esc(a.fecha)}" data-id="${a.id}" data-f="fecha" placeholder="ej. 01/07" style="font-size:12px;padding:5px 8px;width:75px"/></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(a.accion)}" data-id="${a.id}" data-f="accion" placeholder="Nombre de la acción" style="font-size:12px;padding:5px 8px"/></td>
-      <td style="padding:4px 4px"><select data-id="${a.id}" data-f="tipo" style="font-size:12px;padding:5px 8px"><option value="">Seleccioná</option>${tipoOpts.replace(`value="${esc(a.tipo)}"`,`value="${esc(a.tipo)}" selected`)}</select></td>
-      <td style="padding:4px 4px"><input type="text" value="${esc(a.envios)}" data-id="${a.id}" data-f="envios" placeholder="ej. 55000" style="font-size:12px;padding:5px 8px;width:90px;text-align:right"/></td>
-      <td style="padding:4px 4px"><button class="rm" data-id="${a.id}">×</button></td>`;
-    tbody.appendChild(tr);
-  });
-  tbody.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',e=>{
-    const a=acc3Rows.find(x=>x.id===+e.target.dataset.id);
-    if(a) a[e.target.dataset.f]=e.target.value;
-  }));
-  tbody.querySelectorAll('.rm').forEach(btn=>btn.addEventListener('click',()=>{
-    acc3Rows=acc3Rows.filter(x=>x.id!==+btn.dataset.id);
-    renderAcc3();
-  }));
-}
-function addAcc3(fecha='',accion='',tipo='',envios=''){
-  acc3Rows.push({id:++acc3Id,fecha,accion,tipo,envios});
-  renderAcc3();
-}
-document.getElementById('acc3-addbtn').addEventListener('click',()=>addAcc3());
-addAcc3(); addAcc3(); addAcc3();
-
-// Mes default para proyección
-document.getElementById('p3-mes').value=`${now.getFullYear()}-${String(now.getMonth()+2>12?1:now.getMonth()+2).padStart(2,'0')}`;
-
-// ── SOLAPA 3: CALCULAR PROYECCIÓN (100% JS, sin IA) ────────────────────────────
-document.getElementById('p3-genbtn').addEventListener('click',()=>{
-  const marca=document.getElementById('p3-marca').value.trim();
-  const mes=document.getElementById('p3-mes').value;
-  const objFac=document.getElementById('p3-obj-fac').value.trim();
-  const objOrd=document.getElementById('p3-obj-ord').value.trim();
-  const objSes=document.getElementById('p3-obj-ses').value.trim();
-
-  if(!marca||!mes){alert('Completá la marca y el mes.');return;}
-  if(!benchRows.length){alert('Cargá al menos un tipo de campaña con sus benchmarks.');return;}
-  const accsValidas=acc3Rows.filter(a=>a.accion.trim()&&a.envios);
-  if(!accsValidas.length){alert('Cargá al menos una acción con envíos.');return;}
-
-  const [yr,mo]=mes.split('-');
-  const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
-
-  function pN(s){return parseFloat(String(s||0).replace(/[^0-9.,]/g,'').replace(/\./g,'').replace(',','.'))||0;}
-  function pP(s){return pN(s)/100;}
-  function fP(n){return '$'+Math.round(n).toLocaleString('es-AR');}
-  function fPct(n){return (n*100).toFixed(1)+'%';}
-
-  // Construir mapa de benchmarks
-  const benchMap={};
-  benchRows.forEach(b=>{
-    if(b.tipo) benchMap[b.tipo.toLowerCase()]={
-      or:pP(b.or), ctor:pP(b.ctor), tases:pP(b.tases), cr:pP(b.cr), ticket:pN(b.ticket)
-    };
-  });
-  function getBench(tipo){
-    return benchMap[(tipo||'').toLowerCase()]||Object.values(benchMap)[0]||{or:0.2,ctor:0.04,tases:0.9,cr:0.01,ticket:110000};
-  }
-
-  let totEnv=0,totAp=0,totClk=0,totSes=0,totOrd=0,totIng=0;
-  const filas=accsValidas.map(a=>{
-    const b=getBench(a.tipo);
-    const env=pN(a.envios);
-    const ap=Math.round(env*b.or);
-    const clk=Math.round(ap*b.ctor);
-    const ses=Math.round(clk*b.tases);
-    const ord=Math.round(ses*b.cr);
-    const ing=ord*b.ticket;
-    totEnv+=env;totAp+=ap;totClk+=clk;totSes+=ses;totOrd+=ord;totIng+=ing;
-    return {fecha:a.fecha,accion:a.accion,tipo:a.tipo,envios:env,or:fPct(b.or),ctor:fPct(b.ctor),sesiones:ses,cr:fPct(b.cr),ordenes:ord,ticket:fP(b.ticket),ingresos:fP(ing)};
-  });
-
-  const totOR=totAp&&totEnv?fPct(totAp/totEnv):'—';
-  const totCTOR=totClk&&totAp?fPct(totClk/totAp):'—';
-  const totCR=totOrd&&totSes?fPct(totOrd/totSes):'—';
-
-  hide('paso3'); show('resultado3');
-  const rs=document.getElementById('resultado3');
-  rs.innerHTML='';
-
-  const top=document.createElement('div');
-  top.style='display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem';
-  top.innerHTML=`<div style="font-size:14px;font-weight:500">Proyección ${mesNombre} — ${marca}</div><button class="btn-ghost" id="back3btn">← Editar</button>`;
-  rs.appendChild(top);
-  document.getElementById('back3btn').addEventListener('click',()=>{hide('resultado3');show('paso3');});
-
-  // Benchmarks resumen
-  const bc=document.createElement('div');
-  bc.className='card';bc.style='margin-bottom:1rem';
-  bc.innerHTML=`<div class="ct">Benchmarks utilizados</div><div style="overflow-x:auto"><table class="proj-table">
-    <thead><tr><th style="text-align:left">Tipo</th><th>OR</th><th>CTOR</th><th>Ses/Clicks</th><th>CR</th><th>Ticket</th></tr></thead>
-    <tbody>${benchRows.filter(b=>b.tipo).map(b=>`<tr>
-      <td style="text-align:left">${esc(b.tipo)}</td>
-      <td>${b.or}%</td><td>${b.ctor}%</td><td>${b.tases}%</td><td>${b.cr}%</td><td>${fP(pN(b.ticket))}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
-  rs.appendChild(bc);
-
-  // Tabla proyección
-  const tc=document.createElement('div');
-  tc.className='card';tc.style='margin-bottom:1rem';
-  tc.innerHTML=`<div class="ct">Proyección por envío</div><div style="overflow-x:auto"><table class="proj-table">
-    <thead><tr><th style="text-align:left">Fecha</th><th style="text-align:left">Acción</th><th style="text-align:left">Tipo</th><th>Envíos</th><th>OR</th><th>CTOR</th><th>Sesiones</th><th>CR</th><th>Órdenes</th><th>Ticket</th><th>Ingresos</th></tr></thead>
-    <tbody>
-      ${filas.map(f=>`<tr>
-        <td style="text-align:left;white-space:nowrap">${esc(f.fecha)}</td>
-        <td style="text-align:left">${esc(f.accion)}</td>
-        <td style="text-align:left"><span style="font-size:10px;padding:2px 6px;border-radius:20px;background:var(--org);color:var(--or2)">${esc(f.tipo)}</span></td>
-        <td>${f.envios.toLocaleString('es-AR')}</td>
-        <td>${esc(f.or)}</td><td>${esc(f.ctor)}</td>
-        <td>${f.sesiones.toLocaleString('es-AR')}</td>
-        <td>${esc(f.cr)}</td>
-        <td>${f.ordenes.toLocaleString('es-AR')}</td>
-        <td>${esc(f.ticket)}</td>
-        <td>${esc(f.ingresos)}</td>
-      </tr>`).join('')}
-      <tr class="total-row">
-        <td colspan="3" style="text-align:left">TOTAL MES</td>
-        <td>${totEnv.toLocaleString('es-AR')}</td>
-        <td>${totOR}</td><td>${totCTOR}</td>
-        <td>${totSes.toLocaleString('es-AR')}</td>
-        <td>${totCR}</td>
-        <td>${totOrd.toLocaleString('es-AR')}</td>
-        <td>—</td>
-        <td>${fP(totIng)}</td>
-      </tr>
-    </tbody>
-  </table></div>`;
-  rs.appendChild(tc);
-
-  // Vs gestión
-  if(objFac||objOrd||objSes){
-    const vc=document.createElement('div');
-    vc.className='card';vc.style='margin-bottom:1rem';
-    const mkCard=(label,proy,obj)=>{
-      if(!obj) return '';
-      const o=pN(obj), diff=o?((proy-o)/o*100).toFixed(1):0;
-      const pos=diff>0, neg=diff<0;
-      return `<div class="obj-card"><div class="lbl">${label}</div><div class="val">${typeof proy==='number'&&label!=='Sesiones'?fP(proy):proy.toLocaleString('es-AR')}</div><div class="diff ${pos?'diff-up':neg?'diff-dn':'diff-eq'}">${pos?'+':''}${diff}% vs objetivo</div></div>`;
-    };
-    vc.innerHTML=`<div class="ct">Proyección vs objetivos de gestión</div><div class="obj-grid">${mkCard('Facturación',totIng,objFac)}${mkCard('Órdenes',totOrd,objOrd)}${mkCard('Sesiones',totSes,objSes)}</div>`;
-    rs.appendChild(vc);
-  }
-
-  // Footer
-  const ft=document.createElement('div');
-  ft.className='frow';
-  ft.innerHTML=`<button class="fo" id="p3-copy">Copiar tabla</button><button class="fd" id="p3-csv">Descargar CSV</button>`;
-  rs.appendChild(ft);
-
-  document.getElementById('p3-copy').addEventListener('click',function(){
-    const hd=['Fecha','Acción','Tipo','Envíos','OR','CTOR','Sesiones','CR','Órdenes','Ticket','Ingresos'];
-    const rows=filas.map(f=>[f.fecha,f.accion,f.tipo,f.envios,f.or,f.ctor,f.sesiones,f.cr,f.ordenes,f.ticket,f.ingresos]);
-    rows.push(['TOTAL','','',totEnv,totOR,totCTOR,totSes,totCR,totOrd,'',fP(totIng)]);
-    navigator.clipboard.writeText([hd,...rows].map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
-  });
-  document.getElementById('p3-csv').addEventListener('click',()=>{
-    const hd=['Fecha','Acción','Tipo','Envíos','OR','CTOR','Sesiones','CR','Órdenes','Ticket','Ingresos'];
-    const rows=filas.map(f=>[f.fecha,f.accion,f.tipo,f.envios,f.or,f.ctor,f.sesiones,f.cr,f.ordenes,f.ticket,f.ingresos]);
-    rows.push(['TOTAL','','',totEnv,totOR,totCTOR,totSes,totCR,totOrd,'',fP(totIng)]);
-    const csv=[hd,...rows].map(r=>r.join(',')).join('\n');
-    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download=`proyeccion_${marca.toLowerCase().replace(/\s/g,'_')}_${mes}.csv`;a.click();URL.revokeObjectURL(url);
-  });
 });
 
 // ── PASO 1 ─────────────────────────────────────────────────────────────────────
@@ -623,6 +323,7 @@ document.getElementById('btn-cal').addEventListener('click',async()=>{
   const mes=document.getElementById('mes').value;
   const tonoDesc=document.getElementById('tono-desc').value.trim();
   const tonoEj=document.getElementById('tono-ejemplos').value.trim();
+  const notas=document.getElementById('notas-mes').value.trim();
   const canales=canalesActivos();
   if(!marca||!mes){alert('Completá nombre de la marca y mes.');return;}
   if(!tonoDesc){alert('Describí el tono de voz de la marca.');return;}
@@ -646,6 +347,7 @@ CANALES ACTIVOS: ${canales.join(', ')}
 TONO DE VOZ DE LA MARCA:
 ${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
 
+${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
 TAREA: Analizá el contenido del archivo de gestión comercial y generá un calendario de comunicaciones mensual.
 
 CÓMO LEER EL ARCHIVO:
