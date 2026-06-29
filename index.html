@@ -302,6 +302,9 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
 
+// Forzar estado inicial correcto
+hide('paso2');hide('resultado1');hide('resultado2');
+
 // Canales
 document.querySelectorAll('.canal-toggle').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
 function canalesActivos(){return [...document.querySelectorAll('.canal-toggle.on')].map(b=>b.dataset.canal);}
