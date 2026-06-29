@@ -467,6 +467,7 @@ document.getElementById('btn-cal').addEventListener('click',async()=>{
   if(!canales.length){alert('Seleccioná al menos un canal activo.');return;}
 
   hide('paso1');show('resultado1');
+  hide('paso2');hide('resultado2');
   hide('analisis-box');
   document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Analizando el archivo y armando el calendario…</div></div>`;
 
