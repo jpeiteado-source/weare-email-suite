@@ -631,13 +631,25 @@ document.getElementById('p2-genbtn').addEventListener('click',async()=>{
   const prompt=`Sos un experto en email marketing y comunicaciones digitales.\n\nMARCA: ${marca}\nINDUSTRIA: ${industria||'No especificada'}\nBUYER PERSONA: ${buyer||'No especificado'}\n\nTONO DE VOZ DE LA MARCA:\n${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}\n\nACCIONES DEL MES (cada una indica sus canales activos):\n${validos.map((a,i)=>{const canales=(a.canales||['Newsletter']).join(', ');return `${i+1}. ${a.n}${a.f?` (${a.f})`:''} — Tipo: ${a.t} — Canales: ${canales}`;}).join('\n')}\n\nREGLAS GENERALES:\n- El tipo define el objetivo del mensaje\n- El tono de marca define vocabulario, emojis y estilo\n- Lenguaje argentino, tildes correctos, signos ¡¿\n- CTAs en mayúsculas: ENTRÁ, MIRÁ, APROVECHÁ, CORRÉ\n\nREGLAS POR CANAL:\nEmail → asunto (máx 45 chars) + preheader (máx 80 chars, complementa sin repetir)\nPush → titulo (máx 45 chars) + mensaje (máx 80 chars, directo y con urgencia)\n\nPara cada acción generá los textos solo para los canales que tiene asignados.\n\nJSON sin markdown:\n{"campanias":[{"nombre":"...","fecha":"...","tipo":"...","canales":["Newsletter"],"email":{"asunto":"...","preheader":"..."},"push":{"titulo":"...","mensaje":"..."}}]}\nSi una acción no tiene un canal, omitir ese campo (ej: si no tiene Push, no incluir "push").`;
 
   try{
-    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:2000})});
+    const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:4000})});
     if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
     const data2=await res.json();
     const txt2=data2.content.map(i=>i.text||'').join('');
     const jsonMatch2=txt2.match(/\{[\s\S]*\}/);
     if(!jsonMatch2) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
-    const parsed=JSON.parse(jsonMatch2[0]);
+    let parsed;
+    try{ parsed=JSON.parse(jsonMatch2[0]); }
+    catch(e){
+      // Intentar reparar JSON truncado
+      let raw=jsonMatch2[0];
+      const opens=(raw.match(/\[/g)||[]).length-(raw.match(/\]/g)||[]).length;
+      const openB=(raw.match(/\{/g)||[]).length-(raw.match(/\}/g)||[]).length;
+      if(raw.endsWith(',')) raw=raw.slice(0,-1);
+      for(let i=0;i<opens;i++) raw+=']';
+      for(let i=0;i<openB;i++) raw+='}';
+      try{ parsed=JSON.parse(raw); }
+      catch(e2){ throw new Error('La respuesta fue muy larga. Intentá con menos acciones o regenerá.'); }
+    }
     const camps=parsed.campanias||[];
     let allTxt=`ASUNTOS & PREHEADERS — ${marca.toUpperCase()}\n${'─'.repeat(48)}\n`;
     const rs=document.getElementById('resultado2');
