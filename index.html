@@ -242,6 +242,18 @@ input[type="file"]{display:none;}
   <!-- PASO 2: FORM -->
   <div id="paso2" class="hidden">
 
+    <!-- SELECTOR DE MARCA -->
+    <div class="card">
+      <div class="ct">Perfil de marca</div>
+      <div class="brand-select-wrap">
+        <select id="brand-select-p2">
+          <option value="">— Seleccioná una marca —</option>
+        </select>
+        <button class="brand-chip" id="brand-load-btn-p2">Cargar</button>
+      </div>
+      <div class="hint" style="margin-top:8px">Cargá el perfil para pre-completar marca, tono y ejemplos. O completá los campos manualmente abajo.</div>
+    </div>
+
     <!-- Solo se muestra si NO viene del paso 1 -->
     <div id="p2-card-marca" class="card hidden">
       <div class="ct">Contexto de la marca</div>
@@ -345,15 +357,18 @@ function saveBrands(brands){
 }
 
 function renderBrandSelect(){
-  const sel=document.getElementById('brand-select');
   const brands=getBrands();
-  const current=sel.value;
-  sel.innerHTML='<option value="">— Seleccioná una marca —</option>';
-  Object.keys(brands).sort().forEach(name=>{
-    const opt=document.createElement('option');
-    opt.value=name; opt.textContent=name;
-    if(name===current) opt.selected=true;
-    sel.appendChild(opt);
+  ['brand-select','brand-select-p2'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(!sel) return;
+    const current=sel.value;
+    sel.innerHTML='<option value="">— Seleccioná una marca —</option>';
+    Object.keys(brands).sort().forEach(name=>{
+      const opt=document.createElement('option');
+      opt.value=name; opt.textContent=name;
+      if(name===current) opt.selected=true;
+      sel.appendChild(opt);
+    });
   });
 }
 
@@ -364,19 +379,27 @@ function loadBrandProfile(name){
   document.getElementById('marca').value=b.nombre||'';
   document.getElementById('tono-desc').value=b.tonoDesc||'';
   document.getElementById('tono-ejemplos').value=b.tonoEj||'';
-  // También en paso 2
   document.getElementById('p2-marca').value=b.nombre||'';
   document.getElementById('p2-tono-desc').value=b.tonoDesc||'';
   document.getElementById('p2-tono-ejemplos').value=b.tonoEj||'';
-  // Industria si existe
   if(b.industria) document.getElementById('p2-industria').value=b.industria;
   if(b.buyer) document.getElementById('p2-buyer').value=b.buyer;
+  // Mostrar campos de marca/tono en paso2 si están vacíos
+  show('p2-card-marca'); show('p2-card-tono');
 }
 
 document.getElementById('brand-load-btn').addEventListener('click',()=>{
   const name=document.getElementById('brand-select').value;
   if(!name){ alert('Seleccioná una marca primero.'); return; }
   loadBrandProfile(name);
+  document.getElementById('brand-select-p2').value=name;
+});
+
+document.getElementById('brand-load-btn-p2').addEventListener('click',()=>{
+  const name=document.getElementById('brand-select-p2').value;
+  if(!name){ alert('Seleccioná una marca primero.'); return; }
+  loadBrandProfile(name);
+  document.getElementById('brand-select').value=name;
 });
 
 document.getElementById('brand-save-btn').addEventListener('click',()=>{
@@ -393,7 +416,7 @@ document.getElementById('brand-save-btn').addEventListener('click',()=>{
   saveBrands(brands);
   renderBrandSelect();
   document.getElementById('brand-select').value=nombre;
-  // Feedback visual
+  document.getElementById('brand-select-p2').value=nombre;
   const btn=document.getElementById('brand-save-btn');
   const orig=btn.textContent;
   btn.textContent='¡Guardado!';
@@ -410,13 +433,13 @@ document.getElementById('brand-del-btn').addEventListener('click',()=>{
   renderBrandSelect();
 });
 
-// Cargar automáticamente si hay una sola marca
 (()=>{
   renderBrandSelect();
   const brands=getBrands();
   const names=Object.keys(brands);
   if(names.length===1){
     document.getElementById('brand-select').value=names[0];
+    document.getElementById('brand-select-p2').value=names[0];
     loadBrandProfile(names[0]);
   }
 })();
@@ -428,7 +451,12 @@ document.getElementById('pill1').addEventListener('click',()=>{
 });
 document.getElementById('pill2').addEventListener('click',()=>{
   ['paso1','resultado1'].forEach(hide);
-  show('paso2'); show('p2-card-marca'); show('p2-card-tono');
+  show('paso2');
+  // Si no viene del calendario, mostrar campos de marca/tono
+  if(!calRows.length){
+    show('p2-card-marca');
+    show('p2-card-tono');
+  }
   updatePills(2);
 });
 
