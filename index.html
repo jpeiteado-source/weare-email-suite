@@ -124,7 +124,17 @@ input[type="file"]{display:none;}
 .diff-dn{color:#f85149;}
 .diff-eq{color:var(--dt3);}
 
-.hidden{display:none!important;}
+.brand-select-wrap{display:flex;gap:8px;align-items:center;}
+.brand-select-wrap select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;}
+.brand-select-wrap select:focus{border-color:var(--or);}
+.brand-actions{display:flex;gap:6px;margin-top:10px;}
+.brand-chip{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt2);cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.brand-chip:hover{border-color:var(--dbrd2);color:var(--dt);}
+.brand-chip.save{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.brand-chip.save:hover{background:var(--orb);}
+.brand-chip.del{color:#f85149;border-color:rgba(248,81,73,0.3);}
+.brand-chip.del:hover{background:rgba(248,81,73,0.1);}
+
 @media(max-width:560px){.g2{grid-template-columns:1fr;}.tbl-hd,.arow{grid-template-columns:minmax(0,1fr) 26px;}.tbl-hd span:nth-child(2){display:none;}}
 </style>
 </head>
@@ -146,6 +156,23 @@ input[type="file"]{display:none;}
 
   <!-- PASO 1: FORM -->
   <div id="paso1">
+
+    <!-- SELECTOR DE MARCA GUARDADA -->
+    <div class="card">
+      <div class="ct">Perfiles de marca guardados</div>
+      <div class="brand-select-wrap">
+        <select id="brand-select">
+          <option value="">— Seleccioná una marca —</option>
+        </select>
+        <button class="brand-chip" id="brand-load-btn">Cargar</button>
+      </div>
+      <div class="brand-actions">
+        <button class="brand-chip save" id="brand-save-btn">Guardar perfil actual</button>
+        <button class="brand-chip del" id="brand-del-btn">Eliminar seleccionada</button>
+      </div>
+      <div class="hint" style="margin-top:8px">Los perfiles se guardan en este navegador. Incluyen nombre, tono y ejemplos de comunicación.</div>
+    </div>
+
     <div class="card">
       <div class="ct">Datos de la marca</div>
       <div class="g2">
@@ -300,11 +327,99 @@ function loadFile(file){
   else reader.readAsText(file,'UTF-8');
 }
 
-// Pills — ahora son 3 tabs independientes
+// Pills — ahora son 2 tabs
 function updatePills(active){
   document.getElementById('pill1').className='pill'+(active===1?' active':'');
   document.getElementById('pill2').className='pill'+(active===2?' active':'');
 }
+
+// ── PERFILES DE MARCA ──────────────────────────────────────────────────────────
+const BRANDS_KEY='weare_brand_profiles';
+
+function getBrands(){
+  try{ return JSON.parse(localStorage.getItem(BRANDS_KEY)||'{}'); }
+  catch(e){ return {}; }
+}
+function saveBrands(brands){
+  localStorage.setItem(BRANDS_KEY, JSON.stringify(brands));
+}
+
+function renderBrandSelect(){
+  const sel=document.getElementById('brand-select');
+  const brands=getBrands();
+  const current=sel.value;
+  sel.innerHTML='<option value="">— Seleccioná una marca —</option>';
+  Object.keys(brands).sort().forEach(name=>{
+    const opt=document.createElement('option');
+    opt.value=name; opt.textContent=name;
+    if(name===current) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function loadBrandProfile(name){
+  const brands=getBrands();
+  const b=brands[name];
+  if(!b) return;
+  document.getElementById('marca').value=b.nombre||'';
+  document.getElementById('tono-desc').value=b.tonoDesc||'';
+  document.getElementById('tono-ejemplos').value=b.tonoEj||'';
+  // También en paso 2
+  document.getElementById('p2-marca').value=b.nombre||'';
+  document.getElementById('p2-tono-desc').value=b.tonoDesc||'';
+  document.getElementById('p2-tono-ejemplos').value=b.tonoEj||'';
+  // Industria si existe
+  if(b.industria) document.getElementById('p2-industria').value=b.industria;
+  if(b.buyer) document.getElementById('p2-buyer').value=b.buyer;
+}
+
+document.getElementById('brand-load-btn').addEventListener('click',()=>{
+  const name=document.getElementById('brand-select').value;
+  if(!name){ alert('Seleccioná una marca primero.'); return; }
+  loadBrandProfile(name);
+});
+
+document.getElementById('brand-save-btn').addEventListener('click',()=>{
+  const nombre=document.getElementById('marca').value.trim();
+  if(!nombre){ alert('Completá el nombre de la marca antes de guardar.'); return; }
+  const brands=getBrands();
+  brands[nombre]={
+    nombre,
+    tonoDesc: document.getElementById('tono-desc').value.trim(),
+    tonoEj: document.getElementById('tono-ejemplos').value.trim(),
+    industria: document.getElementById('p2-industria').value.trim(),
+    buyer: document.getElementById('p2-buyer').value.trim(),
+  };
+  saveBrands(brands);
+  renderBrandSelect();
+  document.getElementById('brand-select').value=nombre;
+  // Feedback visual
+  const btn=document.getElementById('brand-save-btn');
+  const orig=btn.textContent;
+  btn.textContent='¡Guardado!';
+  setTimeout(()=>btn.textContent=orig, 1800);
+});
+
+document.getElementById('brand-del-btn').addEventListener('click',()=>{
+  const name=document.getElementById('brand-select').value;
+  if(!name){ alert('Seleccioná una marca para eliminar.'); return; }
+  if(!confirm(`¿Eliminar el perfil de "${name}"?`)) return;
+  const brands=getBrands();
+  delete brands[name];
+  saveBrands(brands);
+  renderBrandSelect();
+});
+
+// Cargar automáticamente si hay una sola marca
+(()=>{
+  renderBrandSelect();
+  const brands=getBrands();
+  const names=Object.keys(brands);
+  if(names.length===1){
+    document.getElementById('brand-select').value=names[0];
+    loadBrandProfile(names[0]);
+  }
+})();
 
 // Tab navigation
 document.getElementById('pill1').addEventListener('click',()=>{
