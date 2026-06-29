@@ -372,7 +372,7 @@ function renderBrandSelect(){
   });
 }
 
-function loadBrandProfile(name){
+function loadBrandProfile(name, showP2Cards=false){
   const brands=getBrands();
   const b=brands[name];
   if(!b) return;
@@ -384,21 +384,20 @@ function loadBrandProfile(name){
   document.getElementById('p2-tono-ejemplos').value=b.tonoEj||'';
   if(b.industria) document.getElementById('p2-industria').value=b.industria;
   if(b.buyer) document.getElementById('p2-buyer').value=b.buyer;
-  // Mostrar campos de marca/tono en paso2 si están vacíos
-  show('p2-card-marca'); show('p2-card-tono');
+  if(showP2Cards){ show('p2-card-marca'); show('p2-card-tono'); }
 }
 
 document.getElementById('brand-load-btn').addEventListener('click',()=>{
   const name=document.getElementById('brand-select').value;
   if(!name){ alert('Seleccioná una marca primero.'); return; }
-  loadBrandProfile(name);
+  loadBrandProfile(name, false);
   document.getElementById('brand-select-p2').value=name;
 });
 
 document.getElementById('brand-load-btn-p2').addEventListener('click',()=>{
   const name=document.getElementById('brand-select-p2').value;
   if(!name){ alert('Seleccioná una marca primero.'); return; }
-  loadBrandProfile(name);
+  loadBrandProfile(name, true);
   document.getElementById('brand-select').value=name;
 });
 
