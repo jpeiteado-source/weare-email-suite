@@ -172,7 +172,7 @@ input[type="file"]{display:none;}
 <button class="brand-chip save" id="brand-save-btn">Guardar perfil actual</button>
 <button class="brand-chip del" id="brand-del-btn">Eliminar seleccionada</button>
 </div>
-<div class="hint" style="margin-top:8px">Los perfiles se guardan en este navegador. Incluyen nombre, tono y ejemplos de comunicación.</div>
+<div class="hint" style="margin-top:8px">Los perfiles se guardan en este navegador. Incluyen nombre, tono, canales activos y las acciones comerciales cargadas.</div>
 </div>
 
 <div class="card">
@@ -336,6 +336,12 @@ hide('paso2');hide('resultado1');hide('resultado2');
 // Canales
 document.querySelectorAll('.canal-toggle').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
 function canalesActivos(){return [...document.querySelectorAll('.canal-toggle.on')].map(b=>b.dataset.canal);}
+function setCanalesActivos(list){
+document.querySelectorAll('.canal-toggle').forEach(b=>{
+if(list && list.includes(b.dataset.canal)) b.classList.add('on');
+else b.classList.remove('on');
+});
+}
 
 // Mes default
 const now=new Date();
@@ -418,6 +424,17 @@ function totalAcciones(){
 return CATS.reduce((n,c)=>n+accionesCat[c.key].filter(a=>a.nombre&&a.nombre.trim()).length,0);
 }
 
+function loadAccionesCat(data){
+CATS.forEach(c=>{
+const items=(data && data[c.key]) ? data[c.key] : [];
+accionesCat[c.key]=items.map(it=>({id:++aidCat,nombre:it.nombre||'',fi:it.fi||'',ff:it.ff||'',tipoLibre:it.tipoLibre||''}));
+if(!accionesCat[c.key].length){
+accionesCat[c.key]=[{id:++aidCat,nombre:'',fi:'',ff:'',tipoLibre:''}];
+}
+renderAccCat(c.key);
+});
+}
+
 // ── PERFILES DE MARCA ──────────────────────────────────────────────────────────
 const BRANDS_KEY='weare_brand_profiles';
 function getBrands(){
@@ -454,6 +471,8 @@ document.getElementById('p2-tono-desc').value=b.tonoDesc||'';
 document.getElementById('p2-tono-ejemplos').value=b.tonoEj||'';
 if(b.industria) document.getElementById('p2-industria').value=b.industria;
 if(b.buyer) document.getElementById('p2-buyer').value=b.buyer;
+if(b.canalesActivos) setCanalesActivos(b.canalesActivos);
+loadAccionesCat(b.acciones||{});
 }
 document.getElementById('brand-load-btn').addEventListener('click',()=>{
 const name=document.getElementById('brand-select').value;
@@ -471,12 +490,18 @@ document.getElementById('brand-save-btn').addEventListener('click',()=>{
 const nombre=document.getElementById('marca').value.trim();
 if(!nombre){ alert('Completá el nombre de la marca antes de guardar.'); return; }
 const brands=getBrands();
+const accionesToSave={};
+CATS.forEach(c=>{
+accionesToSave[c.key]=accionesCat[c.key].filter(a=>a.nombre&&a.nombre.trim()).map(a=>({nombre:a.nombre,fi:a.fi,ff:a.ff,tipoLibre:a.tipoLibre}));
+});
 brands[nombre]={
 nombre,
 tonoDesc: document.getElementById('tono-desc').value.trim(),
 tonoEj: document.getElementById('tono-ejemplos').value.trim(),
 industria: document.getElementById('p2-industria').value.trim(),
 buyer: document.getElementById('p2-buyer').value.trim(),
+canalesActivos: canalesActivos(),
+acciones: accionesToSave,
 };
 saveBrands(brands);
 renderBrandSelect();
