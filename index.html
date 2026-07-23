@@ -33,8 +33,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--db);color:var(--dt);min-h
 .f:last-child{margin-bottom:0;}
 .f label{font-size:12px;color:var(--dt2);display:block;margin-bottom:4px;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-input[type="text"],input[type="month"],textarea,select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;transition:border-color 0.15s;box-sizing:border-box;}
+input[type="text"],input[type="month"],input[type="date"],textarea,select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;transition:border-color 0.15s;box-sizing:border-box;}
 input:focus,textarea:focus,select:focus{border-color:var(--or);}
+input[type="date"]{color-scheme:dark;}
 textarea{resize:vertical;min-height:72px;line-height:1.55;}
 select{cursor:pointer;}
 .hint{font-size:11px;color:var(--dt3);margin-top:4px;}
@@ -141,7 +142,20 @@ input[type="file"]{display:none;}
 .acc-row.otro{grid-template-columns:104px minmax(0,1fr) 96px 96px 26px;}
 .acc-row:last-child{margin-bottom:0;}
 .acc-row input{font-size:12px;padding:7px 9px;}
-@media(max-width:560px){.g2{grid-template-columns:1fr;}.tbl-hd,.arow{grid-template-columns:minmax(0,1fr) 26px;}.tbl-hd span:nth-child(2){display:none;}.acc-row,.acc-row.otro{grid-template-columns:1fr;}.acc-row .rm{justify-self:end;width:60px;}}
+@media(max-width:560px){.g2{grid-template-columns:1fr;}.tbl-hd,.arow{grid-template-columns:minmax(0,1fr) 26px;}.tbl-hd span:nth-child(2){display:none;}.acc-row,.acc-row.otro{grid-template-columns:1fr;}.acc-row .rm{justify-self:end;width:60px;}.fin-row-top{flex-wrap:wrap;}.fin-dates{grid-template-columns:1fr;}}
+.fin-row{border:1px solid var(--dbrd);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--ds2);}
+.fin-row:last-child{margin-bottom:0;}
+.fin-row-top{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.fin-row-top input{flex:1;font-size:12px;padding:7px 9px;}
+.fin-modo-toggle{display:flex;gap:4px;flex-shrink:0;}
+.modo-btn{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--dbrd);background:transparent;color:var(--dt3);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.15s;}
+.modo-btn.sel{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.fin-dias{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.dia-pill{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--dbrd);background:transparent;color:var(--dt3);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.dia-pill.sel{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.fin-vig-lbl{font-size:10px;color:var(--dt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.06em;}
+.fin-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fin-dates input{font-size:12px;padding:7px 9px;}
 </style>
 </head>
 <body>
@@ -172,7 +186,7 @@ input[type="file"]{display:none;}
 <button class="brand-chip save" id="brand-save-btn">Guardar perfil actual</button>
 <button class="brand-chip del" id="brand-del-btn">Eliminar seleccionada</button>
 </div>
-<div class="hint" style="margin-top:8px">Los perfiles se guardan en este navegador. Incluyen nombre, tono, canales activos y las acciones comerciales cargadas.</div>
+<div class="hint" style="margin-top:8px">Los perfiles se guardan en este navegador. Incluyen nombre, tono y canales activos. Las acciones comerciales se cargan mes a mes y no se guardan por ahora.</div>
 </div>
 
 <div class="card">
@@ -355,13 +369,14 @@ function renderAccCat(key){
 const list=document.getElementById(`acc-${key}-list`);
 if(!list) return;
 list.innerHTML='';
+if(key==='financiacion'){ renderFinanciacionList(list); return; }
 accionesCat[key].forEach(a=>{
 const row=document.createElement('div');
 row.className='acc-row';
 let html='';
 html+=`<input type="text" placeholder="Nombre de la acción…" value="${esc(a.nombre||'')}" data-id="${a.id}" data-cat="${key}" data-f="nombre"/>`;
-html+=`<input type="text" placeholder="Fecha inicio (ej. 15/06)" value="${esc(a.fi||'')}" data-id="${a.id}" data-cat="${key}" data-f="fi"/>`;
-html+=`<input type="text" placeholder="Fecha fin (opc.)" value="${esc(a.ff||'')}" data-id="${a.id}" data-cat="${key}" data-f="ff"/>`;
+html+=`<input type="date" value="${esc(a.fi||'')}" data-id="${a.id}" data-cat="${key}" data-f="fi"/>`;
+html+=`<input type="date" value="${esc(a.ff||'')}" data-id="${a.id}" data-cat="${key}" data-f="ff"/>`;
 html+=`<button class="rm" data-id="${a.id}" data-cat="${key}">×</button>`;
 row.innerHTML=html;
 list.appendChild(row);
@@ -378,8 +393,67 @@ renderAccCat(cat);
 }));
 }
 
+const DIAS_SEMANA=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+function renderFinanciacionList(list){
+accionesCat.financiacion.forEach(a=>{
+const row=document.createElement('div');
+row.className='fin-row';
+const modo=a.modo||'puntual';
+const diasHTML=DIAS_SEMANA.map(d=>`<button class="dia-pill${(a.dias||[]).includes(d)?' sel':''}" data-dia="${d}" data-id="${a.id}">${d.slice(0,3)}</button>`).join('');
+const bodyHTML = modo==='recurrente' ? `
+<div class="fin-dias">${diasHTML}</div>
+<div class="fin-vig-lbl">Vigencia (opcional)</div>
+<div class="fin-dates">
+<input type="date" value="${esc(a.fi||'')}" data-id="${a.id}" data-f="fi"/>
+<input type="date" value="${esc(a.ff||'')}" data-id="${a.id}" data-f="ff"/>
+</div>` : `
+<div class="fin-dates">
+<input type="date" value="${esc(a.fi||'')}" data-id="${a.id}" data-f="fi"/>
+<input type="date" value="${esc(a.ff||'')}" data-id="${a.id}" data-f="ff"/>
+</div>`;
+row.innerHTML=`<div class="fin-row-top">
+<input type="text" placeholder="Nombre de la acción…" value="${esc(a.nombre||'')}" data-id="${a.id}" data-f="nombre"/>
+<div class="fin-modo-toggle">
+<button class="modo-btn${modo==='puntual'?' sel':''}" data-modo="puntual" data-id="${a.id}">Fecha puntual</button>
+<button class="modo-btn${modo==='recurrente'?' sel':''}" data-modo="recurrente" data-id="${a.id}">Días recurrentes</button>
+</div>
+<button class="rm" data-id="${a.id}">×</button>
+</div>
+<div class="fin-body">${bodyHTML}</div>`;
+list.appendChild(row);
+});
+list.querySelectorAll('input[data-f]').forEach(el=>el.addEventListener('input',e=>{
+const a=accionesCat.financiacion.find(x=>x.id===+e.target.dataset.id);
+if(a) a[e.target.dataset.f]=e.target.value;
+}));
+list.querySelectorAll('.modo-btn').forEach(btn=>btn.addEventListener('click',()=>{
+const id=+btn.dataset.id;
+const a=accionesCat.financiacion.find(x=>x.id===id);
+if(a){ a.modo=btn.dataset.modo; renderAccCat('financiacion'); }
+}));
+list.querySelectorAll('.dia-pill').forEach(btn=>btn.addEventListener('click',()=>{
+const id=+btn.dataset.id;
+const a=accionesCat.financiacion.find(x=>x.id===id);
+if(!a) return;
+a.dias=a.dias||[];
+const dia=btn.dataset.dia;
+if(a.dias.includes(dia)) a.dias=a.dias.filter(d=>d!==dia);
+else a.dias.push(dia);
+btn.classList.toggle('sel');
+}));
+list.querySelectorAll('.rm').forEach(b=>b.addEventListener('click',()=>{
+accionesCat.financiacion=accionesCat.financiacion.filter(x=>x.id!==+b.dataset.id);
+renderAccCat('financiacion');
+}));
+}
+
 function addAccCat(key){
-accionesCat[key].push({id:++aidCat,nombre:'',fi:'',ff:'',tipoLibre:''});
+if(key==='financiacion'){
+accionesCat[key].push({id:++aidCat,nombre:'',modo:'puntual',fi:'',ff:'',dias:[]});
+}else{
+accionesCat[key].push({id:++aidCat,nombre:'',fi:'',ff:''});
+}
 renderAccCat(key);
 }
 
@@ -388,6 +462,17 @@ document.querySelectorAll('.add-lnk[data-cat]').forEach(btn=>btn.addEventListene
 // Arrancar cada categoría con una fila vacía para no mostrar el bloque vacío
 CATS.forEach(c=>addAccCat(c.key));
 
+function fechaAR(iso){
+if(!iso) return '';
+const p=iso.split('-');
+if(p.length!==3) return iso;
+return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+function diasTexto(dias){
+return DIAS_SEMANA.filter(d=>(dias||[]).includes(d)).join(', ');
+}
+
 function buildAccionesTexto(){
 let out='';
 CATS.forEach(c=>{
@@ -395,8 +480,16 @@ const items=accionesCat[c.key].filter(a=>a.nombre&&a.nombre.trim());
 if(!items.length) return;
 out+=`\n${c.label.toUpperCase()}:\n`;
 items.forEach(a=>{
-const fechaTxt=(a.ff&&a.ff.trim())?`${a.fi||'?'} al ${a.ff.trim()}`:(a.fi||'sin fecha');
+if(c.key==='financiacion' && a.modo==='recurrente'){
+const diasStr=diasTexto(a.dias)||'días a definir';
+const fi=fechaAR(a.fi),ff=fechaAR(a.ff);
+const vigencia=(fi&&ff)?` (vigente del ${fi} al ${ff})`:(fi?` (vigente desde ${fi})`:'');
+out+=`- ${a.nombre.trim()} — RECURRENTE, todos los: ${diasStr}${vigencia}\n`;
+}else{
+const fi=fechaAR(a.fi),ff=fechaAR(a.ff);
+const fechaTxt=ff?`${fi||'?'} al ${ff}`:(fi||'sin fecha');
 out+=`- ${a.nombre.trim()} — ${fechaTxt}\n`;
+}
 });
 });
 return out.trim();
@@ -406,12 +499,22 @@ function totalAcciones(){
 return CATS.reduce((n,c)=>n+accionesCat[c.key].filter(a=>a.nombre&&a.nombre.trim()).length,0);
 }
 
+// NOTA: loadAccionesCat queda sin uso por ahora — las acciones comerciales no se
+// persisten en el perfil de marca todavía. Se deja lista para cuando el agente
+// de la suite necesite recuperar el historial completo de acciones por marca.
 function loadAccionesCat(data){
 CATS.forEach(c=>{
 const items=(data && data[c.key]) ? data[c.key] : [];
-accionesCat[c.key]=items.map(it=>({id:++aidCat,nombre:it.nombre||'',fi:it.fi||'',ff:it.ff||'',tipoLibre:it.tipoLibre||''}));
+if(c.key==='financiacion'){
+accionesCat[c.key]=items.map(it=>({id:++aidCat,nombre:it.nombre||'',modo:it.modo||'puntual',fi:it.fi||'',ff:it.ff||'',dias:it.dias||[]}));
 if(!accionesCat[c.key].length){
-accionesCat[c.key]=[{id:++aidCat,nombre:'',fi:'',ff:'',tipoLibre:''}];
+accionesCat[c.key]=[{id:++aidCat,nombre:'',modo:'puntual',fi:'',ff:'',dias:[]}];
+}
+}else{
+accionesCat[c.key]=items.map(it=>({id:++aidCat,nombre:it.nombre||'',fi:it.fi||'',ff:it.ff||''}));
+if(!accionesCat[c.key].length){
+accionesCat[c.key]=[{id:++aidCat,nombre:'',fi:'',ff:''}];
+}
 }
 renderAccCat(c.key);
 });
@@ -454,7 +557,6 @@ document.getElementById('p2-tono-ejemplos').value=b.tonoEj||'';
 if(b.industria) document.getElementById('p2-industria').value=b.industria;
 if(b.buyer) document.getElementById('p2-buyer').value=b.buyer;
 if(b.canalesActivos) setCanalesActivos(b.canalesActivos);
-loadAccionesCat(b.acciones||{});
 }
 document.getElementById('brand-load-btn').addEventListener('click',()=>{
 const name=document.getElementById('brand-select').value;
@@ -472,10 +574,6 @@ document.getElementById('brand-save-btn').addEventListener('click',()=>{
 const nombre=document.getElementById('marca').value.trim();
 if(!nombre){ alert('Completá el nombre de la marca antes de guardar.'); return; }
 const brands=getBrands();
-const accionesToSave={};
-CATS.forEach(c=>{
-accionesToSave[c.key]=accionesCat[c.key].filter(a=>a.nombre&&a.nombre.trim()).map(a=>({nombre:a.nombre,fi:a.fi,ff:a.ff,tipoLibre:a.tipoLibre}));
-});
 brands[nombre]={
 nombre,
 tonoDesc: document.getElementById('tono-desc').value.trim(),
@@ -483,7 +581,6 @@ tonoEj: document.getElementById('tono-ejemplos').value.trim(),
 industria: document.getElementById('p2-industria').value.trim(),
 buyer: document.getElementById('p2-buyer').value.trim(),
 canalesActivos: canalesActivos(),
-acciones: accionesToSave,
 };
 saveBrands(brands);
 renderBrandSelect();
@@ -566,6 +663,7 @@ CRITERIO EDITORIAL:
 - Acciones de un solo día (sin fecha de fin) → comunicar ese día por todos los canales activos
 - Acciones con fecha de fin (rango de días) → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
 - Financiación → usarla como complemento en el copy, no como tema principal salvo que no haya otra acción comercial ese día
+- Si una acción de Financiación está marcada como RECURRENTE (ej. "todos los: Viernes, Sábado, Domingo"), replicala en TODAS las fechas del mes que caigan en esos días de la semana, dentro del rango de vigencia indicado (si no hay vigencia indicada, aplicarla durante todo el mes)
 - Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
 - Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
 - Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
