@@ -208,39 +208,27 @@ input[type="file"]{display:none;}
 <div class="hint" style="margin-bottom:14px">Cargá las acciones del mes organizadas por categoría. La fecha de fin es opcional — dejala vacía si la acción es de un solo día.</div>
 
 <div class="acc-cat-block">
-<div class="acc-cat-title">Lanzamientos</div>
-<div id="acc-lanzamiento-list"></div>
-<button class="add-lnk" data-cat="lanzamiento">+ Agregar lanzamiento</button>
+<div class="acc-cat-title">Comunicación AO</div>
+<div id="acc-comunicacionAO-list"></div>
+<button class="add-lnk" data-cat="comunicacionAO">+ Agregar comunicación AO</button>
 </div>
 
 <div class="acc-cat-block">
-<div class="acc-cat-title">Beneficios</div>
-<div id="acc-beneficio-list"></div>
-<button class="add-lnk" data-cat="beneficio">+ Agregar beneficio</button>
+<div class="acc-cat-title">Acción Comercial</div>
+<div id="acc-accionComercial-list"></div>
+<button class="add-lnk" data-cat="accionComercial">+ Agregar acción comercial</button>
 </div>
 
 <div class="acc-cat-block">
-<div class="acc-cat-title">Acciones bancarias</div>
-<div id="acc-bancaria-list"></div>
-<button class="add-lnk" data-cat="bancaria">+ Agregar acción bancaria</button>
+<div class="acc-cat-title">Financiación</div>
+<div id="acc-financiacion-list"></div>
+<button class="add-lnk" data-cat="financiacion">+ Agregar financiación</button>
 </div>
 
 <div class="acc-cat-block">
-<div class="acc-cat-title">Microeventos</div>
+<div class="acc-cat-title">Microevento</div>
 <div id="acc-microevento-list"></div>
 <button class="add-lnk" data-cat="microevento">+ Agregar microevento</button>
-</div>
-
-<div class="acc-cat-block">
-<div class="acc-cat-title">Institucional</div>
-<div id="acc-institucional-list"></div>
-<button class="add-lnk" data-cat="institucional">+ Agregar acción institucional</button>
-</div>
-
-<div class="acc-cat-block">
-<div class="acc-cat-title">Otro</div>
-<div id="acc-otro-list"></div>
-<button class="add-lnk" data-cat="otro">+ Agregar acción</button>
 </div>
 </div>
 
@@ -355,14 +343,12 @@ document.getElementById('pill2').className='pill'+(active===2?' active':'');
 
 // ── ACCIONES COMERCIALES POR CATEGORÍA ─────────────────────────────────────────
 const CATS=[
-{key:'lanzamiento',label:'Lanzamiento'},
-{key:'beneficio',label:'Beneficio'},
-{key:'bancaria',label:'Acción bancaria'},
-{key:'microevento',label:'Microevento'},
-{key:'institucional',label:'Institucional'},
-{key:'otro',label:'Otro'}
+{key:'comunicacionAO',label:'Comunicación AO'},
+{key:'accionComercial',label:'Acción Comercial'},
+{key:'financiacion',label:'Financiación'},
+{key:'microevento',label:'Microevento'}
 ];
-let accionesCat={lanzamiento:[],beneficio:[],bancaria:[],microevento:[],institucional:[],otro:[]};
+let accionesCat={comunicacionAO:[],accionComercial:[],financiacion:[],microevento:[]};
 let aidCat=0;
 
 function renderAccCat(key){
@@ -371,11 +357,8 @@ if(!list) return;
 list.innerHTML='';
 accionesCat[key].forEach(a=>{
 const row=document.createElement('div');
-row.className='acc-row'+(key==='otro'?' otro':'');
+row.className='acc-row';
 let html='';
-if(key==='otro'){
-html+=`<input type="text" placeholder="Tipo" value="${esc(a.tipoLibre||'')}" data-id="${a.id}" data-cat="${key}" data-f="tipoLibre"/>`;
-}
 html+=`<input type="text" placeholder="Nombre de la acción…" value="${esc(a.nombre||'')}" data-id="${a.id}" data-cat="${key}" data-f="nombre"/>`;
 html+=`<input type="text" placeholder="Fecha inicio (ej. 15/06)" value="${esc(a.fi||'')}" data-id="${a.id}" data-cat="${key}" data-f="fi"/>`;
 html+=`<input type="text" placeholder="Fecha fin (opc.)" value="${esc(a.ff||'')}" data-id="${a.id}" data-cat="${key}" data-f="ff"/>`;
@@ -413,8 +396,7 @@ if(!items.length) return;
 out+=`\n${c.label.toUpperCase()}:\n`;
 items.forEach(a=>{
 const fechaTxt=(a.ff&&a.ff.trim())?`${a.fi||'?'} al ${a.ff.trim()}`:(a.fi||'sin fecha');
-const tipoTxt=(c.key==='otro'&&a.tipoLibre&&a.tipoLibre.trim())?` [${a.tipoLibre.trim()}]`:'';
-out+=`- ${a.nombre.trim()}${tipoTxt} — ${fechaTxt}\n`;
+out+=`- ${a.nombre.trim()} — ${fechaTxt}\n`;
 });
 });
 return out.trim();
@@ -583,7 +565,7 @@ TAREA: A partir de las acciones comerciales de arriba, generá un calendario de 
 CRITERIO EDITORIAL:
 - Acciones de un solo día (sin fecha de fin) → comunicar ese día por todos los canales activos
 - Acciones con fecha de fin (rango de días) → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
-- Beneficios y acciones bancarias → usarlos como complemento en el copy, no como tema principal salvo que no haya otra acción ese día
+- Financiación → usarla como complemento en el copy, no como tema principal salvo que no haya otra acción comercial ese día
 - Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
 - Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
 - Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
