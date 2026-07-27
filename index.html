@@ -138,11 +138,7 @@ input[type="file"]{display:none;}
 .acc-cat-block{margin-bottom:18px;}
 .acc-cat-block:last-child{margin-bottom:0;}
 .acc-cat-title{font-size:12px;font-weight:500;color:var(--dt2);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--dbrd);}
-.acc-row{display:grid;grid-template-columns:minmax(0,1fr) 96px 96px 26px;gap:8px;align-items:start;margin-bottom:8px;}
-.acc-row.otro{grid-template-columns:104px minmax(0,1fr) 96px 96px 26px;}
-.acc-row:last-child{margin-bottom:0;}
-.acc-row input{font-size:12px;padding:7px 9px;}
-@media(max-width:560px){.g2{grid-template-columns:1fr;}.tbl-hd,.arow{grid-template-columns:minmax(0,1fr) 26px;}.tbl-hd span:nth-child(2){display:none;}.acc-row,.acc-row.otro{grid-template-columns:1fr;}.acc-row .rm{justify-self:end;width:60px;}.fin-row-top{flex-wrap:wrap;}.fin-dates{grid-template-columns:1fr;}}
+@media(max-width:560px){.g2{grid-template-columns:1fr;}.tbl-hd,.arow{grid-template-columns:minmax(0,1fr) 26px;}.tbl-hd span:nth-child(2){display:none;}.fin-row-top{flex-wrap:wrap;}.fin-dates{grid-template-columns:1fr;}}
 .fin-row{border:1px solid var(--dbrd);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--ds2);}
 .fin-row:last-child{margin-bottom:0;}
 .fin-row-top{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
@@ -372,19 +368,36 @@ list.innerHTML='';
 if(key==='financiacion'){ renderFinanciacionList(list); return; }
 accionesCat[key].forEach(a=>{
 const row=document.createElement('div');
-row.className='acc-row';
-let html='';
-html+=`<input type="text" placeholder="Nombre de la acción…" value="${esc(a.nombre||'')}" data-id="${a.id}" data-cat="${key}" data-f="nombre"/>`;
-html+=`<input type="date" value="${esc(a.fi||'')}" data-id="${a.id}" data-cat="${key}" data-f="fi"/>`;
-html+=`<input type="date" value="${esc(a.ff||'')}" data-id="${a.id}" data-cat="${key}" data-f="ff"/>`;
-html+=`<button class="rm" data-id="${a.id}" data-cat="${key}">×</button>`;
-row.innerHTML=html;
+row.className='fin-row';
+const mesCompleto=!!a.mesCompleto;
+const bodyHTML=mesCompleto?'':`
+<div class="fin-dates">
+<input type="date" value="${esc(a.fi||'')}" data-id="${a.id}" data-cat="${key}" data-f="fi"/>
+<input type="date" value="${esc(a.ff||'')}" data-id="${a.id}" data-cat="${key}" data-f="ff"/>
+</div>`;
+row.innerHTML=`<div class="fin-row-top">
+<input type="text" placeholder="Nombre de la acción…" value="${esc(a.nombre||'')}" data-id="${a.id}" data-cat="${key}" data-f="nombre"/>
+<div class="fin-modo-toggle">
+<button class="modo-btn${!mesCompleto?' sel':''}" data-modo="fecha" data-id="${a.id}" data-cat="${key}">Fecha puntual</button>
+<button class="modo-btn${mesCompleto?' sel':''}" data-modo="mes" data-id="${a.id}" data-cat="${key}">Todo el mes</button>
+</div>
+<button class="rm" data-id="${a.id}" data-cat="${key}">×</button>
+</div>
+<div class="fin-body">${bodyHTML}</div>`;
 list.appendChild(row);
 });
 list.querySelectorAll('input[data-f]').forEach(el=>el.addEventListener('input',e=>{
 const cat=e.target.dataset.cat;
 const a=accionesCat[cat].find(x=>x.id===+e.target.dataset.id);
 if(a) a[e.target.dataset.f]=e.target.value;
+}));
+list.querySelectorAll('.modo-btn').forEach(btn=>btn.addEventListener('click',()=>{
+const cat=btn.dataset.cat;
+const a=accionesCat[cat].find(x=>x.id===+btn.dataset.id);
+if(!a) return;
+a.mesCompleto=btn.dataset.modo==='mes';
+if(a.mesCompleto){ a.fi=''; a.ff=''; }
+renderAccCat(cat);
 }));
 list.querySelectorAll('.rm').forEach(b=>b.addEventListener('click',()=>{
 const cat=b.dataset.cat;
@@ -452,7 +465,7 @@ function addAccCat(key){
 if(key==='financiacion'){
 accionesCat[key].push({id:++aidCat,nombre:'',modo:'puntual',fi:'',ff:'',dias:[]});
 }else{
-accionesCat[key].push({id:++aidCat,nombre:'',fi:'',ff:''});
+accionesCat[key].push({id:++aidCat,nombre:'',fi:'',ff:'',mesCompleto:false});
 }
 renderAccCat(key);
 }
@@ -485,6 +498,8 @@ const diasStr=diasTexto(a.dias)||'días a definir';
 const fi=fechaAR(a.fi),ff=fechaAR(a.ff);
 const vigencia=(fi&&ff)?` (vigente del ${fi} al ${ff})`:(fi?` (vigente desde ${fi})`:'');
 out+=`- ${a.nombre.trim()} — RECURRENTE, todos los: ${diasStr}${vigencia}\n`;
+}else if(a.mesCompleto){
+out+=`- ${a.nombre.trim()} — TODO EL MES\n`;
 }else{
 const fi=fechaAR(a.fi),ff=fechaAR(a.ff);
 const fechaTxt=ff?`${fi||'?'} al ${ff}`:(fi||'sin fecha');
@@ -511,9 +526,9 @@ if(!accionesCat[c.key].length){
 accionesCat[c.key]=[{id:++aidCat,nombre:'',modo:'puntual',fi:'',ff:'',dias:[]}];
 }
 }else{
-accionesCat[c.key]=items.map(it=>({id:++aidCat,nombre:it.nombre||'',fi:it.fi||'',ff:it.ff||''}));
+accionesCat[c.key]=items.map(it=>({id:++aidCat,nombre:it.nombre||'',fi:it.fi||'',ff:it.ff||'',mesCompleto:!!it.mesCompleto}));
 if(!accionesCat[c.key].length){
-accionesCat[c.key]=[{id:++aidCat,nombre:'',fi:'',ff:''}];
+accionesCat[c.key]=[{id:++aidCat,nombre:'',fi:'',ff:'',mesCompleto:false}];
 }
 }
 renderAccCat(c.key);
@@ -664,6 +679,7 @@ CRITERIO EDITORIAL:
 - Acciones con fecha de fin (rango de días) → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
 - Financiación → usarla como complemento en el copy, no como tema principal salvo que no haya otra acción comercial ese día
 - Si una acción de Financiación está marcada como RECURRENTE (ej. "todos los: Viernes, Sábado, Domingo"), replicala en TODAS las fechas del mes que caigan en esos días de la semana, dentro del rango de vigencia indicado (si no hay vigencia indicada, aplicarla durante todo el mes)
+- Si una acción está marcada como TODO EL MES, considerarla vigente durante el mes completo indicado arriba (no es una acción puntual): usarla como tema de fondo en los envíos que no tengan otra acción específica ese día, sin necesidad de anunciarla un único día
 - Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
 - Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
 - Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
