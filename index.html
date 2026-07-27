@@ -242,8 +242,9 @@ input[type="file"]{display:none;}
 </div>
 <div id="analisis-box" class="info-box hidden"></div>
 <div class="cal-wrap" id="cal-wrap"></div>
-<div style="margin-top:1rem">
+<div style="margin-top:1rem;display:flex;gap:8px">
 <button class="btn-ghost" id="btn-copy-cal">Copiar tabla</button>
+<button class="btn-ghost" id="btn-new-cal">🏠 Volver al inicio</button>
 </div>
 </div>
 </div>
@@ -787,6 +788,26 @@ const rows=[header,...calRows.map(r=>[r.elemento,r.canal,r.hora,r.tipo,r.asunto|
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
 });
 document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');});
+document.getElementById('btn-new-cal').addEventListener('click',()=>{
+if(!confirm('¿Volver al inicio? Se limpia el formulario para empezar con otra marca o mes (lo generado ya quedó guardado).')) return;
+document.getElementById('marca').value='';
+document.getElementById('industria').value='';
+document.getElementById('buyer').value='';
+const now=new Date();
+document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+document.getElementById('tono-desc').value='';
+document.getElementById('tono-ejemplos').value='';
+document.getElementById('notas-mes').value='';
+setCanalesActivos(['Newsletter']);
+CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
+document.getElementById('brand-select').value='';
+calRows=[];
+document.getElementById('cal-wrap').innerHTML='';
+hide('analisis-box');
+hide('save-indicator');
+show('paso1');hide('resultado1');
+window.scrollTo(0,0);
+});
 </script>
 </body>
 </html>
