@@ -29,6 +29,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--db);color:var(--dt);min-h
 .f:last-child{margin-bottom:0;}
 .f label{font-size:12px;color:var(--dt2);display:block;margin-bottom:4px;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 input[type="text"],input[type="month"],input[type="date"],textarea,select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;transition:border-color 0.15s;box-sizing:border-box;}
 input:focus,textarea:focus,select:focus{border-color:var(--or);}
 input[type="date"]{color-scheme:dark;}
@@ -117,7 +118,7 @@ input[type="file"]{display:none;}
 .acc-cat-block{margin-bottom:18px;}
 .acc-cat-block:last-child{margin-bottom:0;}
 .acc-cat-title{font-size:12px;font-weight:500;color:var(--dt2);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--dbrd);}
-@media(max-width:560px){.g2{grid-template-columns:1fr;}.fin-row-top{flex-wrap:wrap;}.fin-dates{grid-template-columns:1fr;}}
+@media(max-width:560px){.g2,.g3{grid-template-columns:1fr;}.fin-row-top{flex-wrap:wrap;}.fin-dates{grid-template-columns:1fr;}}
 .fin-row{border:1px solid var(--dbrd);border-radius:8px;padding:10px 12px;margin-bottom:10px;background:var(--ds2);}
 .fin-row:last-child{margin-bottom:0;}
 .fin-row-top{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
@@ -246,6 +247,39 @@ input[type="file"]{display:none;}
 <button class="btn-ghost" id="btn-copy-cal">Copiar tabla</button>
 <button class="btn-ghost" id="btn-new-cal">🏠 Volver al inicio</button>
 </div>
+</div>
+
+<div class="card">
+<div class="ct">Proyección del mes</div>
+<div id="proy-ref-wrap"></div>
+
+<div class="ct" style="margin-top:1.2rem">Bajada de Comercial</div>
+<div class="g3">
+<div class="f"><label>Sesiones</label><input type="number" min="0" id="proy-b-sesiones" placeholder="0" /></div>
+<div class="f"><label>Órdenes</label><input type="number" min="0" id="proy-b-ordenes" placeholder="0" /></div>
+<div class="f"><label>Facturación</label><input type="number" min="0" id="proy-b-facturacion" placeholder="0" /></div>
+</div>
+<div class="hint">Ticket promedio: <span id="proy-b-ticket">—</span> · CR: <span id="proy-b-cr">—</span></div>
+<button class="add-lnk" id="proy-copy-btn" style="margin-top:8px">→ Usar estos valores como punto de partida de la proyección final</button>
+
+<div class="ct" style="margin-top:1.2rem">Proyección final</div>
+<div class="g3">
+<div class="f"><label>Sesiones</label><input type="number" min="0" id="proy-f-sesiones" placeholder="0" /></div>
+<div class="f"><label>Órdenes</label><input type="number" min="0" id="proy-f-ordenes" placeholder="0" /></div>
+<div class="f"><label>Facturación</label><input type="number" min="0" id="proy-f-facturacion" placeholder="0" /></div>
+</div>
+<div class="g2" style="margin-top:0.8rem">
+<div class="f"><label>OR objetivo (%)</label><input type="number" min="0" max="100" id="proy-f-or" placeholder="0" /></div>
+<div class="f"><label>CTOR objetivo (%)</label><input type="number" min="0" max="100" id="proy-f-ctor" placeholder="0" /></div>
+</div>
+<div class="hint">Ticket promedio: <span id="proy-f-ticket">—</span> · CR: <span id="proy-f-cr">—</span></div>
+
+<div class="frow" style="margin-top:14px">
+<button class="btn-ghost" id="proy-save-btn">Guardar proyección</button>
+<button class="fd" id="proy-dist-btn" disabled>Distribuir en el calendario →</button>
+</div>
+<span class="hint hidden" id="proy-save-indicator" style="color:var(--ok)">Guardado ✓</span>
+<div class="hint" style="margin-top:8px">El reparto entre acciones es parejo (misma proyección para cada acción real del mes, excluyendo los "A DEFINIR") — es un punto de partida simple, no una predicción ponderada.</div>
 </div>
 </div>
 
@@ -620,10 +654,12 @@ const indef=(r.asunto||'').includes('A DEFINIR');
 fieldsHTML=`<div class="rl"><div class="rlbl">Asunto</div><div class="rval${indef?' indef':''}">${esc(r.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div>
 <div class="rl"><div class="rlbl">Preheader</div><div class="rval pre${indef?' indef':''}">${esc(r.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>`;
 }
+const objHTML=r.objetivoFacturacion?`<div class="rl"><div class="rlbl">Objetivo</div><div class="rval">🎯 ${fmtMoney(r.objetivoFacturacion)} · ${Math.round(r.objetivoOrdenes||0)} órdenes</div></div>`:'';
 return `<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>
 <div class="cbody">
 <div class="tipo-opts">${chipsHTML}</div>
 ${fieldsHTML}
+${objHTML}
 <div class="crow" style="gap:8px"><button class="cpybtn" data-idx="${idx}">Copiar</button><button class="btn-ghost regen-btn" data-idx="${idx}">Regenerar ↻</button></div>
 </div>`;
 }
@@ -701,6 +737,148 @@ el.classList.remove('hidden');
 setTimeout(()=>el.classList.add('hidden'),2500);
 }
 
+// ── PROYECCIÓN DEL MES ───────────────────────────────────────────────────────────
+let proyMarca='',proyMes='',proyGuardada=false;
+function fmtMoney(n){return '$'+(Math.round(n||0)).toLocaleString('es-AR');}
+function fmtPct(n){return (n||0).toFixed(1)+'%';}
+function calcTicket(facturacion,ordenes){return ordenes>0?facturacion/ordenes:0;}
+function calcCR(ordenes,sesiones){return sesiones>0?(ordenes/sesiones*100):0;}
+
+function actualizarCalcProy(pref){
+const s=+document.getElementById(`proy-${pref}-sesiones`).value||0;
+const o=+document.getElementById(`proy-${pref}-ordenes`).value||0;
+const f=+document.getElementById(`proy-${pref}-facturacion`).value||0;
+document.getElementById(`proy-${pref}-ticket`).textContent=fmtMoney(calcTicket(f,o));
+document.getElementById(`proy-${pref}-cr`).textContent=fmtPct(calcCR(o,s));
+}
+['proy-b-sesiones','proy-b-ordenes','proy-b-facturacion'].forEach(id=>document.getElementById(id).addEventListener('input',()=>actualizarCalcProy('b')));
+['proy-f-sesiones','proy-f-ordenes','proy-f-facturacion'].forEach(id=>document.getElementById(id).addEventListener('input',()=>actualizarCalcProy('f')));
+
+document.getElementById('proy-copy-btn').addEventListener('click',()=>{
+document.getElementById('proy-f-sesiones').value=document.getElementById('proy-b-sesiones').value;
+document.getElementById('proy-f-ordenes').value=document.getElementById('proy-b-ordenes').value;
+document.getElementById('proy-f-facturacion').value=document.getElementById('proy-b-facturacion').value;
+actualizarCalcProy('f');
+});
+
+function renderProyRef(list){
+const wrap=document.getElementById('proy-ref-wrap');
+if(!list||!list.length){ wrap.innerHTML='<div class="hint">Todavía no hay proyecciones de meses anteriores para esta marca.</div>'; return; }
+let html='<div class="cal-wrap"><table class="cal-table"><thead><tr><th>Mes</th><th>Sesiones</th><th>Órdenes</th><th>Facturación</th><th>Ticket prom.</th><th>CR</th></tr></thead><tbody>';
+list.slice().reverse().forEach(p=>{
+const fnl=p.final||{};
+html+=`<tr><td>${esc(p.month||'')}</td><td>${(fnl.sesiones||0).toLocaleString('es-AR')}</td><td>${(fnl.ordenes||0).toLocaleString('es-AR')}</td><td>${fmtMoney(fnl.facturacion)}</td><td>${fmtMoney(calcTicket(fnl.facturacion,fnl.ordenes))}</td><td>${fmtPct(calcCR(fnl.ordenes,fnl.sesiones))}</td></tr>`;
+});
+html+='</tbody></table></div>';
+wrap.innerHTML=html;
+}
+
+async function loadProyeccion(marca,mes){
+proyMarca=marca;proyMes=mes;proyGuardada=false;
+document.getElementById('proy-dist-btn').disabled=true;
+['proy-b-sesiones','proy-b-ordenes','proy-b-facturacion','proy-f-sesiones','proy-f-ordenes','proy-f-facturacion','proy-f-or','proy-f-ctor'].forEach(id=>document.getElementById(id).value='');
+actualizarCalcProy('b');actualizarCalcProy('f');
+document.getElementById('proy-ref-wrap').innerHTML='<div class="hint">Cargando referencia…</div>';
+try{
+const [actualRes,histRes]=await Promise.all([
+fetch(`/api/proyeccion?nombre=${encodeURIComponent(marca)}&month=${mes}`),
+fetch(`/api/proyeccion?nombre=${encodeURIComponent(marca)}&months=3`)
+]);
+if(actualRes.ok){
+const p=await actualRes.json();
+document.getElementById('proy-b-sesiones').value=p.bajada?.sesiones||'';
+document.getElementById('proy-b-ordenes').value=p.bajada?.ordenes||'';
+document.getElementById('proy-b-facturacion').value=p.bajada?.facturacion||'';
+document.getElementById('proy-f-sesiones').value=p.final?.sesiones||'';
+document.getElementById('proy-f-ordenes').value=p.final?.ordenes||'';
+document.getElementById('proy-f-facturacion').value=p.final?.facturacion||'';
+document.getElementById('proy-f-or').value=p.final?.or||'';
+document.getElementById('proy-f-ctor').value=p.final?.ctor||'';
+actualizarCalcProy('b');actualizarCalcProy('f');
+proyGuardada=true;
+document.getElementById('proy-dist-btn').disabled=false;
+}
+if(histRes.ok){
+const hd=await histRes.json();
+renderProyRef((hd.proyecciones||[]).filter(p=>p.month!==mes));
+}else{
+document.getElementById('proy-ref-wrap').innerHTML='';
+}
+}catch(e){
+document.getElementById('proy-ref-wrap').innerHTML='';
+}
+}
+
+document.getElementById('proy-save-btn').addEventListener('click',async function(){
+if(!proyMarca||!proyMes) return;
+const body={
+nombre:proyMarca,month:proyMes,
+bajada:{sesiones:+document.getElementById('proy-b-sesiones').value||0,ordenes:+document.getElementById('proy-b-ordenes').value||0,facturacion:+document.getElementById('proy-b-facturacion').value||0},
+final:{sesiones:+document.getElementById('proy-f-sesiones').value||0,ordenes:+document.getElementById('proy-f-ordenes').value||0,facturacion:+document.getElementById('proy-f-facturacion').value||0,or:+document.getElementById('proy-f-or').value||0,ctor:+document.getElementById('proy-f-ctor').value||0}
+};
+this.disabled=true;
+try{
+const res=await fetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+if(res.ok){
+proyGuardada=true;
+document.getElementById('proy-dist-btn').disabled=false;
+const ind=document.getElementById('proy-save-indicator');
+ind.classList.remove('hidden');
+setTimeout(()=>ind.classList.add('hidden'),2500);
+}else{
+alert('No se pudo guardar la proyección. Probá de nuevo en un momento.');
+}
+}catch(e){
+alert('No se pudo guardar la proyección. Probá de nuevo en un momento.');
+}
+this.disabled=false;
+});
+
+function distribuirProyeccion(rows,final){
+const grupos=new Map();
+rows.forEach(r=>{
+const key=r.elemento||'';
+if(!grupos.has(key)) grupos.set(key,{rows:[],indef:false});
+const g=grupos.get(key);
+g.rows.push(r);
+const texto=(r.asunto||r.titulo||r.mensaje||'');
+if(texto.includes('A DEFINIR')) g.indef=true;
+});
+const activos=[...grupos.values()].filter(g=>!g.indef);
+const totalPeso=activos.length;
+rows.forEach(r=>{ delete r.objetivoFacturacion; delete r.objetivoOrdenes; });
+if(!totalPeso) return;
+const facturacionPorAccion=(final.facturacion||0)/totalPeso;
+const ordenesPorAccion=(final.ordenes||0)/totalPeso;
+activos.forEach(g=>{
+g.rows.forEach(r=>{ r.objetivoFacturacion=facturacionPorAccion; r.objetivoOrdenes=ordenesPorAccion; });
+});
+}
+
+document.getElementById('proy-dist-btn').addEventListener('click',async function(){
+const final={
+sesiones:+document.getElementById('proy-f-sesiones').value||0,
+ordenes:+document.getElementById('proy-f-ordenes').value||0,
+facturacion:+document.getElementById('proy-f-facturacion').value||0
+};
+if(!final.facturacion&&!final.ordenes){ alert('Cargá y guardá la proyección final antes de distribuir.'); return; }
+distribuirProyeccion(calRows,final);
+renderCalTable(calRows);
+this.textContent='Distribuyendo…';this.disabled=true;
+try{
+const res=await fetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+nombre:proyMarca,month:proyMes,
+notas:document.getElementById('notas-mes').value.trim(),
+canales:canalesActivos(),
+accionesCat,
+filas:calRows,
+analisis:document.getElementById('analisis-box').textContent||''
+})});
+if(res.ok) showSavedIndicator();
+}catch(e){}
+this.textContent='Distribuir en el calendario →';this.disabled=false;
+});
+
 // ── PASO 1 ─────────────────────────────────────────────────────────────────────
 document.getElementById('btn-cal').addEventListener('click',async()=>{
 const marca=document.getElementById('marca').value.trim();
@@ -777,6 +955,8 @@ if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.a
 fetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
 nombre:marca,month:mes,notas,canales,accionesCat,filas:calRows,analisis:parsed.analisis||''
 })}).then(r=>{ if(r.ok) showSavedIndicator(); }).catch(()=>{});
+
+loadProyeccion(marca,mes);
 }catch(err){
 document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
 }
