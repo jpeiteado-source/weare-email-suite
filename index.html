@@ -187,6 +187,17 @@ input[type="file"]{display:none;}
 </div>
 
 <div class="card">
+<div class="ct">Ir directo a Proyección</div>
+<div class="brand-select-wrap">
+<select id="proy-direct-month" disabled>
+<option value="">— Elegí una marca arriba —</option>
+</select>
+<button class="btn-accent" id="proy-direct-btn">📊 Ir a Proyección →</button>
+</div>
+<div class="hint" style="margin-top:8px">Salteá el formulario y anda directo a cargar la proyección de un mes que ya generaste (usando la marca seleccionada arriba).</div>
+</div>
+
+<div class="card">
 <div class="ct">Datos de la marca</div>
 <div class="g2">
 <div class="f"><label>Nombre de la marca</label><input type="text" id="marca" placeholder="ej. SELÚ, Nike AR…" /></div>
@@ -515,9 +526,6 @@ function totalAcciones(){
 return CATS.reduce((n,c)=>n+accionesCat[c.key].filter(a=>a.nombre&&a.nombre.trim()).length,0);
 }
 
-// NOTA: loadAccionesCat queda sin uso por ahora — las acciones comerciales no se
-// persisten en el perfil de marca todavía. Se deja lista para cuando el agente
-// de la suite necesite recuperar el historial completo de acciones por marca.
 function loadAccionesCat(data){
 CATS.forEach(c=>{
 const items=(data && data[c.key]) ? data[c.key] : [];
@@ -584,6 +592,62 @@ document.getElementById('brand-load-btn').addEventListener('click',async()=>{
 const name=document.getElementById('brand-select').value;
 if(!name){ alert('Seleccioná una marca primero.'); return; }
 await loadBrandProfile(name);
+await poblarMesesGuardados();
+});
+
+// ── ACCESO DIRECTO A PROYECCIÓN (meses ya guardados) ────────────────────────────
+async function poblarMesesGuardados(){
+const sel=document.getElementById('proy-direct-month');
+const nombre=document.getElementById('brand-select').value;
+if(!nombre){ sel.innerHTML='<option value="">— Elegí una marca arriba —</option>'; sel.disabled=true; return; }
+sel.innerHTML='<option value="">Cargando meses…</option>'; sel.disabled=true;
+try{
+const res=await fetch('/api/plans?nombre='+encodeURIComponent(nombre));
+const meses=res.ok?(await res.json()).months||[]:[];
+if(!meses.length){ sel.innerHTML='<option value="">Sin meses guardados para esta marca</option>'; sel.disabled=true; return; }
+sel.innerHTML=meses.map(m=>`<option value="${m}">${m}</option>`).join('');
+sel.disabled=false;
+}catch(e){
+sel.innerHTML='<option value="">Sin meses guardados para esta marca</option>'; sel.disabled=true;
+}
+}
+document.getElementById('brand-select').addEventListener('change',poblarMesesGuardados);
+
+async function cargarPlanDirecto(nombre,month){
+const btn=document.getElementById('proy-direct-btn');
+const orig=btn.textContent;
+btn.textContent='Cargando…';btn.disabled=true;
+try{
+const [planRes,brandRes]=await Promise.all([
+fetch(`/api/plans?nombre=${encodeURIComponent(nombre)}&month=${month}`),
+fetch(`/api/brands?nombre=${encodeURIComponent(nombre)}`)
+]);
+if(!planRes.ok){ alert('No se pudo cargar ese calendario guardado.'); btn.textContent=orig;btn.disabled=false; return; }
+const plan=await planRes.json();
+if(brandRes.ok) await loadBrandProfile(nombre);
+document.getElementById('marca').value=nombre;
+document.getElementById('mes').value=month;
+document.getElementById('notas-mes').value=plan.notas||'';
+if(plan.canales&&plan.canales.length) setCanalesActivos(plan.canales);
+loadAccionesCat(plan.accionesCat||{});
+calRows=plan.filas||[];
+renderCalTable(calRows);
+if(plan.analisis){ document.getElementById('analisis-box').textContent=plan.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
+proyMarca=nombre;proyMes=month;
+hide('paso1');hide('resultado1');show('proyPage');
+loadProyeccion();
+window.scrollTo(0,0);
+}catch(e){
+alert('No se pudo cargar ese calendario guardado.');
+}
+btn.textContent=orig;btn.disabled=false;
+}
+document.getElementById('proy-direct-btn').addEventListener('click',()=>{
+const nombre=document.getElementById('brand-select').value;
+const month=document.getElementById('proy-direct-month').value;
+if(!nombre){ alert('Seleccioná una marca primero.'); return; }
+if(!month){ alert('Seleccioná un mes guardado.'); return; }
+cargarPlanDirecto(nombre,month);
 });
 document.getElementById('brand-save-btn').addEventListener('click',async()=>{
 const nombre=document.getElementById('marca').value.trim();
@@ -642,6 +706,7 @@ if(brands.length===1){
 document.getElementById('brand-select').value=brands[0].nombre;
 await loadBrandProfile(brands[0].nombre);
 }
+await poblarMesesGuardados();
 })();
 
 // ── REGLAS DE COPY COMPARTIDAS (calendario + regenerar fila) ───────────────────
@@ -1127,6 +1192,8 @@ document.getElementById('notas-mes').value='';
 setCanalesActivos(['Newsletter']);
 CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
 document.getElementById('brand-select').value='';
+document.getElementById('proy-direct-month').innerHTML='<option value="">— Elegí una marca arriba —</option>';
+document.getElementById('proy-direct-month').disabled=true;
 calRows=[];
 proyMarca='';proyMes='';
 document.getElementById('cal-wrap').innerHTML='';
