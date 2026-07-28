@@ -55,6 +55,7 @@ export default async function handler(req, res) {
           or: num(f.or),
           ctor: num(f.ctor)
         },
+        consideraciones: req.body.consideraciones || '',
         updatedAt: new Date().toISOString()
       };
       await pipeline([

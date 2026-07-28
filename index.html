@@ -297,6 +297,10 @@ input[type="file"]{display:none;}
 </div>
 <div class="hint">Órdenes: <span id="proy-ordenes-calc">—</span> · Facturación: <span id="proy-facturacion-calc">—</span> (calculadas a partir de Sesiones × CR × Ticket promedio)</div>
 
+<div class="ct" style="margin-top:1.2rem">Consideraciones para la distribución <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+<textarea id="proy-consideraciones" style="min-height:72px" placeholder="Ej: El envío gratis suele performar mejor que el resto de las acciones. Las notificaciones push del Happy Hour de Vans suelen tener más relevancia que las del resto de los microeventos."></textarea>
+<div class="hint">La IA va a usar esto para ajustar el peso de cada acción en el reparto, además de las reglas automáticas (inicio/cierre/microevento/etc.).</div>
+
 <button class="btn-or" id="proy-dist-btn" style="margin-top:14px">Guardar y distribuir →</button>
 </div>
 </div>
@@ -804,7 +808,7 @@ wrap.innerHTML=html;
 
 async function loadProyeccion(){
 if(!proyMarca||!proyMes) return;
-['proy-sesiones','proy-ticket','proy-cr','proy-or','proy-ctor'].forEach(id=>document.getElementById(id).value='');
+['proy-sesiones','proy-ticket','proy-cr','proy-or','proy-ctor','proy-consideraciones'].forEach(id=>document.getElementById(id).value='');
 actualizarCalcProy();
 document.getElementById('proy-ref-wrap').innerHTML='<div class="hint">Cargando referencia…</div>';
 try{
@@ -820,6 +824,7 @@ document.getElementById('proy-ticket').value=f.ordenes?Math.round(calcTicket(f.f
 document.getElementById('proy-cr').value=f.sesiones?Math.round(calcCR(f.ordenes,f.sesiones)*100)/100:'';
 document.getElementById('proy-or').value=f.or||'';
 document.getElementById('proy-ctor').value=f.ctor||'';
+document.getElementById('proy-consideraciones').value=p.consideraciones||'';
 actualizarCalcProy();
 }
 if(histRes.ok){
@@ -873,7 +878,8 @@ if(esUltimoDiaDelMes(fecha,mesYYYYMM)&&(momento==='cierre'||categoria==='microev
 return peso;
 }
 
-function distribuirProyeccion(rows,final,mesYYYYMM){
+function distribuirProyeccion(rows,final,mesYYYYMM,ajustesMap){
+ajustesMap=ajustesMap||{};
 const grupos=new Map();
 rows.forEach(r=>{
 const key=r.elemento||'';
@@ -883,16 +889,61 @@ g.rows.push(r);
 const texto=(r.asunto||r.titulo||r.mensaje||'');
 if(texto.includes('A DEFINIR')) g.indef=true;
 });
-rows.forEach(r=>{ delete r.objetivoFacturacion; delete r.objetivoOrdenes; delete r.pesoDistribucion; });
-const activos=[...grupos.entries()].filter(([,g])=>!g.indef).map(([key,g])=>({g,peso:pesoAccion(g.rows,parseElementoFecha(key,mesYYYYMM),mesYYYYMM)}));
+rows.forEach(r=>{ delete r.objetivoFacturacion; delete r.objetivoOrdenes; delete r.pesoDistribucion; delete r.ajusteIA; });
+const activos=[...grupos.entries()].filter(([,g])=>!g.indef).map(([key,g])=>{
+let peso=pesoAccion(g.rows,parseElementoFecha(key,mesYYYYMM),mesYYYYMM);
+let ajuste=1;
+if(ajustesMap[key]&&isFinite(ajustesMap[key])){
+ajuste=Math.min(3,Math.max(0.3,+ajustesMap[key]));
+peso*=ajuste;
+}
+return {g,peso,ajuste};
+});
 const totalPeso=activos.reduce((s,a)=>s+a.peso,0);
 if(!totalPeso) return;
-activos.forEach(({g,peso})=>{
+activos.forEach(({g,peso,ajuste})=>{
 const share=peso/totalPeso;
 const objFact=(final.facturacion||0)*share;
 const objOrd=(final.ordenes||0)*share;
-g.rows.forEach(r=>{ r.objetivoFacturacion=objFact; r.objetivoOrdenes=objOrd; r.pesoDistribucion=Math.round(share*1000)/10; });
+g.rows.forEach(r=>{ r.objetivoFacturacion=objFact; r.objetivoOrdenes=objOrd; r.pesoDistribucion=Math.round(share*1000)/10; if(ajuste!==1) r.ajusteIA=ajuste; });
 });
+}
+
+async function obtenerAjustesDistribucion(rows,consideraciones){
+const grupos=new Map();
+rows.forEach(r=>{
+const key=r.elemento||'';
+if(!grupos.has(key)) grupos.set(key,{canales:new Set(),categoria:r.categoria,momento:r.momento});
+const g=grupos.get(key);
+g.canales.add(r.canal);
+if(r.categoria) g.categoria=r.categoria;
+if(r.momento) g.momento=r.momento;
+});
+const lista=[...grupos.entries()].map(([key,g],i)=>`${i+1}. ${key} — categoría: ${g.categoria||'—'} — momento: ${g.momento||'—'} — canales: ${[...g.canales].join(', ')}`).join('\n');
+const prompt=`Sos un analista de CRM que ajusta el reparto de una proyección de facturación entre las acciones de un calendario de email marketing, según el criterio del equipo.
+
+ACCIONES DEL MES:
+${lista}
+
+CONSIDERACIONES DEL EQUIPO PARA ESTE MES:
+${consideraciones}
+
+TAREA: Para cada acción de la lista, asigná un multiplicador de ajuste que refleje las consideraciones de arriba, para aplicar SOBRE el peso ya calculado por reglas automáticas (no lo reemplaza, lo afina). 1 = sin cambios. Mayor a 1 = más peso relativo (ej. 1.5 = 50% más). Menor a 1 = menos peso (ej. 0.5 = la mitad). Si una acción no tiene relación con las consideraciones, dejala en 1 — no inventes ajustes sin base en el texto. Nunca uses valores fuera del rango 0.3 a 3.
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"ajustes":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","multiplicador":1.5}]}`;
+try{
+const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:1500})});
+if(!res.ok) return {};
+const data=await res.json();
+const txt=data.content.map(i=>i.text||'').join('');
+const m=txt.match(/\{[\s\S]*\}/);
+if(!m) return {};
+const parsed=JSON.parse(m[0]);
+const map={};
+(parsed.ajustes||[]).forEach(a=>{ if(a.elemento&&isFinite(a.multiplicador)) map[a.elemento]=+a.multiplicador; });
+return map;
+}catch(e){ return {}; }
 }
 
 let distList=[];
@@ -906,15 +957,15 @@ grupos.get(key).rows.push(r);
 const items=[...grupos.entries()].map(([key,g])=>{
 const canales=[...new Set(g.rows.map(r=>r.canal))].join(', ');
 const obj=g.rows.find(r=>r.objetivoFacturacion!=null);
-return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0};
+return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0,ajuste:obj?obj.ajusteIA:null};
 });
 items.sort((a,b)=>(a.fecha&&b.fecha)?a.fecha-b.fecha:0);
 distList=items;
 const wrap=document.getElementById('dist-wrap');
 if(!items.length){ wrap.innerHTML='<div class="hint">No hay acciones con objetivo — revisá que el calendario tenga acciones reales (no "A DEFINIR").</div>'; return; }
-let html='<div class="cal-wrap"><table class="cal-table"><thead><tr><th>Elemento</th><th>Canales</th><th>% del mes</th><th>Objetivo facturación</th><th>Objetivo órdenes</th></tr></thead><tbody>';
+let html='<div class="cal-wrap"><table class="cal-table"><thead><tr><th>Elemento</th><th>Canales</th><th>% del mes</th><th>Ajuste IA</th><th>Objetivo facturación</th><th>Objetivo órdenes</th></tr></thead><tbody>';
 items.forEach(it=>{
-html+=`<tr><td>${esc(it.elemento)}</td><td>${esc(it.canales)}</td><td>${it.peso?`<span class="pct-badge">${it.peso}%</span>`:'—'}</td><td>${fmtMoney(it.objetivoFacturacion)}</td><td>${Math.round(it.objetivoOrdenes)}</td></tr>`;
+html+=`<tr><td>${esc(it.elemento)}</td><td>${esc(it.canales)}</td><td>${it.peso?`<span class="pct-badge">${it.peso}%</span>`:'—'}</td><td>${it.ajuste?`${it.ajuste}x`:'—'}</td><td>${fmtMoney(it.objetivoFacturacion)}</td><td>${Math.round(it.objetivoOrdenes)}</td></tr>`;
 });
 html+='</tbody></table></div>';
 wrap.innerHTML=html;
@@ -925,10 +976,17 @@ if(!proyMarca||!proyMes) return;
 const calc=actualizarCalcProy();
 if(!calc.sesiones||!calc.cr){ alert('Cargá al menos Sesiones y CR objetivo antes de distribuir.'); return; }
 const final={sesiones:calc.sesiones,ordenes:calc.ordenes,facturacion:calc.facturacion,or:+document.getElementById('proy-or').value||0,ctor:+document.getElementById('proy-ctor').value||0};
-this.textContent='Distribuyendo…';this.disabled=true;
+const consideraciones=document.getElementById('proy-consideraciones').value.trim();
+this.disabled=true;
 try{
-await fetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final})});
-distribuirProyeccion(calRows,final,proyMes);
+await fetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,consideraciones})});
+let ajustes={};
+if(consideraciones){
+this.textContent='Analizando consideraciones…';
+ajustes=await obtenerAjustesDistribucion(calRows,consideraciones);
+}
+this.textContent='Distribuyendo…';
+distribuirProyeccion(calRows,final,proyMes,ajustes);
 fetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
 nombre:proyMarca,month:proyMes,
 notas:document.getElementById('notas-mes').value.trim(),
@@ -947,8 +1005,8 @@ this.textContent='Guardar y distribuir →';this.disabled=false;
 });
 
 document.getElementById('btn-copy-dist').addEventListener('click',function(){
-const header=['Elemento','Canales','% del mes','Objetivo facturación','Objetivo órdenes'];
-const rows=[header,...distList.map(it=>[it.elemento,it.canales,it.peso?it.peso+'%':'',Math.round(it.objetivoFacturacion),Math.round(it.objetivoOrdenes)])];
+const header=['Elemento','Canales','% del mes','Ajuste IA','Objetivo facturación','Objetivo órdenes'];
+const rows=[header,...distList.map(it=>[it.elemento,it.canales,it.peso?it.peso+'%':'',it.ajuste?it.ajuste+'x':'',Math.round(it.objetivoFacturacion),Math.round(it.objetivoOrdenes)])];
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar lista',2000);});
 });
 
