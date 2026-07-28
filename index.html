@@ -297,6 +297,10 @@ input[type="file"]{display:none;}
 </div>
 <div class="hint">Órdenes: <span id="proy-ordenes-calc">—</span> · Facturación: <span id="proy-facturacion-calc">—</span> (calculadas a partir de Sesiones × CR × Ticket promedio)</div>
 
+<div class="ct" style="margin-top:1.2rem">Automatizaciones</div>
+<div class="f"><label>% de la facturación del mes</label><div class="field-affix" style="max-width:160px"><input type="number" min="0" max="100" id="proy-auto-pct" placeholder="10" value="10" /><span class="affix">%</span></div></div>
+<div class="hint">Se reserva este % de la facturación y órdenes proyectadas para automatizaciones diarias (bienvenida, carrito abandonado, etc.) antes de repartir el resto entre las acciones del calendario.</div>
+
 <div class="ct" style="margin-top:1.2rem">Consideraciones para la distribución <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
 <textarea id="proy-consideraciones" style="min-height:72px" placeholder="Ej: El envío gratis suele performar mejor que el resto de las acciones. Las notificaciones push del Happy Hour de Vans suelen tener más relevancia que las del resto de los microeventos."></textarea>
 <div class="hint">La IA va a usar esto para ajustar el peso de cada acción en el reparto, además de las reglas automáticas (inicio/cierre/microevento/etc.).</div>
@@ -809,6 +813,7 @@ wrap.innerHTML=html;
 async function loadProyeccion(){
 if(!proyMarca||!proyMes) return;
 ['proy-sesiones','proy-ticket','proy-cr','proy-or','proy-ctor','proy-consideraciones'].forEach(id=>document.getElementById(id).value='');
+document.getElementById('proy-auto-pct').value='10';
 actualizarCalcProy();
 document.getElementById('proy-ref-wrap').innerHTML='<div class="hint">Cargando referencia…</div>';
 try{
@@ -824,6 +829,7 @@ document.getElementById('proy-ticket').value=f.ordenes?Math.round(calcTicket(f.f
 document.getElementById('proy-cr').value=f.sesiones?Math.round(calcCR(f.ordenes,f.sesiones)*100)/100:'';
 document.getElementById('proy-or').value=f.or||'';
 document.getElementById('proy-ctor').value=f.ctor||'';
+document.getElementById('proy-auto-pct').value=(p.autoPct!=null?p.autoPct:10);
 document.getElementById('proy-consideraciones').value=p.consideraciones||'';
 actualizarCalcProy();
 }
@@ -947,7 +953,7 @@ return map;
 }
 
 let distList=[];
-function renderDistribucionList(rows,mesYYYYMM){
+function renderDistribucionList(rows,mesYYYYMM,autoInfo){
 const grupos=new Map();
 rows.forEach(r=>{
 const key=r.elemento||'';
@@ -960,6 +966,9 @@ const obj=g.rows.find(r=>r.objetivoFacturacion!=null);
 return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0,ajuste:obj?obj.ajusteIA:null};
 });
 items.sort((a,b)=>(a.fecha&&b.fecha)?a.fecha-b.fecha:0);
+if(autoInfo&&autoInfo.pct>0){
+items.unshift({fecha:null,elemento:'Automatizaciones (bienvenida, carrito abandonado, etc.)',canales:'—',objetivoFacturacion:autoInfo.facturacion,objetivoOrdenes:autoInfo.ordenes,peso:autoInfo.pct,ajuste:null});
+}
 distList=items;
 const wrap=document.getElementById('dist-wrap');
 if(!items.length){ wrap.innerHTML='<div class="hint">No hay acciones con objetivo — revisá que el calendario tenga acciones reales (no "A DEFINIR").</div>'; return; }
@@ -976,17 +985,20 @@ if(!proyMarca||!proyMes) return;
 const calc=actualizarCalcProy();
 if(!calc.sesiones||!calc.cr){ alert('Cargá al menos Sesiones y CR objetivo antes de distribuir.'); return; }
 const final={sesiones:calc.sesiones,ordenes:calc.ordenes,facturacion:calc.facturacion,or:+document.getElementById('proy-or').value||0,ctor:+document.getElementById('proy-ctor').value||0};
+const autoPct=Math.min(100,Math.max(0,+document.getElementById('proy-auto-pct').value||0));
 const consideraciones=document.getElementById('proy-consideraciones').value.trim();
 this.disabled=true;
 try{
-await fetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,consideraciones})});
+await fetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,autoPct,consideraciones})});
 let ajustes={};
 if(consideraciones){
 this.textContent='Analizando consideraciones…';
 ajustes=await obtenerAjustesDistribucion(calRows,consideraciones);
 }
 this.textContent='Distribuyendo…';
-distribuirProyeccion(calRows,final,proyMes,ajustes);
+const autoInfo={pct:autoPct,facturacion:final.facturacion*autoPct/100,ordenes:final.ordenes*autoPct/100};
+const finalCalendario={facturacion:final.facturacion-autoInfo.facturacion,ordenes:final.ordenes-autoInfo.ordenes};
+distribuirProyeccion(calRows,finalCalendario,proyMes,ajustes);
 fetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
 nombre:proyMarca,month:proyMes,
 notas:document.getElementById('notas-mes').value.trim(),
@@ -995,7 +1007,7 @@ accionesCat,
 filas:calRows,
 analisis:document.getElementById('analisis-box').textContent||''
 })}).catch(()=>{});
-renderDistribucionList(calRows,proyMes);
+renderDistribucionList(calRows,proyMes,autoInfo);
 hide('proyPage');show('distPage');
 window.scrollTo(0,0);
 }catch(e){

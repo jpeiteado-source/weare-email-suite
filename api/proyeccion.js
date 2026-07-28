@@ -55,6 +55,7 @@ export default async function handler(req, res) {
           or: num(f.or),
           ctor: num(f.ctor)
         },
+        autoPct: num(req.body.autoPct),
         consideraciones: req.body.consideraciones || '',
         updatedAt: new Date().toISOString()
       };
