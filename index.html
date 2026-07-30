@@ -387,18 +387,22 @@ input[type="file"]{display:none;}
 </div>
 <div class="hint">Órdenes: <span id="proy-ordenes-calc">—</span> · Facturación: <span id="proy-facturacion-calc">—</span> (calculadas a partir de Sesiones × CR × Ticket promedio)</div>
 
-<div class="ct" style="margin-top:1.2rem">Totales de tienda <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional — todos los canales, no solo email)</span></div>
+<div class="ct" style="margin-top:1.2rem">Automatizaciones</div>
+<div class="f"><label>% de la facturación del mes</label><div class="field-affix" style="max-width:160px"><input type="number" min="0" max="100" id="proy-auto-pct" placeholder="10" value="10" /><span class="affix">%</span></div></div>
+<div class="hint">Se reserva este % de la facturación y órdenes proyectadas para automatizaciones diarias (bienvenida, carrito abandonado, etc.) antes de repartir el resto entre las acciones del calendario.</div>
+</div>
+
+<div class="card">
+<div class="ct">Totales de tienda <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional — todos los canales, no solo email)</span></div>
 <div class="g2">
 <div class="f"><label>Facturación total de tienda</label><div class="field-affix pre"><input type="number" min="0" id="proy-tienda-facturacion" placeholder="0" /><span class="affix">$</span></div></div>
 <div class="f"><label>Órdenes totales de tienda</label><input type="number" min="0" id="proy-tienda-ordenes" placeholder="0" /></div>
 </div>
 <div class="hint">Share de participación email — Facturación: <span id="proy-share-facturacion">—</span> · Órdenes: <span id="proy-share-ordenes">—</span> (calculado sobre los totales de tienda de arriba)</div>
+</div>
 
-<div class="ct" style="margin-top:1.2rem">Automatizaciones</div>
-<div class="f"><label>% de la facturación del mes</label><div class="field-affix" style="max-width:160px"><input type="number" min="0" max="100" id="proy-auto-pct" placeholder="10" value="10" /><span class="affix">%</span></div></div>
-<div class="hint">Se reserva este % de la facturación y órdenes proyectadas para automatizaciones diarias (bienvenida, carrito abandonado, etc.) antes de repartir el resto entre las acciones del calendario.</div>
-
-<div class="ct" style="margin-top:1.2rem">Consideraciones para la distribución <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+<div class="card">
+<div class="ct">Consideraciones para la distribución <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
 <textarea id="proy-consideraciones" style="min-height:72px" placeholder="Ej: El envío gratis suele performar mejor que el resto de las acciones. Las notificaciones push del Happy Hour de Vans suelen tener más relevancia que las del resto de los microeventos."></textarea>
 <div class="hint">La IA va a usar esto para ajustar el peso de cada acción en el reparto, además de las reglas automáticas (inicio/cierre/microevento/etc.).</div>
 
