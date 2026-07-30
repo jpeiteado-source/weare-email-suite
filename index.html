@@ -387,6 +387,13 @@ input[type="file"]{display:none;}
 </div>
 <div class="hint">Órdenes: <span id="proy-ordenes-calc">—</span> · Facturación: <span id="proy-facturacion-calc">—</span> (calculadas a partir de Sesiones × CR × Ticket promedio)</div>
 
+<div class="ct" style="margin-top:1.2rem">Totales de tienda <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional — todos los canales, no solo email)</span></div>
+<div class="g2">
+<div class="f"><label>Facturación total de tienda</label><div class="field-affix pre"><input type="number" min="0" id="proy-tienda-facturacion" placeholder="0" /><span class="affix">$</span></div></div>
+<div class="f"><label>Órdenes totales de tienda</label><input type="number" min="0" id="proy-tienda-ordenes" placeholder="0" /></div>
+</div>
+<div class="hint">Share de participación email — Facturación: <span id="proy-share-facturacion">—</span> · Órdenes: <span id="proy-share-ordenes">—</span> (calculado sobre los totales de tienda de arriba)</div>
+
 <div class="ct" style="margin-top:1.2rem">Automatizaciones</div>
 <div class="f"><label>% de la facturación del mes</label><div class="field-affix" style="max-width:160px"><input type="number" min="0" max="100" id="proy-auto-pct" placeholder="10" value="10" /><span class="affix">%</span></div></div>
 <div class="hint">Se reserva este % de la facturación y órdenes proyectadas para automatizaciones diarias (bienvenida, carrito abandonado, etc.) antes de repartir el resto entre las acciones del calendario.</div>
@@ -1174,17 +1181,23 @@ const ordenes=s*(cr/100);
 const facturacion=ordenes*t;
 document.getElementById('proy-ordenes-calc').textContent=Math.round(ordenes).toLocaleString('es-AR');
 document.getElementById('proy-facturacion-calc').textContent=fmtMoney(facturacion);
-return {sesiones:s,ticket:t,cr,ordenes,facturacion};
+const tiendaFacturacion=+document.getElementById('proy-tienda-facturacion').value||0;
+const tiendaOrdenes=+document.getElementById('proy-tienda-ordenes').value||0;
+document.getElementById('proy-share-facturacion').textContent=tiendaFacturacion>0?fmtPct(facturacion/tiendaFacturacion*100):'—';
+document.getElementById('proy-share-ordenes').textContent=tiendaOrdenes>0?fmtPct(ordenes/tiendaOrdenes*100):'—';
+return {sesiones:s,ticket:t,cr,ordenes,facturacion,tiendaFacturacion,tiendaOrdenes};
 }
-['proy-sesiones','proy-ticket','proy-cr'].forEach(id=>document.getElementById(id).addEventListener('input',actualizarCalcProy));
+['proy-sesiones','proy-ticket','proy-cr','proy-tienda-facturacion','proy-tienda-ordenes'].forEach(id=>document.getElementById(id).addEventListener('input',actualizarCalcProy));
 
 function renderProyRef(list){
 const wrap=document.getElementById('proy-ref-wrap');
 if(!list||!list.length){ wrap.innerHTML='<div class="hint">Todavía no hay proyecciones de meses anteriores para esta marca.</div>'; return; }
-let html='<div class="cal-wrap"><table class="cal-table"><thead><tr><th>Mes</th><th>Sesiones</th><th>Órdenes</th><th>Facturación</th><th>Ticket prom.</th><th>CR</th></tr></thead><tbody>';
+let html='<div class="cal-wrap"><table class="cal-table"><thead><tr><th>Mes</th><th>Sesiones</th><th>Órdenes</th><th>Facturación</th><th>Ticket prom.</th><th>CR</th><th>Fact. tienda</th><th>Share email</th></tr></thead><tbody>';
 list.slice().reverse().forEach(p=>{
 const fnl=p.final||{};
-html+=`<tr><td>${esc(p.month||'')}</td><td>${(fnl.sesiones||0).toLocaleString('es-AR')}</td><td>${(fnl.ordenes||0).toLocaleString('es-AR')}</td><td>${fmtMoney(fnl.facturacion)}</td><td>${fmtMoney(calcTicket(fnl.facturacion,fnl.ordenes))}</td><td>${fmtPct(calcCR(fnl.ordenes,fnl.sesiones))}</td></tr>`;
+const td=p.tienda||{};
+const share=td.facturacion>0?fmtPct(fnl.facturacion/td.facturacion*100):'—';
+html+=`<tr><td>${esc(p.month||'')}</td><td>${(fnl.sesiones||0).toLocaleString('es-AR')}</td><td>${(fnl.ordenes||0).toLocaleString('es-AR')}</td><td>${fmtMoney(fnl.facturacion)}</td><td>${fmtMoney(calcTicket(fnl.facturacion,fnl.ordenes))}</td><td>${fmtPct(calcCR(fnl.ordenes,fnl.sesiones))}</td><td>${td.facturacion?fmtMoney(td.facturacion):'—'}</td><td>${share}</td></tr>`;
 });
 html+='</tbody></table></div>';
 wrap.innerHTML=html;
@@ -1192,7 +1205,7 @@ wrap.innerHTML=html;
 
 async function loadProyeccion(){
 if(!proyMarca||!proyMes) return;
-['proy-sesiones','proy-ticket','proy-cr','proy-or','proy-ctor','proy-consideraciones'].forEach(id=>document.getElementById(id).value='');
+['proy-sesiones','proy-ticket','proy-cr','proy-or','proy-ctor','proy-tienda-facturacion','proy-tienda-ordenes','proy-consideraciones'].forEach(id=>document.getElementById(id).value='');
 document.getElementById('proy-auto-pct').value='10';
 actualizarCalcProy();
 document.getElementById('proy-ref-wrap').innerHTML='<div class="hint">Cargando referencia…</div>';
@@ -1204,11 +1217,14 @@ apiFetch(`/api/proyeccion?nombre=${encodeURIComponent(proyMarca)}&months=3`)
 if(actualRes.ok){
 const p=await actualRes.json();
 const f=p.final||{};
+const td=p.tienda||{};
 document.getElementById('proy-sesiones').value=f.sesiones||'';
 document.getElementById('proy-ticket').value=f.ordenes?Math.round(calcTicket(f.facturacion,f.ordenes)):'';
 document.getElementById('proy-cr').value=f.sesiones?Math.round(calcCR(f.ordenes,f.sesiones)*100)/100:'';
 document.getElementById('proy-or').value=f.or||'';
 document.getElementById('proy-ctor').value=f.ctor||'';
+document.getElementById('proy-tienda-facturacion').value=td.facturacion||'';
+document.getElementById('proy-tienda-ordenes').value=td.ordenes||'';
 document.getElementById('proy-auto-pct').value=(p.autoPct!=null?p.autoPct:10);
 document.getElementById('proy-consideraciones').value=p.consideraciones||'';
 actualizarCalcProy();
@@ -1365,11 +1381,12 @@ if(!proyMarca||!proyMes) return;
 const calc=actualizarCalcProy();
 if(!calc.sesiones||!calc.cr){ alert('Cargá al menos Sesiones y CR objetivo antes de distribuir.'); return; }
 const final={sesiones:calc.sesiones,ordenes:calc.ordenes,facturacion:calc.facturacion,or:+document.getElementById('proy-or').value||0,ctor:+document.getElementById('proy-ctor').value||0};
+const tienda={facturacion:calc.tiendaFacturacion,ordenes:calc.tiendaOrdenes};
 const autoPct=Math.min(100,Math.max(0,+document.getElementById('proy-auto-pct').value||0));
 const consideraciones=document.getElementById('proy-consideraciones').value.trim();
 this.disabled=true;
 try{
-await apiFetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,autoPct,consideraciones})});
+await apiFetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,tienda,autoPct,consideraciones})});
 let ajustes={};
 if(consideraciones){
 this.textContent='Analizando consideraciones…';

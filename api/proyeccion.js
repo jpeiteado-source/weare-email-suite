@@ -48,6 +48,7 @@ export default async function handler(req, res) {
       if (!nombre || !month) return res.status(400).json({ error: 'Falta nombre o mes' });
       const b = req.body.bajada || {};
       const f = req.body.final || {};
+      const t = req.body.tienda || {};
       const proyeccion = {
         nombre,
         month,
@@ -59,6 +60,7 @@ export default async function handler(req, res) {
           or: num(f.or),
           ctor: num(f.ctor)
         },
+        tienda: { facturacion: num(t.facturacion), ordenes: num(t.ordenes) },
         autoPct: num(req.body.autoPct),
         consideraciones: req.body.consideraciones || '',
         updatedAt: new Date().toISOString()
