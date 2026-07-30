@@ -153,12 +153,6 @@ input[type="file"]{display:none;}
 .fin-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .fin-dates input{font-size:12px;padding:7px 9px;}
 .auth-card{max-width:380px;margin:3rem auto 0;}
-.brand-card{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--dbrd);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--ds2);transition:all 0.15s;}
-.brand-card:hover{border-color:var(--dbrd2);}
-.brand-card.sel{border-color:var(--or);background:var(--org);}
-.brand-card .bn{font-size:14px;font-weight:500;color:var(--dt);}
-.brand-card .bmeta{font-size:11px;color:var(--dt3);margin-top:2px;}
-.brand-card .arrow{color:var(--dt3);font-size:16px;}
 .acc-item{border:1px solid var(--dbrd);border-radius:8px;margin-bottom:8px;overflow:hidden;}
 .acc-item:last-child{margin-bottom:0;}
 .acc-header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--ds2);border:none;color:var(--dt);font-family:inherit;font-size:13px;font-weight:500;text-align:left;}
@@ -207,14 +201,20 @@ input[type="file"]{display:none;}
 <div class="ct" style="margin-bottom:0">Tus marcas</div>
 <button class="btn-accent" id="btn-open-add-brand">+ Agregar marca</button>
 </div>
-<div id="brand-list"></div>
+<div class="brand-select-wrap">
+<select id="brand-select"><option value="">— Seleccioná una marca —</option></select>
+</div>
 <div class="hint hidden" id="brand-list-empty">Todavía no tenés marcas cargadas. Empezá agregando una con el botón de arriba.</div>
 </div>
 
 <div class="card hidden" id="legacy-card">
-<div class="ct">Marcas existentes sin asignar</div>
-<div class="hint" style="margin-bottom:10px">Se cargaron antes de que existieran usuarios. Copiá las que uses vos a tu cuenta — no se borran del listado general.</div>
-<div id="legacy-brand-list"></div>
+<div class="ct">¿Falta alguna marca tuya?</div>
+<div class="hint" style="margin-bottom:10px">Estas se cargaron antes de que existieran usuarios. Copiá la tuya a tu cuenta — una vez copiada, deja de aparecer acá para todos.</div>
+<div class="brand-select-wrap">
+<select id="legacy-brand-select"><option value="">— Elegí una marca —</option></select>
+<button class="btn-accent" id="legacy-copy-btn">Copiar a mi cuenta</button>
+</div>
+<button class="add-lnk" id="legacy-dismiss-btn">Omitir, ya tengo mis marcas</button>
 </div>
 
 <div class="card hidden" id="brand-actions-card">
@@ -633,6 +633,7 @@ renderAccCat(c.key);
 const AUTH_KEY='weare_token', USER_KEY='weare_username';
 let authToken=localStorage.getItem(AUTH_KEY)||'';
 let currentUsername=localStorage.getItem(USER_KEY)||'';
+let legacyDismissed=false;
 
 async function apiFetch(url,opts){
 opts=Object.assign({},opts||{});
@@ -684,7 +685,7 @@ try{
 const res=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:authMode,username,password})});
 const data=await res.json();
 if(!res.ok) throw new Error(data.error||'Error al autenticar');
-authToken=data.token; currentUsername=data.username;
+authToken=data.token; currentUsername=data.username; legacyDismissed=!!data.legacyDismissed;
 localStorage.setItem(AUTH_KEY,authToken); localStorage.setItem(USER_KEY,currentUsername);
 document.getElementById('auth-password').value='';
 await afterLogin();
@@ -716,58 +717,81 @@ window.scrollTo(0,0);
 }
 
 async function loadBrandList(){
-const wrap=document.getElementById('brand-list');
-wrap.innerHTML='<div class="hint">Cargando…</div>';
+const sel=document.getElementById('brand-select');
+sel.innerHTML='<option value="">Cargando…</option>';
+sel.disabled=true;
 try{
 const res=await apiFetch('/api/brands');
 const data=res.ok?await res.json():{brands:[]};
 brandsCache=(data.brands||[]).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre));
 if(!brandsCache.length){
-wrap.innerHTML='';
+sel.innerHTML='<option value="">— No tenés marcas cargadas —</option>';
 show('brand-list-empty');
 return;
 }
 hide('brand-list-empty');
-wrap.innerHTML=brandsCache.map(b=>`<div class="brand-card" data-nombre="${esc(b.nombre)}"><div><div class="bn">${esc(b.nombre)}</div><div class="bmeta">${esc(b.industria||'Sin industria definida')}</div></div><span class="arrow">→</span></div>`).join('');
-wrap.querySelectorAll('.brand-card').forEach(card=>card.addEventListener('click',()=>selectBrand(card.dataset.nombre)));
-}catch(e){ wrap.innerHTML='<div class="err">No se pudieron cargar las marcas.</div>'; }
+sel.innerHTML='<option value="">— Seleccioná una marca —</option>'+brandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
+sel.disabled=false;
+}catch(e){ sel.innerHTML='<option value="">Error al cargar las marcas</option>'; }
 }
+document.getElementById('brand-select').addEventListener('change',function(){
+if(this.value) selectBrand(this.value);
+else{ activeBrand=null; hide('brand-actions-card'); }
+});
 
 async function selectBrand(nombre){
-document.querySelectorAll('#brand-list .brand-card').forEach(c=>c.classList.toggle('sel',c.dataset.nombre===nombre));
 const b=brandsCache.find(x=>x.nombre===nombre);
 if(!b) return;
 activeBrand=b;
+document.getElementById('brand-select').value=nombre;
 document.getElementById('brand-actions-name').textContent=b.nombre;
 show('brand-actions-card');
 await poblarMesesGuardados();
 document.getElementById('brand-actions-card').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+let legacyBrandsCache=[];
 async function loadLegacyBrands(){
-const wrap=document.getElementById('legacy-brand-list');
+if(legacyDismissed){ hide('legacy-card'); return; }
+const sel=document.getElementById('legacy-brand-select');
 try{
 const res=await apiFetch('/api/brands?scope=legacy');
 if(!res.ok){ hide('legacy-card'); return; }
 const data=await res.json();
-const legacy=(data.brands||[]).filter(b=>!brandsCache.some(x=>x.nombre===b.nombre));
-if(!legacy.length){ hide('legacy-card'); return; }
+legacyBrandsCache=(data.brands||[]).filter(b=>!brandsCache.some(x=>x.nombre===b.nombre));
+if(!legacyBrandsCache.length){ hide('legacy-card'); return; }
 show('legacy-card');
-wrap.innerHTML=legacy.map(b=>`<div class="brand-card" data-nombre="${esc(b.nombre)}" style="cursor:default"><div><div class="bn">${esc(b.nombre)}</div><div class="bmeta">Marca antigua sin dueño asignado</div></div><button class="btn-accent" data-copy="${esc(b.nombre)}">Copiar a mi cuenta</button></div>`).join('');
-wrap.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',async()=>{
-const nombre=btn.dataset.copy;
-const legacyBrand=legacy.find(b=>b.nombre===nombre);
+sel.innerHTML='<option value="">— Elegí una marca —</option>'+legacyBrandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
+}catch(e){ hide('legacy-card'); }
+}
+document.getElementById('legacy-copy-btn').addEventListener('click',async()=>{
+const sel=document.getElementById('legacy-brand-select');
+const nombre=sel.value;
+if(!nombre){ alert('Elegí una marca para copiar.'); return; }
+const legacyBrand=legacyBrandsCache.find(b=>b.nombre===nombre);
 if(!legacyBrand) return;
-btn.textContent='Copiando…'; btn.disabled=true;
+const btn=document.getElementById('legacy-copy-btn');
+const orig=btn.textContent; btn.textContent='Copiando…'; btn.disabled=true;
 try{
 const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(legacyBrand)});
 if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al copiar'); }
+await apiFetch('/api/brands?scope=legacy&nombre='+encodeURIComponent(nombre),{method:'DELETE'}).catch(()=>{});
 await loadBrandList();
 await loadLegacyBrands();
-}catch(err){ alert('No se pudo copiar: '+err.message); btn.textContent='Copiar a mi cuenta'; btn.disabled=false; }
-}));
-}catch(e){ hide('legacy-card'); }
-}
+}catch(err){ alert('No se pudo copiar: '+err.message); }
+btn.textContent=orig; btn.disabled=false;
+});
+document.getElementById('legacy-dismiss-btn').addEventListener('click',async()=>{
+if(!confirm('¿Ya tenés todas tus marcas cargadas? No vas a volver a ver esta sección.')) return;
+const btn=document.getElementById('legacy-dismiss-btn');
+btn.disabled=true;
+try{
+await apiFetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'dismiss-legacy'})});
+legacyDismissed=true;
+hide('legacy-card');
+}catch(e){ alert('No se pudo omitir, probá de nuevo.'); }
+btn.disabled=false;
+});
 
 document.getElementById('btn-del-brand-home').addEventListener('click',async()=>{
 if(!activeBrand) return;
@@ -1403,7 +1427,7 @@ try{
 const res=await fetch('/api/auth',{headers:{Authorization:'Bearer '+authToken}});
 if(res.ok){
 const data=await res.json();
-currentUsername=data.username;
+currentUsername=data.username; legacyDismissed=!!data.legacyDismissed;
 localStorage.setItem(USER_KEY,currentUsername);
 await afterLogin();
 return;

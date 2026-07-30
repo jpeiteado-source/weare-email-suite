@@ -20,6 +20,17 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
+      if (action === 'dismiss-legacy') {
+        const usernameKey = await getSessionUser(req);
+        if (!usernameKey) return res.status(401).json({ error: 'No autenticado' });
+        const raw = await redis(['GET', `user:${usernameKey}`]);
+        if (!raw) return res.status(404).json({ error: 'Usuario no encontrado' });
+        const user = JSON.parse(raw);
+        user.legacyDismissed = true;
+        await redis(['SET', `user:${usernameKey}`, JSON.stringify(user)]);
+        return res.status(200).json({ ok: true });
+      }
+
       const usernameRaw = (req.body?.username || '').trim();
       const password = req.body?.password || '';
       const key = normalizeUsername(usernameRaw);
@@ -35,7 +46,7 @@ export default async function handler(req, res) {
           ['SADD', 'users:index', key]
         ]);
         const token = await createSession(key);
-        return res.status(200).json({ token, username: usernameRaw });
+        return res.status(200).json({ token, username: usernameRaw, legacyDismissed: false });
       }
 
       if (action === 'login') {
@@ -45,7 +56,7 @@ export default async function handler(req, res) {
         const user = JSON.parse(raw);
         if (!verifyPassword(password, user.passwordHash)) return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
         const token = await createSession(key);
-        return res.status(200).json({ token, username: user.username });
+        return res.status(200).json({ token, username: user.username, legacyDismissed: !!user.legacyDismissed });
       }
 
       return res.status(400).json({ error: 'Acción inválida' });
@@ -55,8 +66,8 @@ export default async function handler(req, res) {
       const usernameKey = await getSessionUser(req);
       if (!usernameKey) return res.status(401).json({ error: 'No autenticado' });
       const raw = await redis(['GET', `user:${usernameKey}`]);
-      const display = raw ? JSON.parse(raw).username : usernameKey;
-      return res.status(200).json({ username: display });
+      const user = raw ? JSON.parse(raw) : null;
+      return res.status(200).json({ username: user ? user.username : usernameKey, legacyDismissed: !!(user && user.legacyDismissed) });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

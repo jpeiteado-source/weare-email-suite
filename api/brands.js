@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     if (!usuario) return;
 
     // Marcas viejas, cargadas antes de que existieran usuarios (sin dueño asignado).
-    const legacy = req.method === 'GET' && req.query.scope === 'legacy';
+    const legacy = req.query.scope === 'legacy' && (req.method === 'GET' || req.method === 'DELETE');
     const brandKey = nombre => legacy ? `brand:${nombre}` : `brand:${usuario}:${nombre}`;
     const indexKey = legacy ? 'brands:index' : `brands:index:${usuario}`;
 
@@ -57,8 +57,8 @@ export default async function handler(req, res) {
       const nombre = (req.query.nombre || '').trim();
       if (!nombre) return res.status(400).json({ error: 'Falta el nombre de la marca' });
       await pipeline([
-        ['DEL', `brand:${usuario}:${nombre}`],
-        ['SREM', `brands:index:${usuario}`, nombre]
+        ['DEL', brandKey(nombre)],
+        ['SREM', indexKey, nombre]
       ]);
       return res.status(200).json({ ok: true });
     }
