@@ -224,9 +224,9 @@ input[type="file"]{display:none;}
 <button class="btn-ghost" id="btn-edit-brand">Editar datos de marca</button>
 <button class="btn-ghost" id="btn-del-brand-home" style="color:#f85149">Eliminar marca</button>
 </div>
-<div class="hint" style="margin-top:16px;margin-bottom:8px">Ir directo a una proyección ya generada:</div>
+<div class="hint" style="margin-top:16px;margin-bottom:8px">Ir directo a la proyección de un mes (tenga o no calendario generado):</div>
 <div class="brand-select-wrap">
-<select id="proy-direct-month" disabled><option value="">— Elegí una marca —</option></select>
+<input type="month" id="proy-direct-month" />
 <button class="btn-accent" id="proy-direct-btn">📊 Ir a Proyección →</button>
 </div>
 </div>
@@ -368,7 +368,10 @@ input[type="file"]{display:none;}
 <div class="card">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
 <div class="ct" style="margin-bottom:0">Proyección final del mes</div>
+<div style="display:flex;gap:8px">
 <button class="btn-ghost" id="btn-back-cal">← Volver al calendario</button>
+<button class="btn-ghost" id="btn-new-proy">🏠 Volver al inicio</button>
+</div>
 </div>
 <div id="proy-ref-wrap"></div>
 
@@ -882,19 +885,12 @@ window.scrollTo(0,0);
 document.getElementById('btn-goto-plan').addEventListener('click',showPlanScreen);
 document.getElementById('btn-change-brand').addEventListener('click',()=>showHome());
 
-// ── ACCESO DIRECTO A PROYECCIÓN (meses ya guardados) ────────────────────────────
-async function poblarMesesGuardados(){
-const sel=document.getElementById('proy-direct-month');
-if(!activeBrand){ sel.innerHTML='<option value="">— Elegí una marca —</option>'; sel.disabled=true; return; }
-sel.innerHTML='<option value="">Cargando meses…</option>'; sel.disabled=true;
-try{
-const res=await apiFetch('/api/plans?nombre='+encodeURIComponent(activeBrand.nombre));
-const meses=res.ok?(await res.json()).months||[]:[];
-if(!meses.length){ sel.innerHTML='<option value="">Sin meses guardados para esta marca</option>'; sel.disabled=true; return; }
-sel.innerHTML=meses.map(m=>`<option value="${m}">${m}</option>`).join('');
-sel.disabled=false;
-}catch(e){
-sel.innerHTML='<option value="">Sin meses guardados para esta marca</option>'; sel.disabled=true;
+// ── ACCESO DIRECTO A PROYECCIÓN (con o sin calendario generado) ────────────────
+function poblarMesesGuardados(){
+const input=document.getElementById('proy-direct-month');
+if(!input.value){
+const now=new Date();
+input.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 }
 }
 
@@ -904,28 +900,35 @@ const orig=btn.textContent;
 btn.textContent='Cargando…';btn.disabled=true;
 try{
 const planRes=await apiFetch(`/api/plans?nombre=${encodeURIComponent(nombre)}&month=${month}`);
-if(!planRes.ok){ alert('No se pudo cargar ese calendario guardado.'); btn.textContent=orig;btn.disabled=false; return; }
+if(planRes.ok){
 const plan=await planRes.json();
-document.getElementById('mes').value=month;
 document.getElementById('notas-mes').value=plan.notas||'';
 loadAccionesCat(plan.accionesCat||{});
 calRows=plan.filas||[];
 renderCalTable(calRows);
 if(plan.analisis){ document.getElementById('analisis-box').textContent=plan.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
+}else{
+document.getElementById('notas-mes').value='';
+CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
+calRows=[];
+renderCalTable(calRows);
+hide('analisis-box');
+}
+document.getElementById('mes').value=month;
 proyMarca=nombre;proyMes=month;
 ['homeScreen','brandFormScreen','paso1','resultado1'].forEach(hide);
 show('proyPage');
 loadProyeccion();
 window.scrollTo(0,0);
 }catch(e){
-alert('No se pudo cargar ese calendario guardado.');
+alert('No se pudo acceder a la proyección de ese mes.');
 }
 btn.textContent=orig;btn.disabled=false;
 }
 document.getElementById('proy-direct-btn').addEventListener('click',()=>{
 const month=document.getElementById('proy-direct-month').value;
 if(!activeBrand){ alert('Seleccioná una marca primero.'); return; }
-if(!month){ alert('Seleccioná un mes guardado.'); return; }
+if(!month){ alert('Elegí un mes.'); return; }
 cargarPlanDirecto(activeBrand.nombre,month);
 });
 
@@ -1412,6 +1415,7 @@ showHome();
 }
 document.getElementById('btn-new-cal').addEventListener('click',volverAlInicio);
 document.getElementById('btn-new-dist').addEventListener('click',volverAlInicio);
+document.getElementById('btn-new-proy').addEventListener('click',volverAlInicio);
 
 document.getElementById('btn-goto-proy').addEventListener('click',()=>{
 hide('resultado1');show('proyPage');
