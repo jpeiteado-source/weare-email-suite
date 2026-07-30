@@ -23,6 +23,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--db);color:var(--dt);min-h
 .logo{background:var(--or);color:#fff;font-size:10px;font-weight:500;padding:4px 8px;border-radius:4px;letter-spacing:0.06em;}
 .pipe{width:1px;height:14px;background:var(--dbrd2);}
 .tool{font-size:13px;color:var(--dt2);}
+.hdr-right{display:flex;align-items:center;gap:12px;}
+.hdr-user{font-size:12px;color:var(--dt2);}
 .main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 4rem;}
 .card{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:1rem;}
 .ct{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.1em;color:var(--dt3);margin-bottom:1rem;}
@@ -31,7 +33,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--db);color:var(--dt);min-h
 .f label{font-size:12px;color:var(--dt2);display:block;margin-bottom:4px;}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-input[type="text"],input[type="month"],input[type="date"],input[type="number"],textarea,select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box;}
+input[type="text"],input[type="password"],input[type="month"],input[type="date"],input[type="number"],textarea,select{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;transition:border-color 0.15s,box-shadow 0.15s;box-sizing:border-box;}
 input:hover,textarea:hover,select:hover{border-color:var(--dbrd2);}
 input:focus,textarea:focus,select:focus{border-color:var(--or);box-shadow:0 0 0 3px var(--org);}
 input[type="date"]{color-scheme:dark;}
@@ -132,13 +134,6 @@ input[type="file"]{display:none;}
 .brand-select-wrap{display:flex;gap:8px;align-items:center;}
 .brand-select-wrap select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;}
 .brand-select-wrap select:focus{border-color:var(--or);}
-.brand-actions{display:flex;gap:6px;margin-top:10px;}
-.brand-chip{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt2);cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
-.brand-chip:hover{border-color:var(--dbrd2);color:var(--dt);background:var(--ds2);}
-.brand-chip.save{background:var(--org);border-color:var(--orb);color:var(--or2);}
-.brand-chip.save:hover{background:var(--orb);}
-.brand-chip.del{color:#f85149;border-color:rgba(248,81,73,0.3);}
-.brand-chip.del:hover{background:rgba(248,81,73,0.1);}
 .hidden{display:none!important;}
 .acc-cat-block{margin-bottom:18px;}
 .acc-cat-block:last-child{margin-bottom:0;}
@@ -157,6 +152,26 @@ input[type="file"]{display:none;}
 .fin-vig-lbl{font-size:10px;color:var(--dt3);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.06em;}
 .fin-dates{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .fin-dates input{font-size:12px;padding:7px 9px;}
+.auth-card{max-width:380px;margin:3rem auto 0;}
+.brand-card{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border:1px solid var(--dbrd);border-radius:8px;margin-bottom:8px;cursor:pointer;background:var(--ds2);transition:all 0.15s;}
+.brand-card:hover{border-color:var(--dbrd2);}
+.brand-card.sel{border-color:var(--or);background:var(--org);}
+.brand-card .bn{font-size:14px;font-weight:500;color:var(--dt);}
+.brand-card .bmeta{font-size:11px;color:var(--dt3);margin-top:2px;}
+.brand-card .arrow{color:var(--dt3);font-size:16px;}
+.acc-item{border:1px solid var(--dbrd);border-radius:8px;margin-bottom:8px;overflow:hidden;}
+.acc-item:last-child{margin-bottom:0;}
+.acc-header{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--ds2);border:none;color:var(--dt);font-family:inherit;font-size:13px;font-weight:500;text-align:left;}
+.acc-header:hover{background:var(--dbrd);}
+.acc-card-header{width:100%;display:flex;align-items:center;justify-content:space-between;background:transparent;border:none;padding:0;font-family:inherit;text-align:left;}
+.acc-toggle{cursor:pointer;}
+.acc-header-flex{display:flex;align-items:center;}
+.acc-count{font-size:11px;color:var(--dt3);font-weight:400;margin-left:6px;}
+.acc-caret{font-size:10px;color:var(--dt3);transition:transform 0.2s;flex-shrink:0;margin-left:10px;}
+.acc-toggle.open .acc-caret{transform:rotate(180deg);}
+.acc-panel{display:none;}
+.acc-panel.open{display:block;}
+.acc-panel-inner{padding:14px;}
 </style>
 </head>
 <body>
@@ -166,50 +181,72 @@ input[type="file"]{display:none;}
 <div class="pipe"></div>
 <span class="tool">Email Marketing Suite</span>
 </div>
+<div class="hdr-right hidden" id="hdr-user-wrap">
+<span class="hdr-user" id="hdr-username"></span>
+<button class="btn-ghost" id="btn-logout">Salir</button>
+</div>
 </header>
 <main class="main">
-<!-- PASO 1: FORM -->
-<div id="paso1">
-<!-- SELECTOR DE MARCA GUARDADA -->
-<div class="card">
-<div class="ct">Perfiles de marca guardados</div>
-<div class="brand-select-wrap">
-<select id="brand-select">
-<option value="">— Seleccioná una marca —</option>
-</select>
-<button class="brand-chip" id="brand-load-btn">Cargar</button>
+
+<!-- AUTH -->
+<div id="authScreen">
+<div class="card auth-card">
+<div class="ct" id="auth-title">Iniciar sesión</div>
+<div class="f"><label>Usuario</label><input type="text" id="auth-username" placeholder="tu nombre o usuario" autocomplete="username" /></div>
+<div class="f"><label>Contraseña</label><input type="password" id="auth-password" placeholder="••••••" autocomplete="current-password" /></div>
+<div class="err hidden" id="auth-error" style="margin-bottom:0.8rem"></div>
+<button class="btn-or" id="auth-submit-btn">Entrar</button>
+<div class="hint" style="margin-top:14px;text-align:center"><span id="auth-toggle-txt">¿No tenés cuenta?</span> <a href="#" id="auth-toggle-link" style="color:var(--or)">Crear una</a></div>
 </div>
-<div class="brand-actions">
-<button class="brand-chip save" id="brand-save-btn">Guardar perfil actual</button>
-<button class="brand-chip del" id="brand-del-btn">Eliminar seleccionada</button>
-</div>
-<div class="hint" style="margin-top:8px">Los perfiles y los calendarios generados quedan guardados en el servidor, disponibles desde cualquier dispositivo.</div>
 </div>
 
+<!-- HOME / SELECCIÓN DE MARCA -->
+<div id="homeScreen" class="hidden">
 <div class="card">
-<div class="ct">Ir directo a Proyección</div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+<div class="ct" style="margin-bottom:0">Tus marcas</div>
+<button class="btn-accent" id="btn-open-add-brand">+ Agregar marca</button>
+</div>
+<div id="brand-list"></div>
+<div class="hint hidden" id="brand-list-empty">Todavía no tenés marcas cargadas. Empezá agregando una con el botón de arriba.</div>
+</div>
+
+<div class="card hidden" id="legacy-card">
+<div class="ct">Marcas existentes sin asignar</div>
+<div class="hint" style="margin-bottom:10px">Se cargaron antes de que existieran usuarios. Copiá las que uses vos a tu cuenta — no se borran del listado general.</div>
+<div id="legacy-brand-list"></div>
+</div>
+
+<div class="card hidden" id="brand-actions-card">
+<div class="ct">Marca seleccionada: <span id="brand-actions-name" style="color:var(--dt);text-transform:none;letter-spacing:0;font-weight:500"></span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+<button class="btn-or" id="btn-goto-plan" style="width:auto;padding:10px 18px">Generar calendario →</button>
+<button class="btn-ghost" id="btn-edit-brand">Editar datos de marca</button>
+<button class="btn-ghost" id="btn-del-brand-home" style="color:#f85149">Eliminar marca</button>
+</div>
+<div class="hint" style="margin-top:16px;margin-bottom:8px">Ir directo a una proyección ya generada:</div>
 <div class="brand-select-wrap">
-<select id="proy-direct-month" disabled>
-<option value="">— Elegí una marca arriba —</option>
-</select>
+<select id="proy-direct-month" disabled><option value="">— Elegí una marca —</option></select>
 <button class="btn-accent" id="proy-direct-btn">📊 Ir a Proyección →</button>
 </div>
-<div class="hint" style="margin-top:8px">Salteá el formulario y anda directo a cargar la proyección de un mes que ya generaste (usando la marca seleccionada arriba).</div>
+</div>
 </div>
 
+<!-- AGREGAR / EDITAR MARCA -->
+<div id="brandFormScreen" class="hidden">
 <div class="card">
-<div class="ct">Datos de la marca</div>
-<div class="g2">
-<div class="f"><label>Nombre de la marca</label><input type="text" id="marca" placeholder="ej. SELÚ, Nike AR…" /></div>
-<div class="f"><label>Mes a planificar</label><input type="month" id="mes" /></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+<div class="ct" style="margin-bottom:0" id="brand-form-title">Agregar marca</div>
+<button class="btn-ghost" id="btn-cancel-brand-form">← Volver</button>
 </div>
 <div class="g2">
-<div class="f"><label>Industria <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><input type="text" id="industria" placeholder="ej. Retail, Moda…" /></div>
-<div class="f"><label>Buyer persona <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><input type="text" id="buyer" placeholder="Edad, intereses, qué los motiva a abrir un email…" /></div>
+<div class="f"><label>Nombre de la marca</label><input type="text" id="bf-nombre" placeholder="ej. SELÚ, Nike AR…" /></div>
+<div class="f"><label>Industria <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><input type="text" id="bf-industria" placeholder="ej. Retail, Moda…" /></div>
 </div>
+<div class="f"><label>Buyer persona <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><input type="text" id="bf-buyer" placeholder="Edad, intereses, qué los motiva a abrir un email…" /></div>
 <div class="f">
 <label>Canales activos</label>
-<div class="canal-grid">
+<div class="canal-grid" id="bf-canales">
 <button class="canal-toggle on" data-canal="Newsletter">Newsletter</button>
 <button class="canal-toggle" data-canal="Notificación Push">Notificación Push</button>
 <button class="canal-toggle" data-canal="WhatsApp">WhatsApp</button>
@@ -221,47 +258,86 @@ input[type="file"]{display:none;}
 <div class="ct">Tono de voz de la marca</div>
 <div class="f">
 <label>Descripción del tono</label>
-<textarea id="tono-desc" style="min-height:68px" placeholder="Ej: Marca de ropa juvenil, lenguaje informal y cercano, tuteo, emojis frecuentes, referencias a tendencias. Nada de español neutro ni formalidades."></textarea>
+<textarea id="bf-tono-desc" style="min-height:68px" placeholder="Ej: Marca de ropa juvenil, lenguaje informal y cercano, tuteo, emojis frecuentes, referencias a tendencias. Nada de español neutro ni formalidades."></textarea>
 </div>
 <div class="f">
 <label>Ejemplos de comunicaciones previas <span style="color:var(--dt3);font-size:11px">(opcional pero muy recomendado)</span></label>
-<textarea id="tono-ejemplos" style="min-height:80px" placeholder="Pegá asuntos o mensajes que representen bien cómo habla la marca.&#10;Ej:&#10;¡Llegó lo nuevo! MIRÁ la colección 🔥&#10;Últimas horas para aprovechar tu 20% OFF ⏰"></textarea>
+<textarea id="bf-tono-ejemplos" style="min-height:80px" placeholder="Pegá asuntos o mensajes que representen bien cómo habla la marca.&#10;Ej:&#10;¡Llegó lo nuevo! MIRÁ la colección 🔥&#10;Últimas horas para aprovechar tu 20% OFF ⏰"></textarea>
 </div>
+</div>
+
+<div class="err hidden" id="brand-form-error" style="margin-bottom:1rem"></div>
+<button class="btn-or" id="btn-save-brand-form">Guardar marca</button>
+</div>
+
+<!-- PASO 1: FORM -->
+<div id="paso1" class="hidden">
+<div class="card" style="display:flex;align-items:center;justify-content:space-between">
+<div><div class="hint" style="margin-bottom:2px">Marca activa</div><div style="font-size:15px;font-weight:500" id="plan-brand-name">—</div></div>
+<button class="btn-ghost" id="btn-change-brand">Cambiar marca</button>
+</div>
+
+<div class="card">
+<div class="ct">Mes a planificar</div>
+<div class="f" style="max-width:220px"><input type="month" id="mes" /></div>
 </div>
 
 <div class="card">
 <div class="ct">Acciones comerciales del mes</div>
 <div class="hint" style="margin-bottom:14px">Cargá las acciones del mes organizadas por categoría. La fecha de fin es opcional — dejala vacía si la acción es de un solo día.</div>
 
-<div class="acc-cat-block">
-<div class="acc-cat-title">Comunicación AO</div>
+<div class="acc-item">
+<button class="acc-header acc-toggle" data-target="acc-panel-comunicacionAO"><span class="acc-header-flex">Comunicación AO<span class="acc-count" id="acc-count-comunicacionAO"></span></span><span class="acc-caret">▾</span></button>
+<div class="acc-panel" id="acc-panel-comunicacionAO">
+<div class="acc-panel-inner">
 <div id="acc-comunicacionAO-list"></div>
 <button class="add-lnk" data-cat="comunicacionAO">+ Agregar comunicación AO</button>
 </div>
+</div>
+</div>
 
-<div class="acc-cat-block">
-<div class="acc-cat-title">Acción Comercial</div>
+<div class="acc-item">
+<button class="acc-header acc-toggle" data-target="acc-panel-accionComercial"><span class="acc-header-flex">Acción Comercial<span class="acc-count" id="acc-count-accionComercial"></span></span><span class="acc-caret">▾</span></button>
+<div class="acc-panel" id="acc-panel-accionComercial">
+<div class="acc-panel-inner">
 <div id="acc-accionComercial-list"></div>
 <button class="add-lnk" data-cat="accionComercial">+ Agregar acción comercial</button>
 </div>
+</div>
+</div>
 
-<div class="acc-cat-block">
-<div class="acc-cat-title">Financiación</div>
+<div class="acc-item">
+<button class="acc-header acc-toggle" data-target="acc-panel-financiacion"><span class="acc-header-flex">Financiación<span class="acc-count" id="acc-count-financiacion"></span></span><span class="acc-caret">▾</span></button>
+<div class="acc-panel" id="acc-panel-financiacion">
+<div class="acc-panel-inner">
 <div id="acc-financiacion-list"></div>
 <button class="add-lnk" data-cat="financiacion">+ Agregar financiación</button>
 </div>
+</div>
+</div>
 
-<div class="acc-cat-block">
-<div class="acc-cat-title">Microevento</div>
+<div class="acc-item">
+<button class="acc-header acc-toggle" data-target="acc-panel-microevento"><span class="acc-header-flex">Microevento<span class="acc-count" id="acc-count-microevento"></span></span><span class="acc-caret">▾</span></button>
+<div class="acc-panel" id="acc-panel-microevento">
+<div class="acc-panel-inner">
 <div id="acc-microevento-list"></div>
 <button class="add-lnk" data-cat="microevento">+ Agregar microevento</button>
 </div>
 </div>
+</div>
+</div>
 
 <div class="card">
-<div class="ct">Notas y consideraciones del mes <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+<button class="acc-card-header acc-toggle" data-target="acc-panel-notas">
+<span class="ct" style="margin-bottom:0">Notas y consideraciones del mes <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></span>
+<span class="acc-caret">▾</span>
+</button>
+<div class="acc-panel" id="acc-panel-notas">
+<div class="acc-panel-inner" style="padding:12px 0 0">
 <textarea id="notas-mes" style="min-height:80px" placeholder="Ej: Este mes vamos a hacer 2 envíos a base inactiva. Hay un lanzamiento de colección la primera semana. Evitar comunicar los fines de semana."></textarea>
 <div class="hint">La IA va a tener en cuenta estas indicaciones al armar el calendario.</div>
+</div>
+</div>
 </div>
 
 <button class="btn-or" id="btn-cal">Generar calendario →</button>
@@ -346,22 +422,26 @@ let calRows=[];
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
-// Forzar estado inicial correcto
-hide('resultado1');hide('proyPage');hide('distPage');
+['resultado1','proyPage','distPage'].forEach(hide);
 
-// Canales
+// Toggles genéricos de canal (se usan en el form de marca)
 document.querySelectorAll('.canal-toggle').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
-function canalesActivos(){return [...document.querySelectorAll('.canal-toggle.on')].map(b=>b.dataset.canal);}
-function setCanalesActivos(list){
-document.querySelectorAll('.canal-toggle').forEach(b=>{
+function canalesFrom(containerId){return [...document.querySelectorAll('#'+containerId+' .canal-toggle.on')].map(b=>b.dataset.canal);}
+function setCanalesIn(containerId,list){
+document.querySelectorAll('#'+containerId+' .canal-toggle').forEach(b=>{
 if(list && list.includes(b.dataset.canal)) b.classList.add('on');
 else b.classList.remove('on');
 });
 }
 
-// Mes default
-const now=new Date();
-document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+// Acordeones (secciones desplegables)
+document.querySelectorAll('.acc-toggle').forEach(btn=>{
+btn.addEventListener('click',()=>{
+const panel=document.getElementById(btn.dataset.target);
+const open=btn.classList.toggle('open');
+if(panel) panel.classList.toggle('open',open);
+});
+});
 
 // ── ACCIONES COMERCIALES POR CATEGORÍA ─────────────────────────────────────────
 const CATS=[
@@ -376,6 +456,11 @@ let aidCat=0;
 function renderAccCat(key){
 const list=document.getElementById(`acc-${key}-list`);
 if(!list) return;
+const countEl=document.getElementById(`acc-count-${key}`);
+if(countEl){
+const n=accionesCat[key].filter(a=>a.nombre&&a.nombre.trim()).length;
+countEl.textContent = n? ` (${n})` : '';
+}
 list.innerHTML='';
 if(key==='financiacion'){ renderFinanciacionList(list); return; }
 accionesCat[key].forEach(a=>{
@@ -544,65 +629,242 @@ renderAccCat(c.key);
 });
 }
 
-// ── PERFILES DE MARCA (backend) ──────────────────────────────────────────────
-async function fetchBrands(){
+// ── SESIÓN / AUTENTICACIÓN ──────────────────────────────────────────────────────
+const AUTH_KEY='weare_token', USER_KEY='weare_username';
+let authToken=localStorage.getItem(AUTH_KEY)||'';
+let currentUsername=localStorage.getItem(USER_KEY)||'';
+
+async function apiFetch(url,opts){
+opts=Object.assign({},opts||{});
+opts.headers=Object.assign({},opts.headers||{},authToken?{Authorization:'Bearer '+authToken}:{});
+const res=await fetch(url,opts);
+if(res.status===401){
+doLogout(true);
+throw new Error('Tu sesión expiró. Iniciá sesión de nuevo.');
+}
+return res;
+}
+
+async function doLogout(silent){
+if(!silent && !confirm('¿Cerrar sesión?')) return;
 try{
-const res=await fetch('/api/brands');
-if(!res.ok) return [];
-const data=await res.json();
-return data.brands||[];
-}catch(e){ return []; }
-}
-async function saveBrandProfile(profile){
-const res=await fetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(profile)});
-if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al guardar la marca'); }
-return res.json();
-}
-async function deleteBrandProfile(nombre){
-const res=await fetch('/api/brands?nombre='+encodeURIComponent(nombre),{method:'DELETE'});
-if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al eliminar la marca'); }
-}
-async function renderBrandSelect(){
-const sel=document.getElementById('brand-select');
-const current=sel.value;
-const brands=await fetchBrands();
-sel.innerHTML='<option value="">— Seleccioná una marca —</option>';
-brands.map(b=>b.nombre).sort().forEach(name=>{
-const opt=document.createElement('option');
-opt.value=name; opt.textContent=name;
-if(name===current) opt.selected=true;
-sel.appendChild(opt);
-});
-return brands;
-}
-async function loadBrandProfile(name){
-try{
-const res=await fetch('/api/brands?nombre='+encodeURIComponent(name));
-if(!res.ok) return;
-const b=await res.json();
-document.getElementById('marca').value=b.nombre||'';
-document.getElementById('tono-desc').value=b.tonoDesc||'';
-document.getElementById('tono-ejemplos').value=b.tonoEj||'';
-document.getElementById('industria').value=b.industria||'';
-document.getElementById('buyer').value=b.buyer||'';
-if(b.canalesActivos) setCanalesActivos(b.canalesActivos);
+if(authToken) await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+authToken},body:JSON.stringify({action:'logout'})});
 }catch(e){}
+authToken='';currentUsername='';activeBrand=null;
+localStorage.removeItem(AUTH_KEY);localStorage.removeItem(USER_KEY);
+hide('hdr-user-wrap');
+['homeScreen','brandFormScreen','paso1','resultado1','proyPage','distPage'].forEach(hide);
+show('authScreen');
 }
-document.getElementById('brand-load-btn').addEventListener('click',async()=>{
-const name=document.getElementById('brand-select').value;
-if(!name){ alert('Seleccioná una marca primero.'); return; }
-await loadBrandProfile(name);
-await poblarMesesGuardados();
+document.getElementById('btn-logout').addEventListener('click',()=>doLogout(false));
+
+let authMode='login';
+function updateAuthUI(){
+document.getElementById('auth-title').textContent = authMode==='login' ? 'Iniciar sesión' : 'Crear cuenta';
+document.getElementById('auth-submit-btn').textContent = authMode==='login' ? 'Entrar' : 'Crear cuenta';
+document.getElementById('auth-toggle-txt').textContent = authMode==='login' ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?';
+document.getElementById('auth-toggle-link').textContent = authMode==='login' ? 'Crear una' : 'Iniciar sesión';
+hide('auth-error');
+}
+document.getElementById('auth-toggle-link').addEventListener('click',(e)=>{
+e.preventDefault();
+authMode = authMode==='login'?'register':'login';
+updateAuthUI();
 });
+
+document.getElementById('auth-submit-btn').addEventListener('click',async()=>{
+const username=document.getElementById('auth-username').value.trim();
+const password=document.getElementById('auth-password').value;
+const errEl=document.getElementById('auth-error');
+hide('auth-error');
+if(!username||!password){ errEl.textContent='Completá usuario y contraseña.'; show('auth-error'); return; }
+const btn=document.getElementById('auth-submit-btn');
+const orig=btn.textContent; btn.textContent='Un momento…'; btn.disabled=true;
+try{
+const res=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:authMode,username,password})});
+const data=await res.json();
+if(!res.ok) throw new Error(data.error||'Error al autenticar');
+authToken=data.token; currentUsername=data.username;
+localStorage.setItem(AUTH_KEY,authToken); localStorage.setItem(USER_KEY,currentUsername);
+document.getElementById('auth-password').value='';
+await afterLogin();
+}catch(e){
+errEl.textContent=e.message; show('auth-error');
+}
+btn.textContent=orig; btn.disabled=false;
+});
+
+async function afterLogin(){
+document.getElementById('hdr-username').textContent=currentUsername;
+show('hdr-user-wrap');
+hide('authScreen');
+await showHome();
+}
+
+// ── HOME / SELECCIÓN DE MARCA ────────────────────────────────────────────────────
+let brandsCache=[];
+let activeBrand=null;
+
+async function showHome(){
+['authScreen','brandFormScreen','paso1','resultado1','proyPage','distPage'].forEach(hide);
+show('homeScreen');
+hide('brand-actions-card');
+activeBrand=null;
+await loadBrandList();
+await loadLegacyBrands();
+window.scrollTo(0,0);
+}
+
+async function loadBrandList(){
+const wrap=document.getElementById('brand-list');
+wrap.innerHTML='<div class="hint">Cargando…</div>';
+try{
+const res=await apiFetch('/api/brands');
+const data=res.ok?await res.json():{brands:[]};
+brandsCache=(data.brands||[]).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre));
+if(!brandsCache.length){
+wrap.innerHTML='';
+show('brand-list-empty');
+return;
+}
+hide('brand-list-empty');
+wrap.innerHTML=brandsCache.map(b=>`<div class="brand-card" data-nombre="${esc(b.nombre)}"><div><div class="bn">${esc(b.nombre)}</div><div class="bmeta">${esc(b.industria||'Sin industria definida')}</div></div><span class="arrow">→</span></div>`).join('');
+wrap.querySelectorAll('.brand-card').forEach(card=>card.addEventListener('click',()=>selectBrand(card.dataset.nombre)));
+}catch(e){ wrap.innerHTML='<div class="err">No se pudieron cargar las marcas.</div>'; }
+}
+
+async function selectBrand(nombre){
+document.querySelectorAll('#brand-list .brand-card').forEach(c=>c.classList.toggle('sel',c.dataset.nombre===nombre));
+const b=brandsCache.find(x=>x.nombre===nombre);
+if(!b) return;
+activeBrand=b;
+document.getElementById('brand-actions-name').textContent=b.nombre;
+show('brand-actions-card');
+await poblarMesesGuardados();
+document.getElementById('brand-actions-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function loadLegacyBrands(){
+const wrap=document.getElementById('legacy-brand-list');
+try{
+const res=await apiFetch('/api/brands?scope=legacy');
+if(!res.ok){ hide('legacy-card'); return; }
+const data=await res.json();
+const legacy=(data.brands||[]).filter(b=>!brandsCache.some(x=>x.nombre===b.nombre));
+if(!legacy.length){ hide('legacy-card'); return; }
+show('legacy-card');
+wrap.innerHTML=legacy.map(b=>`<div class="brand-card" data-nombre="${esc(b.nombre)}" style="cursor:default"><div><div class="bn">${esc(b.nombre)}</div><div class="bmeta">Marca antigua sin dueño asignado</div></div><button class="btn-accent" data-copy="${esc(b.nombre)}">Copiar a mi cuenta</button></div>`).join('');
+wrap.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',async()=>{
+const nombre=btn.dataset.copy;
+const legacyBrand=legacy.find(b=>b.nombre===nombre);
+if(!legacyBrand) return;
+btn.textContent='Copiando…'; btn.disabled=true;
+try{
+const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(legacyBrand)});
+if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al copiar'); }
+await loadBrandList();
+await loadLegacyBrands();
+}catch(err){ alert('No se pudo copiar: '+err.message); btn.textContent='Copiar a mi cuenta'; btn.disabled=false; }
+}));
+}catch(e){ hide('legacy-card'); }
+}
+
+document.getElementById('btn-del-brand-home').addEventListener('click',async()=>{
+if(!activeBrand) return;
+if(!confirm(`¿Eliminar el perfil de "${activeBrand.nombre}"? Esto no borra los calendarios ya generados.`)) return;
+try{
+await apiFetch('/api/brands?nombre='+encodeURIComponent(activeBrand.nombre),{method:'DELETE'});
+activeBrand=null;
+await showHome();
+}catch(e){ alert('No se pudo eliminar: '+e.message); }
+});
+
+// ── AGREGAR / EDITAR MARCA ───────────────────────────────────────────────────────
+let brandFormMode='create';
+
+function openBrandForm(mode){
+hide('homeScreen');show('brandFormScreen');
+hide('brand-form-error');
+document.getElementById('brand-form-title').textContent = mode==='edit' ? 'Editar marca' : 'Agregar marca';
+const nombreInput=document.getElementById('bf-nombre');
+if(mode==='edit' && activeBrand){
+nombreInput.value=activeBrand.nombre; nombreInput.readOnly=true; nombreInput.style.opacity='0.6';
+document.getElementById('bf-industria').value=activeBrand.industria||'';
+document.getElementById('bf-buyer').value=activeBrand.buyer||'';
+document.getElementById('bf-tono-desc').value=activeBrand.tonoDesc||'';
+document.getElementById('bf-tono-ejemplos').value=activeBrand.tonoEj||'';
+setCanalesIn('bf-canales',activeBrand.canalesActivos||['Newsletter']);
+}else{
+nombreInput.value=''; nombreInput.readOnly=false; nombreInput.style.opacity='1';
+document.getElementById('bf-industria').value='';
+document.getElementById('bf-buyer').value='';
+document.getElementById('bf-tono-desc').value='';
+document.getElementById('bf-tono-ejemplos').value='';
+setCanalesIn('bf-canales',['Newsletter']);
+}
+brandFormMode=mode;
+window.scrollTo(0,0);
+}
+document.getElementById('btn-open-add-brand').addEventListener('click',()=>openBrandForm('create'));
+document.getElementById('btn-edit-brand').addEventListener('click',()=>openBrandForm('edit'));
+document.getElementById('btn-cancel-brand-form').addEventListener('click',()=>showHome());
+
+document.getElementById('btn-save-brand-form').addEventListener('click',async()=>{
+const nombre=document.getElementById('bf-nombre').value.trim();
+const errEl=document.getElementById('brand-form-error');
+hide('brand-form-error');
+if(!nombre){ errEl.textContent='Completá el nombre de la marca.'; show('brand-form-error'); return; }
+const tonoDesc=document.getElementById('bf-tono-desc').value.trim();
+if(!tonoDesc){ errEl.textContent='Describí el tono de voz de la marca.'; show('brand-form-error'); return; }
+const canales=canalesFrom('bf-canales');
+if(!canales.length){ errEl.textContent='Seleccioná al menos un canal activo.'; show('brand-form-error'); return; }
+const btn=document.getElementById('btn-save-brand-form');
+const orig=btn.textContent; btn.textContent='Guardando…'; btn.disabled=true;
+try{
+const profile={
+nombre,
+industria: document.getElementById('bf-industria').value.trim(),
+buyer: document.getElementById('bf-buyer').value.trim(),
+tonoDesc,
+tonoEj: document.getElementById('bf-tono-ejemplos').value.trim(),
+canalesActivos: canales
+};
+const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(profile)});
+if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al guardar la marca'); }
+const saved=await res.json();
+await loadBrandList();
+await selectBrand(saved.nombre);
+show('homeScreen');hide('brandFormScreen');
+window.scrollTo(0,0);
+}catch(e){ errEl.textContent=e.message; show('brand-form-error'); btn.textContent=orig; btn.disabled=false; return; }
+btn.textContent=orig; btn.disabled=false;
+});
+
+// ── PANTALLA DE PLANIFICACIÓN ────────────────────────────────────────────────────
+function showPlanScreen(){
+if(!activeBrand) return;
+['homeScreen','brandFormScreen','resultado1','proyPage','distPage'].forEach(hide);
+document.getElementById('plan-brand-name').textContent=activeBrand.nombre;
+const now=new Date();
+document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+document.getElementById('notas-mes').value='';
+CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
+calRows=[];
+document.getElementById('cal-wrap').innerHTML='';
+hide('analisis-box');hide('save-indicator');
+show('paso1');
+window.scrollTo(0,0);
+}
+document.getElementById('btn-goto-plan').addEventListener('click',showPlanScreen);
+document.getElementById('btn-change-brand').addEventListener('click',()=>showHome());
 
 // ── ACCESO DIRECTO A PROYECCIÓN (meses ya guardados) ────────────────────────────
 async function poblarMesesGuardados(){
 const sel=document.getElementById('proy-direct-month');
-const nombre=document.getElementById('brand-select').value;
-if(!nombre){ sel.innerHTML='<option value="">— Elegí una marca arriba —</option>'; sel.disabled=true; return; }
+if(!activeBrand){ sel.innerHTML='<option value="">— Elegí una marca —</option>'; sel.disabled=true; return; }
 sel.innerHTML='<option value="">Cargando meses…</option>'; sel.disabled=true;
 try{
-const res=await fetch('/api/plans?nombre='+encodeURIComponent(nombre));
+const res=await apiFetch('/api/plans?nombre='+encodeURIComponent(activeBrand.nombre));
 const meses=res.ok?(await res.json()).months||[]:[];
 if(!meses.length){ sel.innerHTML='<option value="">Sin meses guardados para esta marca</option>'; sel.disabled=true; return; }
 sel.innerHTML=meses.map(m=>`<option value="${m}">${m}</option>`).join('');
@@ -611,30 +873,24 @@ sel.disabled=false;
 sel.innerHTML='<option value="">Sin meses guardados para esta marca</option>'; sel.disabled=true;
 }
 }
-document.getElementById('brand-select').addEventListener('change',poblarMesesGuardados);
 
 async function cargarPlanDirecto(nombre,month){
 const btn=document.getElementById('proy-direct-btn');
 const orig=btn.textContent;
 btn.textContent='Cargando…';btn.disabled=true;
 try{
-const [planRes,brandRes]=await Promise.all([
-fetch(`/api/plans?nombre=${encodeURIComponent(nombre)}&month=${month}`),
-fetch(`/api/brands?nombre=${encodeURIComponent(nombre)}`)
-]);
+const planRes=await apiFetch(`/api/plans?nombre=${encodeURIComponent(nombre)}&month=${month}`);
 if(!planRes.ok){ alert('No se pudo cargar ese calendario guardado.'); btn.textContent=orig;btn.disabled=false; return; }
 const plan=await planRes.json();
-if(brandRes.ok) await loadBrandProfile(nombre);
-document.getElementById('marca').value=nombre;
 document.getElementById('mes').value=month;
 document.getElementById('notas-mes').value=plan.notas||'';
-if(plan.canales&&plan.canales.length) setCanalesActivos(plan.canales);
 loadAccionesCat(plan.accionesCat||{});
 calRows=plan.filas||[];
 renderCalTable(calRows);
 if(plan.analisis){ document.getElementById('analisis-box').textContent=plan.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
 proyMarca=nombre;proyMes=month;
-hide('paso1');hide('resultado1');show('proyPage');
+['homeScreen','brandFormScreen','paso1','resultado1'].forEach(hide);
+show('proyPage');
 loadProyeccion();
 window.scrollTo(0,0);
 }catch(e){
@@ -643,71 +899,11 @@ alert('No se pudo cargar ese calendario guardado.');
 btn.textContent=orig;btn.disabled=false;
 }
 document.getElementById('proy-direct-btn').addEventListener('click',()=>{
-const nombre=document.getElementById('brand-select').value;
 const month=document.getElementById('proy-direct-month').value;
-if(!nombre){ alert('Seleccioná una marca primero.'); return; }
+if(!activeBrand){ alert('Seleccioná una marca primero.'); return; }
 if(!month){ alert('Seleccioná un mes guardado.'); return; }
-cargarPlanDirecto(nombre,month);
+cargarPlanDirecto(activeBrand.nombre,month);
 });
-document.getElementById('brand-save-btn').addEventListener('click',async()=>{
-const nombre=document.getElementById('marca').value.trim();
-if(!nombre){ alert('Completá el nombre de la marca antes de guardar.'); return; }
-const btn=document.getElementById('brand-save-btn');
-const orig=btn.textContent;
-try{
-await saveBrandProfile({
-nombre,
-tonoDesc: document.getElementById('tono-desc').value.trim(),
-tonoEj: document.getElementById('tono-ejemplos').value.trim(),
-industria: document.getElementById('industria').value.trim(),
-buyer: document.getElementById('buyer').value.trim(),
-canalesActivos: canalesActivos(),
-});
-await renderBrandSelect();
-document.getElementById('brand-select').value=nombre;
-btn.textContent='¡Guardado!';
-}catch(e){
-alert(e.message);
-btn.textContent=orig;
-return;
-}
-setTimeout(()=>btn.textContent=orig, 1800);
-});
-document.getElementById('brand-del-btn').addEventListener('click',async()=>{
-const name=document.getElementById('brand-select').value;
-if(!name){ alert('Seleccioná una marca para eliminar.'); return; }
-if(!confirm(`¿Eliminar el perfil de "${name}"?`)) return;
-try{ await deleteBrandProfile(name); await renderBrandSelect(); }
-catch(e){ alert(e.message); }
-});
-
-// Migración one-time de perfiles guardados en localStorage (versión anterior sin backend)
-async function migrarBrandsLocalStorage(existentes){
-if(localStorage.getItem('weare_migrated_v2')) return;
-const raw=localStorage.getItem('weare_brand_profiles');
-if(!raw){ localStorage.setItem('weare_migrated_v2','1'); return; }
-try{
-const old=JSON.parse(raw);
-const nombresExistentes=new Set(existentes.map(b=>b.nombre));
-let huboError=false;
-for(const nombre of Object.keys(old)){
-if(nombresExistentes.has(nombre)) continue;
-try{ await saveBrandProfile(old[nombre]); }catch(e){ huboError=true; }
-}
-if(!huboError) localStorage.setItem('weare_migrated_v2','1');
-}catch(e){}
-}
-
-(async()=>{
-let brands=await renderBrandSelect();
-await migrarBrandsLocalStorage(brands);
-brands=await renderBrandSelect();
-if(brands.length===1){
-document.getElementById('brand-select').value=brands[0].nombre;
-await loadBrandProfile(brands[0].nombre);
-}
-await poblarMesesGuardados();
-})();
 
 // ── REGLAS DE COPY COMPARTIDAS (calendario + regenerar fila) ───────────────────
 function buildCopyRules(canales){
@@ -791,9 +987,9 @@ setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('ok');},1800);
 }
 async function regenerarFila(idx){
 const r=calRows[idx];
-const marca=document.getElementById('marca').value.trim();
-const tonoDesc=document.getElementById('tono-desc').value.trim();
-const tonoEj=document.getElementById('tono-ejemplos').value.trim();
+const marca=activeBrand?activeBrand.nombre:'';
+const tonoDesc=activeBrand?activeBrand.tonoDesc||'':'';
+const tonoEj=activeBrand?activeBrand.tonoEj||'':'';
 const btn=document.querySelector(`.regen-btn[data-idx="${idx}"]`);
 if(btn){ btn.textContent='Generando…'; btn.disabled=true; }
 const prompt=`Sos un experto en email marketing y comunicaciones digitales para e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
@@ -810,7 +1006,7 @@ ${buildCopyRules([r.canal])}
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
 ${campoPrincipal(r.canal)}`;
 try{
-const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:600})});
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:600})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
 const data=await res.json();
 const txt=data.content.map(i=>i.text||'').join('');
@@ -843,6 +1039,98 @@ if(!el) return;
 el.classList.remove('hidden');
 setTimeout(()=>el.classList.add('hidden'),2500);
 }
+
+// ── PASO 1: GENERAR CALENDARIO ───────────────────────────────────────────────────
+document.getElementById('btn-cal').addEventListener('click',async()=>{
+if(!activeBrand){ alert('Seleccioná una marca primero.'); showHome(); return; }
+const marca=activeBrand.nombre;
+const mes=document.getElementById('mes').value;
+const industria=activeBrand.industria||'';
+const buyer=activeBrand.buyer||'';
+const tonoDesc=activeBrand.tonoDesc||'';
+const tonoEj=activeBrand.tonoEj||'';
+const notas=document.getElementById('notas-mes').value.trim();
+const canales=activeBrand.canalesActivos||[];
+if(!mes){alert('Seleccioná el mes a planificar.');return;}
+if(!totalAcciones()){alert('Cargá al menos una acción comercial del mes.');return;}
+if(!canales.length){alert('Esta marca no tiene canales activos configurados. Editá la marca antes de continuar.');return;}
+
+hide('paso1');show('resultado1');
+hide('analisis-box');
+document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Armando el calendario…</div></div>`;
+
+const [yr,mo]=mes.split('-');
+const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
+const accionesTexto=buildAccionesTexto();
+
+let historial='';
+try{
+const hres=await apiFetch('/api/plans?nombre='+encodeURIComponent(marca)+'&months=3');
+if(hres.ok){ const hd=await hres.json(); historial=buildHistorialTexto(hd.plans||[]); }
+}catch(e){}
+
+const instrucciones=`Sos un analista de Email Marketing y CRM especializado en e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro sin texto adicional ni markdown.
+
+MARCA: ${marca}
+MES: ${mesNombre}
+CANALES ACTIVOS: ${canales.join(', ')}
+${industria?`INDUSTRIA: ${industria}\n`:''}${buyer?`BUYER PERSONA: ${buyer}\n`:''}
+TONO DE VOZ DE LA MARCA:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
+${historial?`\nHISTORIAL DE MESES ANTERIORES (solo para evitar repetir temas/asuntos idénticos y dar continuidad — NO tomar como acciones del mes actual):\n${historial}\n`:''}
+ACCIONES COMERCIALES DEL MES (cargadas manualmente, organizadas por categoría):
+${accionesTexto}
+
+TAREA: A partir de las acciones comerciales de arriba, generá un calendario de comunicaciones mensual.
+
+CRITERIO EDITORIAL:
+- Acciones de un solo día (sin fecha de fin) → comunicar ese día por todos los canales activos
+- Acciones con fecha de fin (rango de días) → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
+- Financiación → usarla como complemento en el copy, no como tema principal salvo que no haya otra acción comercial ese día
+- Si una acción de Financiación está marcada como RECURRENTE (ej. "todos los: Viernes, Sábado, Domingo"), replicala en TODAS las fechas del mes que caigan en esos días de la semana, dentro del rango de vigencia indicado (si no hay vigencia indicada, aplicarla durante todo el mes)
+- Si una acción está marcada como TODO EL MES, considerarla vigente durante el mes completo indicado arriba (no es una acción puntual): usarla como tema de fondo en los envíos que no tengan otra acción específica ese día, sin necesidad de anunciarla un único día
+- Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
+- Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
+- Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
+- Horarios sugeridos: Newsletter → 10:00 o 18:00 / Push → según regla anterior
+- Para cada fila, inferí "tipo" según el objetivo del mensaje (uno de: ${TIPOS.join(', ')})
+- Para cada fila, indicá también "categoria" (comunicacionAO / accionComercial / financiacion / microevento, según de qué bloque de ACCIONES COMERCIALES salió — respectivamente Comunicación AO / Acción Comercial / Financiación / Microevento) y "momento": "inicio" si es el primer día de una acción con rango de fechas, "cierre" si es el último día de ese rango, "recordatorio" si es un día intermedio de una acción en curso, o "puntual" si la acción es de un solo día
+- Si la fila corresponde a una acción de reactivación de base inactiva, agregá "reactivacion":true (si no aplica, omitir el campo)
+- Cada fila es UN envío por UN canal. Según el canal, incluí los campos correspondientes: Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"
+
+${buildCopyRules(canales)}
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","asunto":"texto del asunto","preheader":"texto del preheader"},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","titulo":"texto del título","mensaje":"texto del mensaje"}]}`;
+
+try{
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:4000})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const data=await res.json();
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+const parsed=JSON.parse(jsonMatch[0]);
+calRows=parsed.filas||[];
+renderCalTable(calRows);
+if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
+
+apiFetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+nombre:marca,month:mes,notas,canales,accionesCat,filas:calRows,analisis:parsed.analisis||''
+})}).then(r=>{ if(r.ok) showSavedIndicator(); }).catch(()=>{});
+
+proyMarca=marca;proyMes=mes;
+}catch(err){
+document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+}
+});
+
+document.getElementById('btn-copy-cal').addEventListener('click',function(){
+const header=['Elemento','Canal','Hora','Tipo','Asunto/Título','Preheader/Mensaje'];
+const rows=[header,...calRows.map(r=>[r.elemento,r.canal,r.hora,r.tipo,r.asunto||r.titulo||'',r.preheader||r.mensaje||''])];
+navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
+});
+document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');});
 
 // ── PROYECCIÓN DEL MES ───────────────────────────────────────────────────────────
 let proyMarca='',proyMes='';
@@ -883,8 +1171,8 @@ actualizarCalcProy();
 document.getElementById('proy-ref-wrap').innerHTML='<div class="hint">Cargando referencia…</div>';
 try{
 const [actualRes,histRes]=await Promise.all([
-fetch(`/api/proyeccion?nombre=${encodeURIComponent(proyMarca)}&month=${proyMes}`),
-fetch(`/api/proyeccion?nombre=${encodeURIComponent(proyMarca)}&months=3`)
+apiFetch(`/api/proyeccion?nombre=${encodeURIComponent(proyMarca)}&month=${proyMes}`),
+apiFetch(`/api/proyeccion?nombre=${encodeURIComponent(proyMarca)}&months=3`)
 ]);
 if(actualRes.ok){
 const p=await actualRes.json();
@@ -1004,7 +1292,7 @@ TAREA: Para cada acción de la lista, asigná un multiplicador de ajuste que ref
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
 {"ajustes":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","multiplicador":1.5}]}`;
 try{
-const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:1500})});
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:1500})});
 if(!res.ok) return {};
 const data=await res.json();
 const txt=data.content.map(i=>i.text||'').join('');
@@ -1054,7 +1342,7 @@ const autoPct=Math.min(100,Math.max(0,+document.getElementById('proy-auto-pct').
 const consideraciones=document.getElementById('proy-consideraciones').value.trim();
 this.disabled=true;
 try{
-await fetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,autoPct,consideraciones})});
+await apiFetch('/api/proyeccion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:proyMarca,month:proyMes,final,autoPct,consideraciones})});
 let ajustes={};
 if(consideraciones){
 this.textContent='Analizando consideraciones…';
@@ -1064,10 +1352,10 @@ this.textContent='Distribuyendo…';
 const autoInfo={pct:autoPct,facturacion:final.facturacion*autoPct/100,ordenes:final.ordenes*autoPct/100};
 const finalCalendario={facturacion:final.facturacion-autoInfo.facturacion,ordenes:final.ordenes-autoInfo.ordenes};
 distribuirProyeccion(calRows,finalCalendario,proyMes,ajustes);
-fetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+apiFetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
 nombre:proyMarca,month:proyMes,
 notas:document.getElementById('notas-mes').value.trim(),
-canales:canalesActivos(),
+canales:activeBrand?activeBrand.canalesActivos||[]:[],
 accionesCat,
 filas:calRows,
 analisis:document.getElementById('analisis-box').textContent||''
@@ -1087,131 +1375,45 @@ const rows=[header,...distList.map(it=>[it.elemento,it.canales,it.peso?it.peso+'
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar lista',2000);});
 });
 
-// ── PASO 1 ─────────────────────────────────────────────────────────────────────
-document.getElementById('btn-cal').addEventListener('click',async()=>{
-const marca=document.getElementById('marca').value.trim();
-const mes=document.getElementById('mes').value;
-const industria=document.getElementById('industria').value.trim();
-const buyer=document.getElementById('buyer').value.trim();
-const tonoDesc=document.getElementById('tono-desc').value.trim();
-const tonoEj=document.getElementById('tono-ejemplos').value.trim();
-const notas=document.getElementById('notas-mes').value.trim();
-const canales=canalesActivos();
-if(!marca||!mes){alert('Completá nombre de la marca y mes.');return;}
-if(!tonoDesc){alert('Describí el tono de voz de la marca.');return;}
-if(!totalAcciones()){alert('Cargá al menos una acción comercial del mes.');return;}
-if(!canales.length){alert('Seleccioná al menos un canal activo.');return;}
-
-hide('paso1');show('resultado1');
-hide('analisis-box');
-document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Armando el calendario…</div></div>`;
-
-const [yr,mo]=mes.split('-');
-const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
-const accionesTexto=buildAccionesTexto();
-
-let historial='';
-try{
-const hres=await fetch('/api/plans?nombre='+encodeURIComponent(marca)+'&months=3');
-if(hres.ok){ const hd=await hres.json(); historial=buildHistorialTexto(hd.plans||[]); }
-}catch(e){}
-
-const instrucciones=`Sos un analista de Email Marketing y CRM especializado en e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro sin texto adicional ni markdown.
-
-MARCA: ${marca}
-MES: ${mesNombre}
-CANALES ACTIVOS: ${canales.join(', ')}
-${industria?`INDUSTRIA: ${industria}\n`:''}${buyer?`BUYER PERSONA: ${buyer}\n`:''}
-TONO DE VOZ DE LA MARCA:
-${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
-${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
-${historial?`\nHISTORIAL DE MESES ANTERIORES (solo para evitar repetir temas/asuntos idénticos y dar continuidad — NO tomar como acciones del mes actual):\n${historial}\n`:''}
-ACCIONES COMERCIALES DEL MES (cargadas manualmente, organizadas por categoría):
-${accionesTexto}
-
-TAREA: A partir de las acciones comerciales de arriba, generá un calendario de comunicaciones mensual.
-
-CRITERIO EDITORIAL:
-- Acciones de un solo día (sin fecha de fin) → comunicar ese día por todos los canales activos
-- Acciones con fecha de fin (rango de días) → comunicar al inicio; si dura más de 4 días, recordatorio a mitad y al final
-- Financiación → usarla como complemento en el copy, no como tema principal salvo que no haya otra acción comercial ese día
-- Si una acción de Financiación está marcada como RECURRENTE (ej. "todos los: Viernes, Sábado, Domingo"), replicala en TODAS las fechas del mes que caigan en esos días de la semana, dentro del rango de vigencia indicado (si no hay vigencia indicada, aplicarla durante todo el mes)
-- Si una acción está marcada como TODO EL MES, considerarla vigente durante el mes completo indicado arriba (no es una acción puntual): usarla como tema de fondo en los envíos que no tengan otra acción específica ese día, sin necesidad de anunciarla un único día
-- Días sin acción comercial → completar con [A DEFINIR POR ANALISTA]
-- Frecuencia: 2-3 newsletters semanales, de lunes a viernes. Fines de semana solo si hay acción específica
-- Si coinciden newsletter y push el mismo día, el push va 1 hora después del newsletter
-- Horarios sugeridos: Newsletter → 10:00 o 18:00 / Push → según regla anterior
-- Para cada fila, inferí "tipo" según el objetivo del mensaje (uno de: ${TIPOS.join(', ')})
-- Para cada fila, indicá también "categoria" (comunicacionAO / accionComercial / financiacion / microevento, según de qué bloque de ACCIONES COMERCIALES salió — respectivamente Comunicación AO / Acción Comercial / Financiación / Microevento) y "momento": "inicio" si es el primer día de una acción con rango de fechas, "cierre" si es el último día de ese rango, "recordatorio" si es un día intermedio de una acción en curso, o "puntual" si la acción es de un solo día
-- Si la fila corresponde a una acción de reactivación de base inactiva, agregá "reactivacion":true (si no aplica, omitir el campo)
-- Cada fila es UN envío por UN canal. Según el canal, incluí los campos correspondientes: Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"
-
-${buildCopyRules(canales)}
-FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
-{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","asunto":"texto del asunto","preheader":"texto del preheader"},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","titulo":"texto del título","mensaje":"texto del mensaje"}]}`;
-
-try{
-const res=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:4000})});
-if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
-const data=await res.json();
-const txt=data.content.map(i=>i.text||'').join('');
-const jsonMatch=txt.match(/\{[\s\S]*\}/);
-if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
-const parsed=JSON.parse(jsonMatch[0]);
-calRows=parsed.filas||[];
-renderCalTable(calRows);
-if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
-
-fetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-nombre:marca,month:mes,notas,canales,accionesCat,filas:calRows,analisis:parsed.analisis||''
-})}).then(r=>{ if(r.ok) showSavedIndicator(); }).catch(()=>{});
-
-proyMarca=marca;proyMes=mes;
-}catch(err){
-document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
-}
-});
-
-document.getElementById('btn-copy-cal').addEventListener('click',function(){
-const header=['Elemento','Canal','Hora','Tipo','Asunto/Título','Preheader/Mensaje'];
-const rows=[header,...calRows.map(r=>[r.elemento,r.canal,r.hora,r.tipo,r.asunto||r.titulo||'',r.preheader||r.mensaje||''])];
-navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
-});
-document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');});
-
-function resetTodo(){
-if(!confirm('¿Volver al inicio? Se limpia el formulario para empezar con otra marca o mes (lo generado ya quedó guardado).')) return;
-document.getElementById('marca').value='';
-document.getElementById('industria').value='';
-document.getElementById('buyer').value='';
-const now=new Date();
-document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-document.getElementById('tono-desc').value='';
-document.getElementById('tono-ejemplos').value='';
-document.getElementById('notas-mes').value='';
-setCanalesActivos(['Newsletter']);
-CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
-document.getElementById('brand-select').value='';
-document.getElementById('proy-direct-month').innerHTML='<option value="">— Elegí una marca arriba —</option>';
-document.getElementById('proy-direct-month').disabled=true;
+// ── VOLVER AL INICIO / NAVEGACIÓN ────────────────────────────────────────────────
+function volverAlInicio(){
+if(!confirm('¿Volver al inicio? Lo generado ya quedó guardado.')) return;
 calRows=[];
 proyMarca='';proyMes='';
 document.getElementById('cal-wrap').innerHTML='';
 hide('analisis-box');
 hide('save-indicator');
-show('paso1');hide('resultado1');hide('proyPage');hide('distPage');
-window.scrollTo(0,0);
+['paso1','resultado1','proyPage','distPage'].forEach(hide);
+showHome();
 }
-document.getElementById('btn-new-cal').addEventListener('click',resetTodo);
-document.getElementById('btn-new-dist').addEventListener('click',resetTodo);
+document.getElementById('btn-new-cal').addEventListener('click',volverAlInicio);
+document.getElementById('btn-new-dist').addEventListener('click',volverAlInicio);
 
-// ── NAVEGACIÓN ENTRE PÁGINAS DE PROYECCIÓN/DISTRIBUCIÓN ─────────────────────────
 document.getElementById('btn-goto-proy').addEventListener('click',()=>{
 hide('resultado1');show('proyPage');
 loadProyeccion();
 });
 document.getElementById('btn-back-cal').addEventListener('click',()=>{hide('proyPage');show('resultado1');});
 document.getElementById('btn-back-proy').addEventListener('click',()=>{hide('distPage');show('proyPage');});
+
+// ── BOOTSTRAP DE SESIÓN ──────────────────────────────────────────────────────────
+(async()=>{
+if(authToken){
+try{
+const res=await fetch('/api/auth',{headers:{Authorization:'Bearer '+authToken}});
+if(res.ok){
+const data=await res.json();
+currentUsername=data.username;
+localStorage.setItem(USER_KEY,currentUsername);
+await afterLogin();
+return;
+}
+}catch(e){}
+authToken='';currentUsername='';
+localStorage.removeItem(AUTH_KEY);localStorage.removeItem(USER_KEY);
+}
+show('authScreen');
+})();
 </script>
 </body>
 </html>

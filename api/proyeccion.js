@@ -1,4 +1,5 @@
 import { redis, pipeline } from './_lib/kv.js';
+import { requireUser } from './_lib/auth.js';
 
 function fail(res, err) {
   if (err.message === 'KV_NOT_CONFIGURED') {
@@ -14,24 +15,27 @@ function num(v) {
 
 export default async function handler(req, res) {
   try {
+    const usuario = await requireUser(req, res);
+    if (!usuario) return;
+
     if (req.method === 'GET') {
       const { nombre, month, months } = req.query;
       if (!nombre) return res.status(400).json({ error: 'Falta el nombre de la marca' });
 
       if (month) {
-        const raw = await redis(['GET', `proyeccion:${nombre}:${month}`]);
+        const raw = await redis(['GET', `proyeccion:${usuario}:${nombre}:${month}`]);
         if (!raw) return res.status(404).json({ error: 'Proyección no encontrada' });
         return res.status(200).json(JSON.parse(raw));
       }
 
-      const all = (await redis(['SMEMBERS', `proyeccion:index:${nombre}`])) || [];
+      const all = (await redis(['SMEMBERS', `proyeccion:index:${usuario}:${nombre}`])) || [];
       const sorted = all.sort().reverse();
 
       if (!months) return res.status(200).json({ months: sorted });
 
       const top = sorted.slice(0, parseInt(months, 10) || 3);
       if (!top.length) return res.status(200).json({ proyecciones: [] });
-      const results = await pipeline(top.map(m => ['GET', `proyeccion:${nombre}:${m}`]));
+      const results = await pipeline(top.map(m => ['GET', `proyeccion:${usuario}:${nombre}:${m}`]));
       const proyecciones = results
         .map(r => (r.result ? JSON.parse(r.result) : null))
         .filter(Boolean);
@@ -60,8 +64,8 @@ export default async function handler(req, res) {
         updatedAt: new Date().toISOString()
       };
       await pipeline([
-        ['SET', `proyeccion:${nombre}:${month}`, JSON.stringify(proyeccion)],
-        ['SADD', `proyeccion:index:${nombre}`, month]
+        ['SET', `proyeccion:${usuario}:${nombre}:${month}`, JSON.stringify(proyeccion)],
+        ['SADD', `proyeccion:index:${usuario}:${nombre}`, month]
       ]);
       return res.status(200).json(proyeccion);
     }
@@ -71,8 +75,8 @@ export default async function handler(req, res) {
       const month = (req.query.month || '').trim();
       if (!nombre || !month) return res.status(400).json({ error: 'Falta nombre o mes' });
       await pipeline([
-        ['DEL', `proyeccion:${nombre}:${month}`],
-        ['SREM', `proyeccion:index:${nombre}`, month]
+        ['DEL', `proyeccion:${usuario}:${nombre}:${month}`],
+        ['SREM', `proyeccion:index:${usuario}:${nombre}`, month]
       ]);
       return res.status(200).json({ ok: true });
     }

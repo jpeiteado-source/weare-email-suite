@@ -1,7 +1,12 @@
+import { requireUser } from './_lib/auth.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  const usuario = await requireUser(req, res);
+  if (!usuario) return;
 
   const { prompt, messages, max_tokens } = req.body;
 

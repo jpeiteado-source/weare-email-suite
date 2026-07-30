@@ -1,4 +1,5 @@
 import { redis, pipeline } from './_lib/kv.js';
+import { requireUser } from './_lib/auth.js';
 
 function fail(res, err) {
   if (err.message === 'KV_NOT_CONFIGURED') {
@@ -9,16 +10,24 @@ function fail(res, err) {
 
 export default async function handler(req, res) {
   try {
+    const usuario = await requireUser(req, res);
+    if (!usuario) return;
+
+    // Marcas viejas, cargadas antes de que existieran usuarios (sin dueño asignado).
+    const legacy = req.method === 'GET' && req.query.scope === 'legacy';
+    const brandKey = nombre => legacy ? `brand:${nombre}` : `brand:${usuario}:${nombre}`;
+    const indexKey = legacy ? 'brands:index' : `brands:index:${usuario}`;
+
     if (req.method === 'GET') {
       const { nombre } = req.query;
       if (nombre) {
-        const raw = await redis(['GET', `brand:${nombre}`]);
+        const raw = await redis(['GET', brandKey(nombre)]);
         if (!raw) return res.status(404).json({ error: 'Marca no encontrada' });
         return res.status(200).json(JSON.parse(raw));
       }
-      const names = (await redis(['SMEMBERS', 'brands:index'])) || [];
+      const names = (await redis(['SMEMBERS', indexKey])) || [];
       if (!names.length) return res.status(200).json({ brands: [] });
-      const results = await pipeline(names.map(n => ['GET', `brand:${n}`]));
+      const results = await pipeline(names.map(n => ['GET', brandKey(n)]));
       const brands = results
         .map(r => (r.result ? JSON.parse(r.result) : null))
         .filter(Boolean);
@@ -38,8 +47,8 @@ export default async function handler(req, res) {
         updatedAt: new Date().toISOString()
       };
       await pipeline([
-        ['SET', `brand:${nombre}`, JSON.stringify(profile)],
-        ['SADD', 'brands:index', nombre]
+        ['SET', `brand:${usuario}:${nombre}`, JSON.stringify(profile)],
+        ['SADD', `brands:index:${usuario}`, nombre]
       ]);
       return res.status(200).json(profile);
     }
@@ -48,8 +57,8 @@ export default async function handler(req, res) {
       const nombre = (req.query.nombre || '').trim();
       if (!nombre) return res.status(400).json({ error: 'Falta el nombre de la marca' });
       await pipeline([
-        ['DEL', `brand:${nombre}`],
-        ['SREM', 'brands:index', nombre]
+        ['DEL', `brand:${usuario}:${nombre}`],
+        ['SREM', `brands:index:${usuario}`, nombre]
       ]);
       return res.status(200).json({ ok: true });
     }
