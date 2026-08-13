@@ -1569,10 +1569,18 @@ const canales=[...new Set(g.rows.map(r=>r.canal))].join(', ');
 const obj=g.rows.find(r=>r.objetivoFacturacion!=null);
 return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0,ajuste:obj?obj.ajusteIA:null};
 });
-items.sort((a,b)=>(a.fecha&&b.fecha)?a.fecha-b.fecha:0);
-if(autoInfo&&autoInfo.pct>0){
-items.unshift({fecha:null,elemento:'Automatizaciones (bienvenida, carrito abandonado, etc.)',canales:'—',objetivoFacturacion:autoInfo.facturacion,objetivoOrdenes:autoInfo.ordenes,peso:autoInfo.pct,ajuste:null});
+if(autoInfo&&autoInfo.pct>0&&mesYYYYMM){
+const [yyyy,mm]=mesYYYYMM.split('-').map(Number);
+const totalDias=new Date(yyyy,mm,0).getDate();
+const factDia=autoInfo.facturacion/totalDias;
+const ordDia=autoInfo.ordenes/totalDias;
+const pesoDia=Math.round((autoInfo.pct/totalDias)*100)/100;
+for(let d=1;d<=totalDias;d++){
+const dd=String(d).padStart(2,'0'),mmS=String(mm).padStart(2,'0');
+items.push({fecha:new Date(yyyy,mm-1,d),elemento:`${dd}/${mmS} - AUTOMATIZACIONES`,canales:'—',objetivoFacturacion:factDia,objetivoOrdenes:ordDia,peso:pesoDia,ajuste:null});
 }
+}
+items.sort((a,b)=>(a.fecha&&b.fecha)?a.fecha-b.fecha:0);
 distList=items;
 const wrap=document.getElementById('dist-wrap');
 if(!items.length){ wrap.innerHTML='<div class="hint">No hay acciones con objetivo — revisá que el calendario tenga acciones reales (no "A DEFINIR").</div>'; return; }
