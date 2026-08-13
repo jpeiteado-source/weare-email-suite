@@ -98,6 +98,19 @@ input[type="file"]{display:none;}
 .tipo-opts{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
 .tipo-opt{font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt3);cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
 .tipo-opt.sel{background:var(--org);border-color:var(--orb);color:var(--or2);}
+.seg-cat-block{margin-bottom:12px;}
+.seg-cat-block:last-child{margin-bottom:0;}
+.seg-cat-title{font-size:10px;color:var(--dt3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px;}
+.seg-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.seg-chip{font-size:11px;padding:3px 6px 3px 10px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt2);background:var(--ds2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.seg-chip button{background:none;border:none;color:var(--dt3);cursor:pointer;font-size:13px;line-height:1;padding:0;display:flex;}
+.seg-chip button:hover{color:#f85149;}
+.seg-chip.inc{border-color:rgba(63,185,80,0.3);color:var(--ok);}
+.seg-chip.exc{border-color:rgba(248,81,73,0.3);color:#f85149;}
+.seg-chip.sugerido{border-style:dashed;}
+.seg-chip .seg-add-btn{color:var(--or2);}
+.seg-chip .seg-add-btn:hover{color:var(--or);}
+.warn-line{font-size:11px;color:var(--warn);margin-top:8px;display:flex;align-items:flex-start;gap:5px;}
 .cb{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
 .ch{background:var(--ds2);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--dbrd);}
 .cn{font-size:13px;font-weight:500;}
@@ -264,6 +277,17 @@ input[type="file"]{display:none;}
 <label>Ejemplos de comunicaciones previas <span style="color:var(--dt3);font-size:11px">(opcional pero muy recomendado)</span></label>
 <textarea id="bf-tono-ejemplos" style="min-height:80px" placeholder="Pegá asuntos o mensajes que representen bien cómo habla la marca.&#10;Ej:&#10;¡Llegó lo nuevo! MIRÁ la colección 🔥&#10;Últimas horas para aprovechar tu 20% OFF ⏰"></textarea>
 </div>
+</div>
+
+<div class="card">
+<div class="ct">Segmentos de audiencia <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
+<div class="hint" style="margin-bottom:10px">Biblioteca de segmentos de esta marca (ej. "Engagement: Alto", "Compras: no compró hace más de 90 días"). La IA los va a usar para sugerir a quién incluir/excluir en cada envío del calendario, y va a poder proponer nuevos si hace falta.</div>
+<div class="g2">
+<select id="bf-seg-cat"></select>
+<input type="text" id="bf-seg-nombre" placeholder="Nombre del segmento…" />
+</div>
+<button class="add-lnk" id="bf-seg-add">+ Agregar segmento</button>
+<div id="bf-seg-list" style="margin-top:10px"></div>
 </div>
 
 <div class="err hidden" id="brand-form-error" style="margin-bottom:1rem"></div>
@@ -820,6 +844,44 @@ await showHome();
 // ── AGREGAR / EDITAR MARCA ───────────────────────────────────────────────────────
 let brandFormMode='create';
 
+// ── SEGMENTOS DE AUDIENCIA (biblioteca por marca) ────────────────────────────────
+const SEG_CATEGORIAS=['Segmento de valor (RFM)','Engagement','Compras','Carrito abandonado','Interacción con campañas','Navegación web','Afinidad e interés'];
+let bfSegmentos=[],bfSegIdSeq=0;
+document.getElementById('bf-seg-cat').innerHTML=SEG_CATEGORIAS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+function renderBfSegList(){
+const wrap=document.getElementById('bf-seg-list');
+if(!bfSegmentos.length){ wrap.innerHTML='<div class="hint">Sin segmentos cargados todavía.</div>'; return; }
+let html='';
+SEG_CATEGORIAS.forEach(cat=>{
+const items=bfSegmentos.filter(s=>s.categoria===cat);
+if(!items.length) return;
+html+=`<div class="seg-cat-block"><div class="seg-cat-title">${esc(cat)}</div><div class="seg-chips">`;
+items.forEach(s=>{ html+=`<span class="seg-chip">${esc(s.nombre)}<button data-id="${s.id}">×</button></span>`; });
+html+='</div></div>';
+});
+wrap.innerHTML=html;
+wrap.querySelectorAll('button[data-id]').forEach(b=>b.addEventListener('click',()=>{
+bfSegmentos=bfSegmentos.filter(s=>s.id!==+b.dataset.id);
+renderBfSegList();
+}));
+}
+function buildSegmentosTexto(segmentos){
+if(!segmentos||!segmentos.length) return '';
+let out='';
+SEG_CATEGORIAS.forEach(cat=>{
+const items=segmentos.filter(s=>s.categoria===cat).map(s=>s.nombre).filter(Boolean);
+if(items.length) out+=`- ${cat}: ${items.join(', ')}\n`;
+});
+return out.trim();
+}
+document.getElementById('bf-seg-add').addEventListener('click',()=>{
+const nombre=document.getElementById('bf-seg-nombre').value.trim();
+if(!nombre) return;
+bfSegmentos.push({id:++bfSegIdSeq,categoria:document.getElementById('bf-seg-cat').value,nombre});
+document.getElementById('bf-seg-nombre').value='';
+renderBfSegList();
+});
+
 function openBrandForm(mode){
 hide('homeScreen');show('brandFormScreen');
 hide('brand-form-error');
@@ -832,6 +894,7 @@ document.getElementById('bf-buyer').value=activeBrand.buyer||'';
 document.getElementById('bf-tono-desc').value=activeBrand.tonoDesc||'';
 document.getElementById('bf-tono-ejemplos').value=activeBrand.tonoEj||'';
 setCanalesIn('bf-canales',activeBrand.canalesActivos||['Newsletter']);
+bfSegmentos=(activeBrand.segmentos||[]).map(s=>({id:++bfSegIdSeq,categoria:s.categoria,nombre:s.nombre}));
 }else{
 nombreInput.value=''; nombreInput.readOnly=false; nombreInput.style.opacity='1';
 document.getElementById('bf-industria').value='';
@@ -839,7 +902,9 @@ document.getElementById('bf-buyer').value='';
 document.getElementById('bf-tono-desc').value='';
 document.getElementById('bf-tono-ejemplos').value='';
 setCanalesIn('bf-canales',['Newsletter']);
+bfSegmentos=[];
 }
+renderBfSegList();
 brandFormMode=mode;
 window.scrollTo(0,0);
 }
@@ -865,7 +930,8 @@ industria: document.getElementById('bf-industria').value.trim(),
 buyer: document.getElementById('bf-buyer').value.trim(),
 tonoDesc,
 tonoEj: document.getElementById('bf-tono-ejemplos').value.trim(),
-canalesActivos: canales
+canalesActivos: canales,
+segmentos: bfSegmentos.map(s=>({categoria:s.categoria,nombre:s.nombre}))
 };
 const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(profile)});
 if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al guardar la marca'); }
@@ -916,6 +982,7 @@ const plan=await planRes.json();
 document.getElementById('notas-mes').value=plan.notas||'';
 loadAccionesCat(plan.accionesCat||{});
 calRows=plan.filas||[];
+detectarSolapamientos(calRows,month);
 renderCalTable(calRows);
 if(plan.analisis){ document.getElementById('analisis-box').textContent=plan.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
 }else{
@@ -979,6 +1046,21 @@ return out.trim();
 }
 
 // ── TABLA DE CALENDARIO — render por fila, editable ─────────────────────────────
+function parseSegRef(s){
+const i=(s||'').indexOf(':');
+if(i<0) return {categoria:'',nombre:(s||'').trim()};
+return {categoria:s.slice(0,i).trim(),nombre:s.slice(i+1).trim()};
+}
+function segEnBiblioteca(ref){
+return ((activeBrand&&activeBrand.segmentos)||[]).some(s=>s.categoria===ref.categoria&&s.nombre.toLowerCase()===ref.nombre.toLowerCase());
+}
+function segChipsHTML(lista,cls,idx){
+return (lista||[]).map(s=>{
+const ref=parseSegRef(s);
+const nuevo=ref.categoria&&!segEnBiblioteca(ref);
+return `<span class="seg-chip ${cls}${nuevo?' sugerido':''}">${esc(ref.nombre||s)}${nuevo?`<button class="seg-add-btn" data-idx="${idx}" data-seg="${esc(s)}" title="Agregar a la biblioteca de la marca">+</button>`:''}</span>`;
+}).join('');
+}
 function calRowCardHTML(r,idx){
 const bc=r.canal&&r.canal.includes('Push')?'b-push':r.canal&&r.canal.includes('WhatsApp')?'b-wa':'b-nl';
 const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${r.tipo===t?' sel':''}" data-val="${t}" data-idx="${idx}">${t}</button>`).join('');
@@ -997,12 +1079,50 @@ const indef=(r.asunto||'').includes('A DEFINIR');
 fieldsHTML=`<div class="rl"><div class="rlbl">Asunto</div><div class="rval${indef?' indef':''}">${esc(r.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div>
 <div class="rl"><div class="rlbl">Preheader</div><div class="rval pre${indef?' indef':''}">${esc(r.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>`;
 }
+const incHTML=segChipsHTML(r.incluir,'inc',idx);
+const excHTML=segChipsHTML(r.excluir,'exc',idx);
+const audienciaHTML=(incHTML||excHTML)?`<div class="rl"><div class="rlbl">Audiencia</div><div class="seg-chips" style="margin-top:2px">${incHTML}${excHTML}</div></div>`:'';
+const solapHTML=r.solapamientoTexto?`<div class="warn-line">⚠️ ${esc(r.solapamientoTexto)}</div>`:'';
 return `<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>
 <div class="cbody">
 <div class="tipo-opts">${chipsHTML}</div>
 ${fieldsHTML}
+${audienciaHTML}
+${solapHTML}
 <div class="crow" style="gap:8px"><button class="cpybtn" data-idx="${idx}">Copiar</button><button class="btn-ghost regen-btn" data-idx="${idx}">Regenerar ↻</button></div>
 </div>`;
+}
+function nombreAccion(elemento){
+return (elemento||'').split(' - ').slice(1).join(' - ')||elemento||'';
+}
+function detectarSolapamientos(rows,mesYYYYMM,ventanaDias){
+ventanaDias=ventanaDias||15;
+rows.forEach(r=>{ delete r.solapamientoTexto; });
+const grupos=new Map();
+rows.forEach(r=>{
+const key=r.elemento||'';
+if(!grupos.has(key)) grupos.set(key,{rows:[],fecha:parseElementoFecha(key,mesYYYYMM),incluir:new Set()});
+const g=grupos.get(key);
+g.rows.push(r);
+(r.incluir||[]).forEach(s=>g.incluir.add(s));
+});
+const acciones=[...grupos.entries()].filter(([,g])=>g.fecha&&g.incluir.size>0);
+acciones.forEach(([key,g])=>{
+let mejor=null;
+acciones.forEach(([key2,g2])=>{
+if(key2===key) return;
+const diffDays=Math.round((g.fecha-g2.fecha)/86400000);
+if(Math.abs(diffDays)>ventanaDias) return;
+const compartido=[...g.incluir].filter(s=>g2.incluir.has(s));
+if(!compartido.length) return;
+if(!mejor||Math.abs(diffDays)<Math.abs(mejor.diffDays)) mejor={key2,diffDays,compartido};
+});
+if(mejor){
+const dias=Math.abs(mejor.diffDays);
+const texto=`Comparte audiencia (${mejor.compartido.map(s=>parseSegRef(s).nombre).join(', ')}) con "${nombreAccion(mejor.key2)}" · ${dias} día${dias===1?'':'s'} de diferencia`;
+g.rows.forEach(r=>{ r.solapamientoTexto=texto; });
+}
+});
 }
 function renderCalTable(rows){
 document.getElementById('cal-wrap').innerHTML=rows.map((r,idx)=>`<div class="cb" data-idx="${idx}">${calRowCardHTML(r,idx)}</div>`).join('');
@@ -1069,7 +1189,28 @@ const regenBtn=e.target.closest('.regen-btn');
 if(regenBtn){ regenerarFila(+regenBtn.dataset.idx); return; }
 const cpyBtn=e.target.closest('.cpybtn');
 if(cpyBtn){ copiarFila(+cpyBtn.dataset.idx,cpyBtn); return; }
+const segBtn=e.target.closest('.seg-add-btn');
+if(segBtn){ agregarSegmentoABiblioteca(+segBtn.dataset.idx,segBtn.dataset.seg); return; }
 });
+
+async function agregarSegmentoABiblioteca(idx,segStr){
+if(!activeBrand) return;
+const ref=parseSegRef(segStr);
+if(!ref.categoria||!ref.nombre||segEnBiblioteca(ref)) return;
+const nuevaLista=[...(activeBrand.segmentos||[]),{categoria:ref.categoria,nombre:ref.nombre}];
+try{
+const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+nombre:activeBrand.nombre,
+industria:activeBrand.industria||'',
+buyer:activeBrand.buyer||'',
+tonoDesc:activeBrand.tonoDesc||'',
+tonoEj:activeBrand.tonoEj||'',
+canalesActivos:activeBrand.canalesActivos||[],
+segmentos:nuevaLista
+})});
+if(res.ok){ activeBrand.segmentos=nuevaLista; rerenderCalRow(idx); showSavedIndicator(); }
+}catch(e){}
+}
 
 function showSavedIndicator(){
 const el=document.getElementById('save-indicator');
@@ -1089,6 +1230,7 @@ const tonoDesc=activeBrand.tonoDesc||'';
 const tonoEj=activeBrand.tonoEj||'';
 const notas=document.getElementById('notas-mes').value.trim();
 const canales=activeBrand.canalesActivos||[];
+const segmentos=activeBrand.segmentos||[];
 if(!mes){alert('Seleccioná el mes a planificar.');return;}
 if(!totalAcciones()){alert('Cargá al menos una acción comercial del mes.');return;}
 if(!canales.length){alert('Esta marca no tiene canales activos configurados. Editá la marca antes de continuar.');return;}
@@ -1100,6 +1242,7 @@ document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class
 const [yr,mo]=mes.split('-');
 const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
 const accionesTexto=buildAccionesTexto();
+const segmentosTexto=buildSegmentosTexto(segmentos);
 
 let historial='';
 try{
@@ -1117,6 +1260,7 @@ TONO DE VOZ DE LA MARCA:
 ${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
 ${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
 ${historial?`\nHISTORIAL DE MESES ANTERIORES (solo para evitar repetir temas/asuntos idénticos y dar continuidad — NO tomar como acciones del mes actual):\n${historial}\n`:''}
+${segmentosTexto?`\nSEGMENTOS DE AUDIENCIA YA DEFINIDOS PARA ESTA MARCA (usalos cuando corresponda en vez de inventar de cero):\n${segmentosTexto}\n`:''}
 ACCIONES COMERCIALES DEL MES (cargadas manualmente, organizadas por categoría):
 ${accionesTexto}
 
@@ -1135,11 +1279,12 @@ CRITERIO EDITORIAL:
 - Para cada fila, inferí "tipo" según el objetivo del mensaje (uno de: ${TIPOS.join(', ')})
 - Para cada fila, indicá también "categoria" (comunicacionAO / accionComercial / financiacion / microevento, según de qué bloque de ACCIONES COMERCIALES salió — respectivamente Comunicación AO / Acción Comercial / Financiación / Microevento) y "momento": "inicio" si es el primer día de una acción con rango de fechas, "cierre" si es el último día de ese rango, "recordatorio" si es un día intermedio de una acción en curso, o "puntual" si la acción es de un solo día
 - Si la fila corresponde a una acción de reactivación de base inactiva, agregá "reactivacion":true (si no aplica, omitir el campo)
+- Para cada fila, sugerí "incluir" y "excluir": arrays de segmentos de audiencia a los que conviene (o no) mandarle ese envío. Categorías posibles: Segmento de valor (RFM), Engagement, Compras, Carrito abandonado, Interacción con campañas, Navegación web, Afinidad e interés. Usá los segmentos ya definidos arriba cuando apliquen (escritos igual que ahí); si hace falta uno nuevo que no está en la lista, proponelo igual con formato "Categoría: nombre" (ej. "Compras: no compró hace más de 90 días") para que el analista lo pueda sumar a la biblioteca. Si un envío es para toda la base sin distinción, dejá los arrays vacíos — no fuerces un criterio si no aporta valor
 - Cada fila es UN envío por UN canal. Según el canal, incluí los campos correspondientes: Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"
 
 ${buildCopyRules(canales)}
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
-{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","asunto":"texto del asunto","preheader":"texto del preheader"},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","titulo":"texto del título","mensaje":"texto del mensaje"}]}`;
+{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":["Engagement: Alto"],"excluir":["Segmento de valor (RFM): Perdidos"],"asunto":"texto del asunto","preheader":"texto del preheader"},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":[],"excluir":[],"titulo":"texto del título","mensaje":"texto del mensaje"}]}`;
 
 try{
 const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:4000})});
@@ -1150,6 +1295,7 @@ const jsonMatch=txt.match(/\{[\s\S]*\}/);
 if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
 const parsed=JSON.parse(jsonMatch[0]);
 calRows=parsed.filas||[];
+detectarSolapamientos(calRows,mes);
 renderCalTable(calRows);
 if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
 

@@ -44,6 +44,7 @@ export default async function handler(req, res) {
         industria: req.body.industria || '',
         buyer: req.body.buyer || '',
         canalesActivos: req.body.canalesActivos || [],
+        segmentos: req.body.segmentos || [],
         updatedAt: new Date().toISOString()
       };
       await pipeline([
