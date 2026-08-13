@@ -856,7 +856,7 @@ await showHome();
 let brandFormMode='create';
 
 // ── SEGMENTOS DE AUDIENCIA (biblioteca por marca — se edita desde la planificación) ─
-const SEG_CATEGORIAS=['Segmento de valor (RFM)','Engagement','Compras','Carrito abandonado','Interacción con campañas','Navegación web','Afinidad e interés'];
+const SEG_CATEGORIAS=['Segmento de valor (RFM)','Engagement','Compras','Carrito abandonado','Interacción con campañas','Navegación web','Afinidad e interés','Bases bancarias','Otros'];
 document.getElementById('pl-seg-cat').innerHTML=SEG_CATEGORIAS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
 function buildSegmentosTexto(segmentos){
 if(!segmentos||!segmentos.length) return '';
@@ -1337,7 +1337,7 @@ CRITERIO EDITORIAL:
 - Para cada fila, inferí "tipo" según el objetivo del mensaje (uno de: ${TIPOS.join(', ')})
 - Para cada fila, indicá también "categoria" (comunicacionAO / accionComercial / financiacion / microevento, según de qué bloque de ACCIONES COMERCIALES salió — respectivamente Comunicación AO / Acción Comercial / Financiación / Microevento) y "momento": "inicio" si es el primer día de una acción con rango de fechas, "cierre" si es el último día de ese rango, "recordatorio" si es un día intermedio de una acción en curso, o "puntual" si la acción es de un solo día
 - Si la fila corresponde a una acción de reactivación de base inactiva, agregá "reactivacion":true (si no aplica, omitir el campo)
-- Para cada fila, sugerí "incluir" y "excluir": arrays de segmentos de audiencia a los que conviene (o no) mandarle ese envío. Categorías posibles: Segmento de valor (RFM), Engagement, Compras, Carrito abandonado, Interacción con campañas, Navegación web, Afinidad e interés. PRIORIZÁ usar los segmentos ya definidos arriba (escritos igual que ahí) — analizá cuál de ellos aplica a cada envío según su tipo, categoría y momento, y aplicalos activamente en la mayoría de las filas; dejá los arrays vacíos solo cuando de verdad ningún segmento de la biblioteca tenga sentido para ese envío puntual. Si hace falta un segmento que no está en la lista, proponé uno nuevo igual, con formato "Categoría: nombre" (ej. "Compras: no compró hace más de 90 días"), para que el analista lo pueda sumar a la biblioteca
+- Para cada fila, sugerí "incluir" y "excluir": arrays de segmentos de audiencia a los que conviene (o no) mandarle ese envío. Categorías posibles: ${SEG_CATEGORIAS.join(', ')}. PRIORIZÁ usar los segmentos ya definidos arriba (escritos igual que ahí) — analizá cuál de ellos aplica a cada envío según su tipo, categoría y momento, y aplicalos activamente en la mayoría de las filas; dejá los arrays vacíos solo cuando de verdad ningún segmento de la biblioteca tenga sentido para ese envío puntual. Si hace falta un segmento que no está en la lista, proponé uno nuevo igual, con formato "Categoría: nombre" (ej. "Compras: no compró hace más de 90 días"), para que el analista lo pueda sumar a la biblioteca
 - Cada fila es UN envío por UN canal. Según el canal, incluí los campos correspondientes: Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"
 
 ${buildCopyRules(canales)}
