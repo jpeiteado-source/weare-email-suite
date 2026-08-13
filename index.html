@@ -110,6 +110,10 @@ input[type="file"]{display:none;}
 .seg-chip.sugerido{border-style:dashed;}
 .seg-chip .seg-add-btn{color:var(--or2);}
 .seg-chip .seg-add-btn:hover{color:var(--or);}
+.seg-editor{margin-top:8px;}
+.seg-editor:first-of-type{margin-top:2px;}
+.seg-editor-lbl{font-size:10px;color:var(--dt3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:4px;}
+.seg-add-select{width:auto;max-width:100%;margin-top:6px;font-size:11px;padding:4px 9px;background:var(--ds2);border:1px dashed var(--dbrd2);border-radius:20px;color:var(--dt3);}
 .warn-line{font-size:11px;color:var(--warn);margin-top:8px;display:flex;align-items:flex-start;gap:5px;}
 .cb{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
 .ch{background:var(--ds2);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--dbrd);}
@@ -279,17 +283,6 @@ input[type="file"]{display:none;}
 </div>
 </div>
 
-<div class="card">
-<div class="ct">Segmentos de audiencia <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></div>
-<div class="hint" style="margin-bottom:10px">Biblioteca de segmentos de esta marca (ej. "Engagement: Alto", "Compras: no compró hace más de 90 días"). La IA los va a usar para sugerir a quién incluir/excluir en cada envío del calendario, y va a poder proponer nuevos si hace falta.</div>
-<div class="g2">
-<select id="bf-seg-cat"></select>
-<input type="text" id="bf-seg-nombre" placeholder="Nombre del segmento…" />
-</div>
-<button class="add-lnk" id="bf-seg-add">+ Agregar segmento</button>
-<div id="bf-seg-list" style="margin-top:10px"></div>
-</div>
-
 <div class="err hidden" id="brand-form-error" style="margin-bottom:1rem"></div>
 <button class="btn-or" id="btn-save-brand-form">Guardar marca</button>
 </div>
@@ -304,6 +297,24 @@ input[type="file"]{display:none;}
 <div class="card">
 <div class="ct">Mes a planificar</div>
 <div class="f" style="max-width:220px"><input type="month" id="mes" /></div>
+</div>
+
+<div class="card">
+<button class="acc-card-header acc-toggle" data-target="acc-panel-segmentos">
+<span class="ct" style="margin-bottom:0">Segmentos de audiencia <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></span>
+<span class="acc-caret">▾</span>
+</button>
+<div class="acc-panel" id="acc-panel-segmentos">
+<div class="acc-panel-inner" style="padding:12px 0 0">
+<div class="hint" style="margin-bottom:10px">Biblioteca de segmentos de esta marca (ej. "Engagement: Alto", "Compras: no compró hace más de 90 días") — se carga una sola vez y queda disponible en todos los meses. La IA la usa para sugerir a quién incluir/excluir en cada envío, y puede proponer nuevos.</div>
+<div class="g2">
+<select id="pl-seg-cat"></select>
+<input type="text" id="pl-seg-nombre" placeholder="Nombre del segmento…" />
+</div>
+<button class="add-lnk" id="pl-seg-add">+ Agregar segmento</button>
+<div id="pl-seg-list" style="margin-top:10px"></div>
+</div>
+</div>
 </div>
 
 <div class="card">
@@ -844,27 +855,9 @@ await showHome();
 // ── AGREGAR / EDITAR MARCA ───────────────────────────────────────────────────────
 let brandFormMode='create';
 
-// ── SEGMENTOS DE AUDIENCIA (biblioteca por marca) ────────────────────────────────
+// ── SEGMENTOS DE AUDIENCIA (biblioteca por marca — se edita desde la planificación) ─
 const SEG_CATEGORIAS=['Segmento de valor (RFM)','Engagement','Compras','Carrito abandonado','Interacción con campañas','Navegación web','Afinidad e interés'];
-let bfSegmentos=[],bfSegIdSeq=0;
-document.getElementById('bf-seg-cat').innerHTML=SEG_CATEGORIAS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
-function renderBfSegList(){
-const wrap=document.getElementById('bf-seg-list');
-if(!bfSegmentos.length){ wrap.innerHTML='<div class="hint">Sin segmentos cargados todavía.</div>'; return; }
-let html='';
-SEG_CATEGORIAS.forEach(cat=>{
-const items=bfSegmentos.filter(s=>s.categoria===cat);
-if(!items.length) return;
-html+=`<div class="seg-cat-block"><div class="seg-cat-title">${esc(cat)}</div><div class="seg-chips">`;
-items.forEach(s=>{ html+=`<span class="seg-chip">${esc(s.nombre)}<button data-id="${s.id}">×</button></span>`; });
-html+='</div></div>';
-});
-wrap.innerHTML=html;
-wrap.querySelectorAll('button[data-id]').forEach(b=>b.addEventListener('click',()=>{
-bfSegmentos=bfSegmentos.filter(s=>s.id!==+b.dataset.id);
-renderBfSegList();
-}));
-}
+document.getElementById('pl-seg-cat').innerHTML=SEG_CATEGORIAS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
 function buildSegmentosTexto(segmentos){
 if(!segmentos||!segmentos.length) return '';
 let out='';
@@ -874,12 +867,54 @@ if(items.length) out+=`- ${cat}: ${items.join(', ')}\n`;
 });
 return out.trim();
 }
-document.getElementById('bf-seg-add').addEventListener('click',()=>{
-const nombre=document.getElementById('bf-seg-nombre').value.trim();
-if(!nombre) return;
-bfSegmentos.push({id:++bfSegIdSeq,categoria:document.getElementById('bf-seg-cat').value,nombre});
-document.getElementById('bf-seg-nombre').value='';
-renderBfSegList();
+async function guardarSegmentosBiblioteca(nuevaLista){
+if(!activeBrand) return false;
+try{
+const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+nombre:activeBrand.nombre,
+industria:activeBrand.industria||'',
+buyer:activeBrand.buyer||'',
+tonoDesc:activeBrand.tonoDesc||'',
+tonoEj:activeBrand.tonoEj||'',
+canalesActivos:activeBrand.canalesActivos||[],
+segmentos:nuevaLista
+})});
+if(res.ok){ activeBrand.segmentos=nuevaLista; return true; }
+}catch(e){}
+return false;
+}
+function renderPlanSegList(){
+const wrap=document.getElementById('pl-seg-list');
+if(!wrap) return;
+const segmentos=(activeBrand&&activeBrand.segmentos)||[];
+if(!segmentos.length){ wrap.innerHTML='<div class="hint">Sin segmentos cargados todavía.</div>'; return; }
+let html='';
+SEG_CATEGORIAS.forEach(cat=>{
+const items=segmentos.filter(s=>s.categoria===cat);
+if(!items.length) return;
+html+=`<div class="seg-cat-block"><div class="seg-cat-title">${esc(cat)}</div><div class="seg-chips">`;
+items.forEach(s=>{ html+=`<span class="seg-chip">${esc(s.nombre)}<button data-cat="${esc(s.categoria)}" data-nombre="${esc(s.nombre)}">×</button></span>`; });
+html+='</div></div>';
+});
+wrap.innerHTML=html;
+wrap.querySelectorAll('button[data-cat]').forEach(b=>b.addEventListener('click',async()=>{
+b.disabled=true;
+const nuevaLista=(activeBrand.segmentos||[]).filter(s=>!(s.categoria===b.dataset.cat&&s.nombre===b.dataset.nombre));
+if(await guardarSegmentosBiblioteca(nuevaLista)) renderPlanSegList();
+}));
+}
+document.getElementById('pl-seg-add').addEventListener('click',async()=>{
+const nombreInput=document.getElementById('pl-seg-nombre');
+const nombre=nombreInput.value.trim();
+if(!nombre||!activeBrand) return;
+const categoria=document.getElementById('pl-seg-cat').value;
+const existe=(activeBrand.segmentos||[]).some(s=>s.categoria===categoria&&s.nombre.toLowerCase()===nombre.toLowerCase());
+if(existe){ nombreInput.value=''; return; }
+const btn=document.getElementById('pl-seg-add');
+btn.disabled=true;
+const ok=await guardarSegmentosBiblioteca([...(activeBrand.segmentos||[]),{categoria,nombre}]);
+btn.disabled=false;
+if(ok){ nombreInput.value=''; renderPlanSegList(); }
 });
 
 function openBrandForm(mode){
@@ -894,7 +929,6 @@ document.getElementById('bf-buyer').value=activeBrand.buyer||'';
 document.getElementById('bf-tono-desc').value=activeBrand.tonoDesc||'';
 document.getElementById('bf-tono-ejemplos').value=activeBrand.tonoEj||'';
 setCanalesIn('bf-canales',activeBrand.canalesActivos||['Newsletter']);
-bfSegmentos=(activeBrand.segmentos||[]).map(s=>({id:++bfSegIdSeq,categoria:s.categoria,nombre:s.nombre}));
 }else{
 nombreInput.value=''; nombreInput.readOnly=false; nombreInput.style.opacity='1';
 document.getElementById('bf-industria').value='';
@@ -902,9 +936,7 @@ document.getElementById('bf-buyer').value='';
 document.getElementById('bf-tono-desc').value='';
 document.getElementById('bf-tono-ejemplos').value='';
 setCanalesIn('bf-canales',['Newsletter']);
-bfSegmentos=[];
 }
-renderBfSegList();
 brandFormMode=mode;
 window.scrollTo(0,0);
 }
@@ -931,7 +963,7 @@ buyer: document.getElementById('bf-buyer').value.trim(),
 tonoDesc,
 tonoEj: document.getElementById('bf-tono-ejemplos').value.trim(),
 canalesActivos: canales,
-segmentos: bfSegmentos.map(s=>({categoria:s.categoria,nombre:s.nombre}))
+segmentos: (brandFormMode==='edit'&&activeBrand)?(activeBrand.segmentos||[]):[]
 };
 const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(profile)});
 if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||'Error al guardar la marca'); }
@@ -952,6 +984,7 @@ document.getElementById('plan-brand-name').textContent=activeBrand.nombre;
 const now=new Date();
 document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 document.getElementById('notas-mes').value='';
+renderPlanSegList();
 CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
 calRows=[];
 document.getElementById('cal-wrap').innerHTML='';
@@ -1054,12 +1087,26 @@ return {categoria:s.slice(0,i).trim(),nombre:s.slice(i+1).trim()};
 function segEnBiblioteca(ref){
 return ((activeBrand&&activeBrand.segmentos)||[]).some(s=>s.categoria===ref.categoria&&s.nombre.toLowerCase()===ref.nombre.toLowerCase());
 }
-function segChipsHTML(lista,cls,idx){
-return (lista||[]).map(s=>{
+function segEditorHTML(lista,kind,idx){
+const cls=kind==='incluir'?'inc':'exc';
+const chips=(lista||[]).map(s=>{
 const ref=parseSegRef(s);
 const nuevo=ref.categoria&&!segEnBiblioteca(ref);
-return `<span class="seg-chip ${cls}${nuevo?' sugerido':''}">${esc(ref.nombre||s)}${nuevo?`<button class="seg-add-btn" data-idx="${idx}" data-seg="${esc(s)}" title="Agregar a la biblioteca de la marca">+</button>`:''}</span>`;
+const addBtn=nuevo?`<button class="seg-add-btn" data-idx="${idx}" data-seg="${esc(s)}" title="Agregar a la biblioteca de la marca">+</button>`:'';
+return `<span class="seg-chip ${cls}${nuevo?' sugerido':''}">${esc(ref.nombre||s)}${addBtn}<button class="seg-x" data-idx="${idx}" data-kind="${kind}" data-seg="${esc(s)}" title="Quitar de esta fila">×</button></span>`;
 }).join('');
+const disponibles=((activeBrand&&activeBrand.segmentos)||[]).filter(seg=>!(lista||[]).includes(`${seg.categoria}: ${seg.nombre}`));
+let selectHTML='';
+if(disponibles.length){
+const opts=SEG_CATEGORIAS.map(cat=>{
+const items=disponibles.filter(s=>s.categoria===cat);
+if(!items.length) return '';
+return `<optgroup label="${esc(cat)}">${items.map(s=>`<option value="${esc(cat+': '+s.nombre)}">${esc(s.nombre)}</option>`).join('')}</optgroup>`;
+}).join('');
+selectHTML=`<select class="seg-add-select" data-idx="${idx}" data-kind="${kind}"><option value="">+ agregar a ${kind}…</option>${opts}</select>`;
+}
+if(!chips&&!selectHTML) return '';
+return `<div class="seg-editor"><div class="seg-editor-lbl">${kind==='incluir'?'Incluir':'Excluir'}</div><div class="seg-chips">${chips}</div>${selectHTML}</div>`;
 }
 function calRowCardHTML(r,idx){
 const bc=r.canal&&r.canal.includes('Push')?'b-push':r.canal&&r.canal.includes('WhatsApp')?'b-wa':'b-nl';
@@ -1079,9 +1126,9 @@ const indef=(r.asunto||'').includes('A DEFINIR');
 fieldsHTML=`<div class="rl"><div class="rlbl">Asunto</div><div class="rval${indef?' indef':''}">${esc(r.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div>
 <div class="rl"><div class="rlbl">Preheader</div><div class="rval pre${indef?' indef':''}">${esc(r.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>`;
 }
-const incHTML=segChipsHTML(r.incluir,'inc',idx);
-const excHTML=segChipsHTML(r.excluir,'exc',idx);
-const audienciaHTML=(incHTML||excHTML)?`<div class="rl"><div class="rlbl">Audiencia</div><div class="seg-chips" style="margin-top:2px">${incHTML}${excHTML}</div></div>`:'';
+const incHTML=segEditorHTML(r.incluir,'incluir',idx);
+const excHTML=segEditorHTML(r.excluir,'excluir',idx);
+const audienciaHTML=(incHTML||excHTML)?`<div class="rl"><div class="rlbl">Audiencia</div>${incHTML}${excHTML}</div>`:'';
 const solapHTML=r.solapamientoTexto?`<div class="warn-line">⚠️ ${esc(r.solapamientoTexto)}</div>`:'';
 return `<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>
 <div class="cbody">
@@ -1191,25 +1238,36 @@ const cpyBtn=e.target.closest('.cpybtn');
 if(cpyBtn){ copiarFila(+cpyBtn.dataset.idx,cpyBtn); return; }
 const segBtn=e.target.closest('.seg-add-btn');
 if(segBtn){ agregarSegmentoABiblioteca(+segBtn.dataset.idx,segBtn.dataset.seg); return; }
+const segX=e.target.closest('.seg-x');
+if(segX){ quitarSegmentoDeFila(+segX.dataset.idx,segX.dataset.kind,segX.dataset.seg); return; }
 });
+document.getElementById('cal-wrap').addEventListener('change',e=>{
+const sel=e.target.closest('.seg-add-select');
+if(sel && sel.value) agregarSegmentoAFila(+sel.dataset.idx,sel.dataset.kind,sel.value);
+});
+
+function quitarSegmentoDeFila(idx,kind,seg){
+const r=calRows[idx];
+if(!r||!r[kind]) return;
+r[kind]=r[kind].filter(s=>s!==seg);
+detectarSolapamientos(calRows,proyMes);
+renderCalTable(calRows);
+}
+function agregarSegmentoAFila(idx,kind,seg){
+const r=calRows[idx];
+if(!r||!seg) return;
+r[kind]=r[kind]||[];
+if(!r[kind].includes(seg)) r[kind].push(seg);
+detectarSolapamientos(calRows,proyMes);
+renderCalTable(calRows);
+}
 
 async function agregarSegmentoABiblioteca(idx,segStr){
 if(!activeBrand) return;
 const ref=parseSegRef(segStr);
 if(!ref.categoria||!ref.nombre||segEnBiblioteca(ref)) return;
 const nuevaLista=[...(activeBrand.segmentos||[]),{categoria:ref.categoria,nombre:ref.nombre}];
-try{
-const res=await apiFetch('/api/brands',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-nombre:activeBrand.nombre,
-industria:activeBrand.industria||'',
-buyer:activeBrand.buyer||'',
-tonoDesc:activeBrand.tonoDesc||'',
-tonoEj:activeBrand.tonoEj||'',
-canalesActivos:activeBrand.canalesActivos||[],
-segmentos:nuevaLista
-})});
-if(res.ok){ activeBrand.segmentos=nuevaLista; rerenderCalRow(idx); showSavedIndicator(); }
-}catch(e){}
+if(await guardarSegmentosBiblioteca(nuevaLista)){ rerenderCalRow(idx); showSavedIndicator(); renderPlanSegList(); }
 }
 
 function showSavedIndicator(){
@@ -1279,7 +1337,7 @@ CRITERIO EDITORIAL:
 - Para cada fila, inferí "tipo" según el objetivo del mensaje (uno de: ${TIPOS.join(', ')})
 - Para cada fila, indicá también "categoria" (comunicacionAO / accionComercial / financiacion / microevento, según de qué bloque de ACCIONES COMERCIALES salió — respectivamente Comunicación AO / Acción Comercial / Financiación / Microevento) y "momento": "inicio" si es el primer día de una acción con rango de fechas, "cierre" si es el último día de ese rango, "recordatorio" si es un día intermedio de una acción en curso, o "puntual" si la acción es de un solo día
 - Si la fila corresponde a una acción de reactivación de base inactiva, agregá "reactivacion":true (si no aplica, omitir el campo)
-- Para cada fila, sugerí "incluir" y "excluir": arrays de segmentos de audiencia a los que conviene (o no) mandarle ese envío. Categorías posibles: Segmento de valor (RFM), Engagement, Compras, Carrito abandonado, Interacción con campañas, Navegación web, Afinidad e interés. Usá los segmentos ya definidos arriba cuando apliquen (escritos igual que ahí); si hace falta uno nuevo que no está en la lista, proponelo igual con formato "Categoría: nombre" (ej. "Compras: no compró hace más de 90 días") para que el analista lo pueda sumar a la biblioteca. Si un envío es para toda la base sin distinción, dejá los arrays vacíos — no fuerces un criterio si no aporta valor
+- Para cada fila, sugerí "incluir" y "excluir": arrays de segmentos de audiencia a los que conviene (o no) mandarle ese envío. Categorías posibles: Segmento de valor (RFM), Engagement, Compras, Carrito abandonado, Interacción con campañas, Navegación web, Afinidad e interés. PRIORIZÁ usar los segmentos ya definidos arriba (escritos igual que ahí) — analizá cuál de ellos aplica a cada envío según su tipo, categoría y momento, y aplicalos activamente en la mayoría de las filas; dejá los arrays vacíos solo cuando de verdad ningún segmento de la biblioteca tenga sentido para ese envío puntual. Si hace falta un segmento que no está en la lista, proponé uno nuevo igual, con formato "Categoría: nombre" (ej. "Compras: no compró hace más de 90 días"), para que el analista lo pueda sumar a la biblioteca
 - Cada fila es UN envío por UN canal. Según el canal, incluí los campos correspondientes: Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"
 
 ${buildCopyRules(canales)}
