@@ -469,6 +469,19 @@ input[type="file"]{display:none;}
 const TIPOS=['Urgencia / tiempo limitado','Lanzamiento / novedad','Beneficio / oferta','Aspiracional / inspiracional','Curiosidad / intriga','Racional / informativo','Emocional / cercano'];
 let calRows=[];
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// Intenta salvar una respuesta JSON cortada a mitad de camino (se quedó sin tokens):
+// corta en el último objeto completo y cierra los brackets/llaves que falten.
+function repararJSONTruncado(raw){
+let s=raw.trim();
+const lastComplete=s.lastIndexOf('}');
+if(lastComplete>0) s=s.slice(0,lastComplete+1);
+if(s.endsWith(',')) s=s.slice(0,-1);
+const opens=(s.match(/\[/g)||[]).length-(s.match(/\]/g)||[]).length;
+const openB=(s.match(/\{/g)||[]).length-(s.match(/\}/g)||[]).length;
+for(let i=0;i<opens;i++) s+=']';
+for(let i=0;i<openB;i++) s+='}';
+return JSON.parse(s);
+}
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
 ['resultado1','proyPage','distPage'].forEach(hide);
@@ -1345,13 +1358,18 @@ FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
 {"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":["Engagement: Alto"],"excluir":["Segmento de valor (RFM): Perdidos"],"asunto":"texto del asunto","preheader":"texto del preheader"},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":[],"excluir":[],"titulo":"texto del título","mensaje":"texto del mensaje"}]}`;
 
 try{
-const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:4000})});
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:8000})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
 const data=await res.json();
 const txt=data.content.map(i=>i.text||'').join('');
 const jsonMatch=txt.match(/\{[\s\S]*\}/);
 if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
-const parsed=JSON.parse(jsonMatch[0]);
+let parsed;
+try{ parsed=JSON.parse(jsonMatch[0]); }
+catch(e){
+try{ parsed=repararJSONTruncado(jsonMatch[0]); }
+catch(e2){ throw new Error('La respuesta fue muy larga y se cortó. Probá generar de nuevo, o con menos acciones cargadas.'); }
+}
 calRows=parsed.filas||[];
 detectarSolapamientos(calRows,mes);
 renderCalTable(calRows);
