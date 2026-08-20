@@ -890,7 +890,7 @@ return {texto:`Mensaje: ${data.mensaje||''}`,html:`<div class="rl"><div class="r
 const sl=(data.asunto||'').length,pl=(data.preheader||'').length;
 return {texto:`Asunto: ${data.asunto||''}\nPreheader: ${data.preheader||''}`,html:`<div class="rl"><div class="rlbl">Asunto</div><div class="rval">${esc(data.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div><div class="rl"><div class="rlbl">Preheader</div><div class="rval pre">${esc(data.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>`};
 }
-document.getElementById('qa-gen-btn').addEventListener('click',async function(){
+async function generarAsuntoRapido(btn){
 const nombreMarca=document.getElementById('qa-marca').value;
 if(!nombreMarca){ alert('Seleccioná una marca.'); return; }
 const brand=brandsCache.find(b=>b.nombre===nombreMarca);
@@ -914,7 +914,6 @@ TIPO DE ASUNTO: ${tipo}
 ${buildCopyRules([canal])}
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
 ${campoPrincipal(canal)}`;
-const btn=this;
 const orig=btn.textContent;
 btn.textContent='Generando…';btn.disabled=true;
 const resWrap=document.getElementById('qa-resultado');
@@ -929,15 +928,17 @@ let parsed;
 try{ parsed=JSON.parse(jsonMatch[0]); }
 catch(e){ parsed=repararJSONTruncado(jsonMatch[0]); }
 const r=qaResultadoHTML(canal,parsed);
-resWrap.innerHTML=`<div class="card"><div class="ct" style="margin-bottom:0.8rem">Resultado</div>${r.html}<div class="crow" style="gap:8px;margin-top:12px"><button class="cpybtn" id="qa-copy-btn">Copiar</button></div></div>`;
+resWrap.innerHTML=`<div class="card"><div class="ct" style="margin-bottom:0.8rem">Resultado</div>${r.html}<div class="crow" style="gap:8px;margin-top:12px"><button class="cpybtn" id="qa-copy-btn">Copiar</button><button class="btn-ghost" id="qa-regen-btn">Regenerar ↻</button></div></div>`;
 document.getElementById('qa-copy-btn').addEventListener('click',function(){
 navigator.clipboard.writeText(r.texto).then(()=>{this.textContent='¡Copiado!';this.classList.add('ok');setTimeout(()=>{this.textContent='Copiar';this.classList.remove('ok');},1800);});
 });
+document.getElementById('qa-regen-btn').addEventListener('click',function(){ generarAsuntoRapido(this); });
 }catch(err){
 resWrap.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
 }
 btn.textContent=orig;btn.disabled=false;
-});
+}
+document.getElementById('qa-gen-btn').addEventListener('click',function(){ generarAsuntoRapido(this); });
 
 let legacyBrandsCache=[];
 async function loadLegacyBrands(){
