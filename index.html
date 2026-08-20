@@ -213,6 +213,12 @@ input[type="file"]{display:none;}
 
 <!-- HOME / SELECCIÓN DE MARCA -->
 <div id="homeScreen" class="hidden">
+<div style="display:flex;gap:8px;margin-bottom:1rem">
+<button class="btn-accent home-tab-btn" data-tab="marcas">Tus marcas</button>
+<button class="btn-ghost home-tab-btn" data-tab="asuntos">✏️ Generador de asuntos</button>
+</div>
+
+<div id="home-tab-marcas">
 <div class="card">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
 <div class="ct" style="margin-bottom:0">Tus marcas</div>
@@ -246,6 +252,30 @@ input[type="file"]{display:none;}
 <input type="month" id="proy-direct-month" />
 <button class="btn-accent" id="proy-direct-btn">📊 Ir a Proyección →</button>
 </div>
+</div>
+</div>
+
+<div id="home-tab-asuntos" class="hidden">
+<div class="card">
+<div class="ct">Generador rápido de asuntos</div>
+<div class="hint" style="margin-bottom:12px">Generá un asunto/preheader (o título/mensaje) puntual para cualquier marca, sin armar un calendario completo. Usa el tono ya cargado de la marca.</div>
+<div class="f"><label>Marca</label><select id="qa-marca"><option value="">— Seleccioná una marca —</option></select></div>
+<div class="f">
+<label>Canal</label>
+<div class="tipo-opts" id="qa-canal">
+<button class="tipo-opt sel" data-val="Newsletter">Newsletter</button>
+<button class="tipo-opt" data-val="Notificación Push">Notificación Push</button>
+<button class="tipo-opt" data-val="WhatsApp">WhatsApp</button>
+</div>
+</div>
+<div class="f"><label>Nombre / tema de la acción</label><input type="text" id="qa-accion" placeholder="Ej: Liquidación de invierno, Envío gratis, Recordatorio de carrito…" /></div>
+<div class="f">
+<label>Tipo de asunto</label>
+<div class="tipo-opts" id="qa-tipo"></div>
+</div>
+<button class="btn-or" id="qa-gen-btn" style="margin-top:14px">Generar →</button>
+</div>
+<div id="qa-resultado"></div>
 </div>
 </div>
 
@@ -776,6 +806,7 @@ async function showHome(){
 show('homeScreen');
 hide('brand-actions-card');
 activeBrand=null;
+irATabHome('marcas');
 await loadBrandList();
 await loadLegacyBrands();
 window.scrollTo(0,0);
@@ -814,6 +845,99 @@ show('brand-actions-card');
 await poblarMesesGuardados();
 document.getElementById('brand-actions-card').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
+
+// ── SOLAPAS DE HOME ──────────────────────────────────────────────────────────────
+function irATabHome(tab){
+document.querySelectorAll('.home-tab-btn').forEach(b=>{
+const activa=b.dataset.tab===tab;
+b.classList.toggle('btn-accent',activa);
+b.classList.toggle('btn-ghost',!activa);
+});
+hide('home-tab-marcas');hide('home-tab-asuntos');
+show('home-tab-'+tab);
+if(tab==='asuntos') poblarQaMarcas();
+}
+document.querySelectorAll('.home-tab-btn').forEach(btn=>btn.addEventListener('click',()=>irATabHome(btn.dataset.tab)));
+
+// ── GENERADOR RÁPIDO DE ASUNTOS ──────────────────────────────────────────────────
+function poblarQaMarcas(){
+const sel=document.getElementById('qa-marca');
+const current=sel.value;
+sel.innerHTML='<option value="">— Seleccioná una marca —</option>'+brandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
+if(current) sel.value=current;
+}
+document.getElementById('qa-canal').addEventListener('click',e=>{
+const btn=e.target.closest('.tipo-opt');
+if(!btn) return;
+document.querySelectorAll('#qa-canal .tipo-opt').forEach(b=>b.classList.remove('sel'));
+btn.classList.add('sel');
+});
+document.getElementById('qa-tipo').innerHTML=TIPOS.map((t,i)=>`<button class="tipo-opt${i===0?' sel':''}" data-val="${esc(t)}">${esc(t)}</button>`).join('');
+document.getElementById('qa-tipo').addEventListener('click',e=>{
+const btn=e.target.closest('.tipo-opt');
+if(!btn) return;
+document.querySelectorAll('#qa-tipo .tipo-opt').forEach(b=>b.classList.remove('sel'));
+btn.classList.add('sel');
+});
+function qaResultadoHTML(canal,data){
+if(canal.includes('Push')){
+const tl=(data.titulo||'').length,ml=(data.mensaje||'').length;
+return {texto:`Título: ${data.titulo||''}\nMensaje: ${data.mensaje||''}`,html:`<div class="rl"><div class="rlbl">Título</div><div class="rval">${esc(data.titulo||'')}</div><div class="chars"><span class="${tl>45?'warn':'good'}">${tl}/45</span></div></div><div class="rl"><div class="rlbl">Mensaje</div><div class="rval pre">${esc(data.mensaje||'')}</div><div class="chars"><span class="${ml>80?'warn':'good'}">${ml}/80</span></div></div>`};
+}
+if(canal.includes('WhatsApp')){
+return {texto:`Mensaje: ${data.mensaje||''}`,html:`<div class="rl"><div class="rlbl">Mensaje</div><div class="rval pre">${esc(data.mensaje||'')}</div></div>`};
+}
+const sl=(data.asunto||'').length,pl=(data.preheader||'').length;
+return {texto:`Asunto: ${data.asunto||''}\nPreheader: ${data.preheader||''}`,html:`<div class="rl"><div class="rlbl">Asunto</div><div class="rval">${esc(data.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div><div class="rl"><div class="rlbl">Preheader</div><div class="rval pre">${esc(data.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>`};
+}
+document.getElementById('qa-gen-btn').addEventListener('click',async function(){
+const nombreMarca=document.getElementById('qa-marca').value;
+if(!nombreMarca){ alert('Seleccioná una marca.'); return; }
+const brand=brandsCache.find(b=>b.nombre===nombreMarca);
+if(!brand){ alert('No se pudo cargar esa marca.'); return; }
+const accion=document.getElementById('qa-accion').value.trim();
+if(!accion){ alert('Escribí un nombre o tema para la acción.'); return; }
+const canalBtn=document.querySelector('#qa-canal .tipo-opt.sel');
+const canal=canalBtn?canalBtn.dataset.val:'Newsletter';
+const tipoBtn=document.querySelector('#qa-tipo .tipo-opt.sel');
+const tipo=tipoBtn?tipoBtn.dataset.val:TIPOS[0];
+const prompt=`Sos un experto en email marketing y comunicaciones digitales para e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
+
+MARCA: ${brand.nombre}
+TONO DE VOZ DE LA MARCA:
+${brand.tonoDesc||''}${brand.tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${brand.tonoEj}`:''}
+
+ACCIÓN: ${accion}
+CANAL: ${canal}
+TIPO DE ASUNTO: ${tipo}
+
+${buildCopyRules([canal])}
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+${campoPrincipal(canal)}`;
+const btn=this;
+const orig=btn.textContent;
+btn.textContent='Generando…';btn.disabled=true;
+const resWrap=document.getElementById('qa-resultado');
+try{
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:600})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const data=await res.json();
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+let parsed;
+try{ parsed=JSON.parse(jsonMatch[0]); }
+catch(e){ parsed=repararJSONTruncado(jsonMatch[0]); }
+const r=qaResultadoHTML(canal,parsed);
+resWrap.innerHTML=`<div class="card"><div class="ct" style="margin-bottom:0.8rem">Resultado</div>${r.html}<div class="crow" style="gap:8px;margin-top:12px"><button class="cpybtn" id="qa-copy-btn">Copiar</button></div></div>`;
+document.getElementById('qa-copy-btn').addEventListener('click',function(){
+navigator.clipboard.writeText(r.texto).then(()=>{this.textContent='¡Copiado!';this.classList.add('ok');setTimeout(()=>{this.textContent='Copiar';this.classList.remove('ok');},1800);});
+});
+}catch(err){
+resWrap.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+}
+btn.textContent=orig;btn.disabled=false;
+});
 
 let legacyBrandsCache=[];
 async function loadLegacyBrands(){
