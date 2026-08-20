@@ -1285,6 +1285,16 @@ ${solapHTML}
 function nombreAccion(elemento){
 return (elemento||'').split(' - ').slice(1).join(' - ')||elemento||'';
 }
+function fechaDeElemento(elemento){
+const m=(elemento||'').match(/^(\d{2}\/\d{2})/);
+return m?m[1]:'';
+}
+function segListText(lista){
+return (lista||[]).map(s=>parseSegRef(s).nombre||s).join(', ');
+}
+// Columnas compartidas por los botones "Copiar" del calendario y de la distribución,
+// para poder pegar directo en la planilla de seguimiento del equipo.
+const EXPORT_HEADER=['Fecha','Canal','Acción','Envíos','Aperturas','OR','Clicks','CTOR','Sesiones/Clicks','Sesiones','Tkt Promedio','CR','Órdenes','Ingresos','BBDD Inc','BBDD Exc'];
 function detectarSolapamientos(rows,mesYYYYMM,ventanaDias){
 ventanaDias=ventanaDias||15;
 rows.forEach(r=>{ delete r.solapamientoTexto; });
@@ -1524,8 +1534,11 @@ document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</
 });
 
 document.getElementById('btn-copy-cal').addEventListener('click',function(){
-const header=['Elemento','Canal','Hora','Tipo','Asunto/Título','Preheader/Mensaje'];
-const rows=[header,...calRows.map(r=>[r.elemento,r.canal,r.hora,r.tipo,r.asunto||r.titulo||'',r.preheader||r.mensaje||''])];
+const rows=[EXPORT_HEADER,...calRows.map(r=>{
+const tieneObjetivo=r.objetivoOrdenes!=null;
+const ticket=(tieneObjetivo&&r.objetivoOrdenes)?Math.round(r.objetivoFacturacion/r.objetivoOrdenes):'';
+return [fechaDeElemento(r.elemento),r.canal||'',nombreAccion(r.elemento),'','','','','','','',ticket,'',tieneObjetivo?Math.round(r.objetivoOrdenes):'',tieneObjetivo?Math.round(r.objetivoFacturacion):'',segListText(r.incluir),segListText(r.excluir)];
+})];
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
 });
 document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');});
@@ -1723,7 +1736,7 @@ grupos.get(key).rows.push(r);
 const items=[...grupos.entries()].map(([key,g])=>{
 const canales=[...new Set(g.rows.map(r=>r.canal))].join(', ');
 const obj=g.rows.find(r=>r.objetivoFacturacion!=null);
-return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0,ajuste:obj?obj.ajusteIA:null};
+return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0,ajuste:obj?obj.ajusteIA:null,incluir:obj?obj.incluir:[],excluir:obj?obj.excluir:[]};
 });
 if(autoInfo&&autoInfo.pct>0&&mesYYYYMM){
 const [yyyy,mm]=mesYYYYMM.split('-').map(Number);
@@ -1733,7 +1746,7 @@ const ordDia=autoInfo.ordenes/totalDias;
 const pesoDia=Math.round((autoInfo.pct/totalDias)*100)/100;
 for(let d=1;d<=totalDias;d++){
 const dd=String(d).padStart(2,'0'),mmS=String(mm).padStart(2,'0');
-items.push({fecha:new Date(yyyy,mm-1,d),elemento:`${dd}/${mmS} - AUTOMATIZACIONES`,canales:'—',objetivoFacturacion:factDia,objetivoOrdenes:ordDia,peso:pesoDia,ajuste:null});
+items.push({fecha:new Date(yyyy,mm-1,d),elemento:`${dd}/${mmS} - AUTOMATIZACIONES`,canales:'—',objetivoFacturacion:factDia,objetivoOrdenes:ordDia,peso:pesoDia,ajuste:null,incluir:[],excluir:[]});
 }
 }
 items.sort((a,b)=>(a.fecha&&b.fecha)?a.fecha-b.fecha:0);
@@ -1786,8 +1799,10 @@ this.textContent='Guardar y distribuir →';this.disabled=false;
 });
 
 document.getElementById('btn-copy-dist').addEventListener('click',function(){
-const header=['Elemento','Canales','% del mes','Ajuste IA','Objetivo facturación','Objetivo órdenes'];
-const rows=[header,...distList.map(it=>[it.elemento,it.canales,it.peso?it.peso+'%':'',it.ajuste?it.ajuste+'x':'',Math.round(it.objetivoFacturacion),Math.round(it.objetivoOrdenes)])];
+const rows=[EXPORT_HEADER,...distList.map(it=>{
+const ticket=it.objetivoOrdenes?Math.round(it.objetivoFacturacion/it.objetivoOrdenes):'';
+return [fechaDeElemento(it.elemento),it.canales||'',nombreAccion(it.elemento),'','','','','','','',ticket,'',Math.round(it.objetivoOrdenes),Math.round(it.objetivoFacturacion),segListText(it.incluir),segListText(it.excluir)];
+})];
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar lista',2000);});
 });
 
