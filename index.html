@@ -289,9 +289,12 @@ input[type="file"]{display:none;}
 
 <!-- PASO 1: FORM -->
 <div id="paso1" class="hidden">
-<div class="card" style="display:flex;align-items:center;justify-content:space-between">
+<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
 <div><div class="hint" style="margin-bottom:2px">Marca activa</div><div style="font-size:15px;font-weight:500" id="plan-brand-name">—</div></div>
+<div style="display:flex;gap:8px">
 <button class="btn-ghost" id="btn-change-brand">Cambiar marca</button>
+<button class="btn-ghost" id="btn-home-paso1">🏠 Volver al inicio</button>
+</div>
 </div>
 
 <div class="card">
@@ -1007,6 +1010,7 @@ window.scrollTo(0,0);
 }
 document.getElementById('btn-goto-plan').addEventListener('click',showPlanScreen);
 document.getElementById('btn-change-brand').addEventListener('click',()=>showHome());
+document.getElementById('btn-home-paso1').addEventListener('click',()=>showHome());
 
 // ── ACCESO DIRECTO A PROYECCIÓN (con o sin calendario generado) ────────────────
 function poblarMesesGuardados(){
