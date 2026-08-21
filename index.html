@@ -273,6 +273,10 @@ input[type="file"]{display:none;}
 <label>Tipo de asunto</label>
 <div class="tipo-opts" id="qa-tipo"></div>
 </div>
+<div class="f">
+<label>Consideraciones <span style="color:var(--dt3);font-size:11px">(opcional)</span></label>
+<textarea id="qa-consideraciones" style="min-height:64px" placeholder="Ej: Ya envié este asunto a la base general, necesito el mismo mensaje pero con otro enfoque para reenviarlo a los que no abrieron."></textarea>
+</div>
 <button class="btn-or" id="qa-gen-btn" style="margin-top:14px">Generar →</button>
 </div>
 <div id="qa-resultado"></div>
@@ -901,6 +905,7 @@ const canalBtn=document.querySelector('#qa-canal .tipo-opt.sel');
 const canal=canalBtn?canalBtn.dataset.val:'Newsletter';
 const tipoBtn=document.querySelector('#qa-tipo .tipo-opt.sel');
 const tipo=tipoBtn?tipoBtn.dataset.val:TIPOS[0];
+const consideraciones=document.getElementById('qa-consideraciones').value.trim();
 const prompt=`Sos un experto en email marketing y comunicaciones digitales para e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
 
 MARCA: ${brand.nombre}
@@ -910,7 +915,7 @@ ${brand.tonoDesc||''}${brand.tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${
 ACCIÓN: ${accion}
 CANAL: ${canal}
 TIPO DE ASUNTO: ${tipo}
-
+${consideraciones?`\nCONSIDERACIONES (tenelas en cuenta al armar el asunto y preheader/mensaje):\n${consideraciones}\n`:''}
 ${buildCopyRules([canal])}
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
 ${campoPrincipal(canal)}`;
