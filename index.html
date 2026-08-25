@@ -1876,13 +1876,16 @@ const card=document.querySelector(`#brief-wrap .cb[data-idx="${idx}"]`);
 if(!card) return;
 card.innerHTML=briefCardHTML(calRows[idx],idx);
 }
+// Agrupa SOLO filas consecutivas de la misma campaña (nunca reordena): si el mismo grupoCampana
+// vuelve a aparecer más adelante interrumpido por otra acción, arranca una caja nueva en su lugar
+// cronológico real, en vez de "tirarlo para atrás" a la primera caja de esa campaña.
 function agruparBriefsPorCampana(rows){
 const grupos=[];
-const idxPorLabel=new Map();
 rows.forEach(({r,idx})=>{
-const label=(r.brief&&r.brief.grupoCampana)?r.brief.grupoCampana:('__sola'+idx);
-if(!idxPorLabel.has(label)){ idxPorLabel.set(label,grupos.length); grupos.push({label,items:[]}); }
-grupos[idxPorLabel.get(label)].items.push({r,idx});
+const label=(r.brief&&r.brief.grupoCampana)?r.brief.grupoCampana:null;
+const ultimo=grupos[grupos.length-1];
+if(label&&ultimo&&ultimo.label===label){ ultimo.items.push({r,idx}); }
+else{ grupos.push({label,items:[{r,idx}]}); }
 });
 return grupos;
 }
@@ -1902,7 +1905,7 @@ genBtn.textContent=rows.some(({r})=>r.brief)?'Regenerar todos ↻':'🪄 Generar
 const grupos=agruparBriefsPorCampana(rows);
 wrap.innerHTML=grupos.map(g=>{
 const cardsHTML=g.items.map(({r,idx})=>`<div class="cb" data-idx="${idx}">${briefCardHTML(r,idx)}</div>`).join('');
-const hdrHTML=g.label.startsWith('__sola')?'':`<div class="brief-group-hdr">${esc(g.label)}</div>`;
+const hdrHTML=g.label?`<div class="brief-group-hdr">${esc(g.label)}</div>`:'';
 return `<div class="brief-group">${hdrHTML}${cardsHTML}</div>`;
 }).join('');
 }
