@@ -504,6 +504,13 @@ input[type="file"]{display:none;}
 <button class="btn-ghost" id="btn-new-cal">🏠 Volver al inicio</button>
 </div>
 </div>
+<div class="card" style="margin-top:1rem">
+<div class="ct" style="font-size:14px;margin-bottom:8px">¿Algo no te convence? Escribí una sugerencia y rehacemos todo el calendario</div>
+<textarea id="cal-feedback" placeholder="Ej: el envío del 15 enfocalo más en la financiación, y separá mejor los dos newsletters de la última semana"></textarea>
+<div style="margin-top:8px">
+<button class="btn-accent" id="btn-regen-feedback">Rehacer calendario con esta sugerencia →</button>
+</div>
+</div>
 </div>
 
 <!-- PÁGINA: PROYECCIÓN DEL MES -->
@@ -1541,9 +1548,18 @@ if(!chips&&!selectHTML) return '';
 return `<div class="seg-editor"><div class="seg-editor-lbl">${kind==='incluir'?'Incluir':'Excluir'}</div><div class="seg-chips">${chips}</div>${selectHTML}</div>`;
 }
 let resultadoModo='campanas';
+let editandoIdx=-1;
 function calRowCardHTML(r,idx){
 const bc=r.canal&&r.canal.includes('Push')?'b-push':r.canal&&r.canal.includes('WhatsApp')?'b-wa':'b-nl';
-const header=`<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>`;
+const header=idx===editandoIdx?`<div class="ch"><div style="display:flex;gap:8px;flex:1;align-items:center">
+<input type="text" class="cedit-fecha" data-idx="${idx}" value="${esc(fechaDeElemento(r.elemento))}" placeholder="DD/MM" style="width:64px;flex:none">
+<input type="text" class="cedit-nombre" data-idx="${idx}" value="${esc(nombreAccion(r.elemento))}" placeholder="Nombre de la campaña" style="flex:1">
+</div>
+<div style="display:flex;gap:6px;margin-left:8px">
+<button class="cpybtn cedit-save" data-idx="${idx}">Guardar</button>
+<button class="cpybtn cedit-cancel" data-idx="${idx}">Cancelar</button>
+</div></div>`
+:`<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span><button class="cpybtn edit-elem-btn" data-idx="${idx}" title="Editar título y fecha">✏️ Editar</button></div></div>`;
 if(resultadoModo==='asuntos'){
 const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${r.tipo===t?' sel':''}" data-val="${t}" data-idx="${idx}">${t}</button>`).join('');
 let fieldsHTML='';
@@ -1696,7 +1712,50 @@ const segBtn=e.target.closest('.seg-add-btn');
 if(segBtn){ agregarSegmentoABiblioteca(+segBtn.dataset.idx,segBtn.dataset.seg); return; }
 const segX=e.target.closest('.seg-x');
 if(segX){ quitarSegmentoDeFila(+segX.dataset.idx,segX.dataset.kind,segX.dataset.seg); return; }
+const editBtn=e.target.closest('.edit-elem-btn');
+if(editBtn){
+editandoIdx=+editBtn.dataset.idx;
+rerenderCalRow(editandoIdx);
+const inp=document.querySelector(`.cedit-nombre[data-idx="${editandoIdx}"]`);
+if(inp) inp.focus();
+return;
+}
+const cancelBtn=e.target.closest('.cedit-cancel');
+if(cancelBtn){ editandoIdx=-1; rerenderCalRow(+cancelBtn.dataset.idx); return; }
+const saveBtn=e.target.closest('.cedit-save');
+if(saveBtn){ guardarEdicionElemento(+saveBtn.dataset.idx); return; }
 });
+
+function guardarEdicionElemento(idx){
+const r=calRows[idx];
+if(!r) return;
+const fechaInp=document.querySelector(`.cedit-fecha[data-idx="${idx}"]`);
+const nombreInp=document.querySelector(`.cedit-nombre[data-idx="${idx}"]`);
+const nombre=(nombreInp?nombreInp.value:'').trim();
+if(!nombre){ alert('El nombre de la campaña no puede quedar vacío.'); return; }
+const m=(fechaInp?fechaInp.value:'').trim().match(/^(\d{1,2})\/(\d{1,2})$/);
+if(!m){ alert('La fecha debe tener formato DD/MM (ej: 05/06).'); return; }
+const fecha=`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}`;
+const nuevoElemento=`${fecha} - ${nombre.toUpperCase()}`;
+const viejoElemento=r.elemento;
+editandoIdx=-1;
+if(nuevoElemento===viejoElemento){ renderCalTable(calRows); return; }
+calRows.forEach(row=>{ if(row.elemento===viejoElemento) row.elemento=nuevoElemento; });
+detectarSolapamientos(calRows,proyMes||document.getElementById('mes').value);
+renderCalTable(calRows);
+guardarPlanActual();
+}
+
+function guardarPlanActual(analisisTexto){
+if(!activeBrand) return;
+const marca=proyMarca||activeBrand.nombre;
+const mes=proyMes||document.getElementById('mes').value;
+const notas=document.getElementById('notas-mes').value.trim();
+const canales=activeBrand.canalesActivos||[];
+apiFetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+nombre:marca,month:mes,notas,canales,accionesCat,filas:calRows,analisis:analisisTexto!=null?analisisTexto:(document.getElementById('analisis-box').textContent||'')
+})}).then(r=>{ if(r.ok) showSavedIndicator(); }).catch(()=>{});
+}
 document.getElementById('cal-wrap').addEventListener('change',e=>{
 const sel=e.target.closest('.seg-add-select');
 if(sel && sel.value) agregarSegmentoAFila(+sel.dataset.idx,sel.dataset.kind,sel.value);
@@ -1734,7 +1793,7 @@ setTimeout(()=>el.classList.add('hidden'),2500);
 }
 
 // ── PASO 1: GENERAR CALENDARIO ───────────────────────────────────────────────────
-document.getElementById('btn-cal').addEventListener('click',async()=>{
+async function generarCalendario(sugerenciaExtra){
 if(!activeBrand){ alert('Seleccioná una marca primero.'); showHome(); return; }
 const marca=activeBrand.nombre;
 const mes=document.getElementById('mes').value;
@@ -1751,7 +1810,7 @@ if(!canales.length){alert('Esta marca no tiene canales activos configurados. Edi
 
 hide('paso1');show('resultado1');
 hide('analisis-box');
-document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Armando el calendario…</div></div>`;
+document.getElementById('cal-wrap').innerHTML=`<div class="spin-wrap"><div class="spinner"></div><div class="stxt">${sugerenciaExtra?'Rehaciendo el calendario con tu sugerencia…':'Armando el calendario…'}</div></div>`;
 
 const [yr,mo]=mes.split('-');
 const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
@@ -1775,6 +1834,7 @@ ${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
 ${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
 ${historial?`\nHISTORIAL DE MESES ANTERIORES (solo para evitar repetir temas/asuntos idénticos y dar continuidad — NO tomar como acciones del mes actual):\n${historial}\n`:''}
 ${segmentosTexto?`\nSEGMENTOS DE AUDIENCIA YA DEFINIDOS PARA ESTA MARCA (usalos cuando corresponda en vez de inventar de cero):\n${segmentosTexto}\n`:''}
+${sugerenciaExtra?`\nSUGERENCIA/CORRECCIÓN DEL ANALISTA SOBRE LA VERSIÓN ANTERIOR DE ESTE CALENDARIO (tenela en cuenta por sobre todo lo demás al rearmar el calendario completo):\n${sugerenciaExtra}\n`:''}
 ACCIONES COMERCIALES DEL MES (cargadas manualmente, organizadas por categoría):
 ${accionesTexto}
 
@@ -1823,19 +1883,25 @@ catch(e2){ throw new Error('La respuesta fue muy larga y se cortó. Probá gener
 calRows=parsed.filas||[];
 detectarSolapamientos(calRows,mes);
 resultadoModo='campanas';
+editandoIdx=-1;
 renderCalTable(calRows);
 if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
 
-apiFetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-nombre:marca,month:mes,notas,canales,accionesCat,filas:calRows,analisis:parsed.analisis||''
-})}).then(r=>{ if(r.ok) showSavedIndicator(); }).catch(()=>{});
-
 proyMarca=marca;proyMes=mes;
+guardarPlanActual(parsed.analisis||'');
 }catch(err){
 const esErrorTecnico=/^(Unexpected token|Unexpected end of JSON|Expected)/.test(err.message||'');
 const msg=esErrorTecnico?'La respuesta fue muy larga y se cortó. Probá generar de nuevo, o con menos acciones cargadas.':err.message;
 document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(msg)}</div>`;
 }
+}
+document.getElementById('btn-cal').addEventListener('click',()=>generarCalendario());
+document.getElementById('btn-regen-feedback').addEventListener('click',()=>{
+const inp=document.getElementById('cal-feedback');
+const txt=(inp.value||'').trim();
+if(!txt){ alert('Escribí una sugerencia antes de rehacer.'); return; }
+inp.value='';
+generarCalendario(txt);
 });
 
 document.getElementById('btn-copy-cal').addEventListener('click',function(){
