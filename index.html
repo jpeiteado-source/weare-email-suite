@@ -501,6 +501,7 @@ input[type="file"]{display:none;}
 <button class="btn-ghost" id="btn-copy-cal">Copiar tabla</button>
 <button class="btn-accent" id="btn-goto-asuntos">Asuntos y preheaders →</button>
 <button class="btn-accent hidden" id="btn-goto-proy">📊 Proyección del mes →</button>
+<button class="btn-accent hidden" id="btn-goto-brief">🧩 Briefs de diseño →</button>
 <button class="btn-ghost" id="btn-new-cal">🏠 Volver al inicio</button>
 </div>
 </div>
@@ -578,6 +579,25 @@ input[type="file"]{display:none;}
 </div>
 </div>
 
+<!-- PÁGINA: BRIEFS DE DISEÑO -->
+<div id="briefPage" class="hidden">
+<div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+<div class="ct" style="margin-bottom:0">Briefs de diseño</div>
+<div style="display:flex;gap:8px">
+<button class="btn-ghost" id="btn-back-brief">← Volver al calendario</button>
+<button class="btn-ghost" id="btn-new-brief">🏠 Volver al inicio</button>
+</div>
+</div>
+<div class="hint" style="margin-bottom:1rem">Un brief de maquetación por cada envío de Newsletter del mes, armado por IA a partir del asunto/preheader ya generado. Editá cualquier campo a mano y copialo listo para pasarle a diseño.</div>
+<button class="btn-accent" id="btn-gen-briefs">🪄 Generar briefs con IA →</button>
+<div class="cal-wrap" id="brief-wrap" style="margin-top:1rem"></div>
+<div style="margin-top:1rem">
+<button class="btn-ghost" id="btn-copy-all-briefs">Copiar todos los briefs</button>
+</div>
+</div>
+</div>
+
 </main>
 
 <script>
@@ -599,7 +619,7 @@ return JSON.parse(s);
 }
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
-['resultado1','proyPage','distPage'].forEach(hide);
+['resultado1','proyPage','distPage','briefPage'].forEach(hide);
 
 // Toggles genéricos de canal (se usan en el form de marca)
 document.querySelectorAll('.canal-toggle').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
@@ -831,7 +851,7 @@ if(authToken) await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'ap
 authToken='';currentUsername='';activeBrand=null;
 localStorage.removeItem(AUTH_KEY);localStorage.removeItem(USER_KEY);
 hide('hdr-user-wrap');
-['homeScreen','brandFormScreen','paso1','resultado1','proyPage','distPage'].forEach(hide);
+['homeScreen','brandFormScreen','paso1','resultado1','proyPage','distPage','briefPage'].forEach(hide);
 show('authScreen');
 }
 document.getElementById('btn-logout').addEventListener('click',()=>doLogout(false));
@@ -884,7 +904,7 @@ let brandsCache=[];
 let activeBrand=null;
 
 async function showHome(){
-['authScreen','brandFormScreen','paso1','resultado1','proyPage','distPage'].forEach(hide);
+['authScreen','brandFormScreen','paso1','resultado1','proyPage','distPage','briefPage'].forEach(hide);
 show('homeScreen');
 hide('brand-actions-card');
 activeBrand=null;
@@ -1645,6 +1665,7 @@ const enAsuntos=resultadoModo==='asuntos';
 document.getElementById('btn-back-campanas').classList.toggle('hidden',!enAsuntos);
 document.getElementById('btn-goto-asuntos').classList.toggle('hidden',enAsuntos);
 document.getElementById('btn-goto-proy').classList.toggle('hidden',!enAsuntos);
+document.getElementById('btn-goto-brief').classList.toggle('hidden',!enAsuntos);
 }
 function rerenderCalRow(idx){
 const card=document.querySelector(`#cal-wrap .cb[data-idx="${idx}"]`);
@@ -1760,6 +1781,237 @@ document.getElementById('cal-wrap').addEventListener('change',e=>{
 const sel=e.target.closest('.seg-add-select');
 if(sel && sel.value) agregarSegmentoAFila(+sel.dataset.idx,sel.dataset.kind,sel.value);
 });
+
+// ── BRIEFS DE DISEÑO (por envío de Newsletter) ───────────────────────────────────
+function calRowsNewsletter(){
+return calRows.map((r,idx)=>({r,idx})).filter(({r})=>!(r.canal&&(r.canal.includes('Push')||r.canal.includes('WhatsApp'))));
+}
+function briefCardHTML(r,idx){
+const header=`<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span></div></div>`;
+const b=r.brief;
+if(!b){
+return `${header}<div class="cbody"><div class="hint">Sin brief generado todavía.</div><div class="crow" style="gap:8px"><button class="btn-ghost brief-gen-btn" data-idx="${idx}">Generar ↻</button></div></div>`;
+}
+const inp=(lbl,field,val,extra)=>`<div class="f"><label>${lbl}</label><input type="text" class="brief-field" data-idx="${idx}" data-field="${field}" value="${esc(val||'')}"${extra||''}></div>`;
+let html=`${header}<div class="cbody">
+${inp('Contexto comercial','contextoComercial',b.contextoComercial)}
+${inp('KV (imagen principal)','kv',b.kv)}
+${inp('Texto en header <span style="font-weight:400;color:var(--dt3)">(opcional)</span>','headerTexto',b.headerTexto)}
+<div class="g2">
+${inp('Jerarquía 1','jerarquia1',b.jerarquia1)}
+${inp('Jerarquía 2','jerarquia2',b.jerarquia2)}
+</div>
+${inp('CTA header','ctaHeader',b.ctaHeader,' style="max-width:200px"')}`;
+if(b.tieneBanner){
+html+=`<div class="f" style="border-top:1px solid var(--dbrd);padding-top:10px;margin-top:4px">
+<label>Banner aparte <button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneBanner" style="margin-left:8px">Quitar</button></label>
+<textarea class="brief-field" data-idx="${idx}" data-field="bannerTexto" style="min-height:52px">${esc(b.bannerTexto||'')}</textarea>
+</div>
+${inp('CTA banner','ctaBanner',b.ctaBanner,' style="max-width:200px"')}`;
+}else{
+html+=`<button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneBanner">+ Agregar banner aparte</button>`;
+}
+if(b.tieneSkus){
+html+=`<div class="f" style="border-top:1px solid var(--dbrd);padding-top:10px;margin-top:10px">
+<label>SKUs participantes <button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneSkus" style="margin-left:8px">Quitar</button></label>
+<input type="text" class="brief-field" data-idx="${idx}" data-field="skusDescripcion" value="${esc(b.skusDescripcion||'')}">
+</div>
+<div class="g2">
+${inp('Cucarda','cucarda',b.cucarda)}
+${inp('Cantidad de SKUs','cantidadSkus',b.cantidadSkus)}
+</div>
+${inp('CTA SKUs','ctaSkus',b.ctaSkus,' style="max-width:200px"')}
+<button class="cpybtn brief-precio-btn" data-idx="${idx}">Precio final: ${b.precioFinal?'Sí':'No'}</button>`;
+}else{
+html+=`<div style="margin-top:10px"><button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneSkus">+ Agregar SKUs</button></div>`;
+}
+html+=`<div class="crow" style="gap:8px;margin-top:10px"><button class="btn-ghost brief-gen-btn" data-idx="${idx}">Regenerar ↻</button><button class="cpybtn brief-copy-btn" data-idx="${idx}">Copiar brief</button></div>
+</div>`;
+return html;
+}
+function rerenderBriefCard(idx){
+const card=document.querySelector(`#brief-wrap .cb[data-idx="${idx}"]`);
+if(!card) return;
+card.innerHTML=briefCardHTML(calRows[idx],idx);
+}
+function renderBriefPage(){
+const rows=calRowsNewsletter();
+const wrap=document.getElementById('brief-wrap');
+const genBtn=document.getElementById('btn-gen-briefs');
+const copyAllBtn=document.getElementById('btn-copy-all-briefs');
+if(!rows.length){
+wrap.innerHTML='<div class="hint">Este calendario no tiene envíos de Newsletter.</div>';
+genBtn.classList.add('hidden');copyAllBtn.classList.add('hidden');
+return;
+}
+genBtn.classList.remove('hidden');copyAllBtn.classList.remove('hidden');
+genBtn.disabled=false;
+genBtn.textContent=rows.some(({r})=>r.brief)?'Regenerar todos ↻':'🪄 Generar briefs con IA →';
+wrap.innerHTML=rows.map(({r,idx})=>`<div class="cb" data-idx="${idx}">${briefCardHTML(r,idx)}</div>`).join('');
+}
+function normalizarBrief(b){
+return {contextoComercial:b.contextoComercial||'',kv:b.kv||'',headerTexto:b.headerTexto||'',jerarquia1:b.jerarquia1||'',jerarquia2:b.jerarquia2||'',ctaHeader:b.ctaHeader||'',tieneBanner:!!b.tieneBanner,bannerTexto:b.bannerTexto||'',ctaBanner:b.ctaBanner||'',tieneSkus:!!b.tieneSkus,skusDescripcion:b.skusDescripcion||'',precioFinal:!!b.precioFinal,cucarda:b.cucarda||'',cantidadSkus:b.cantidadSkus||'',ctaSkus:b.ctaSkus||''};
+}
+const BRIEF_ESTRUCTURA=`- "contextoComercial": frase corta con el nombre de la acción comercial.
+- "kv": breve descripción del key visual / imagen principal sugerida para el header.
+- "headerTexto": texto de apoyo breve en el header, si hace falta (dejar vacío "" si no aplica).
+- "jerarquia1": el mensaje principal/más grande del header (headline).
+- "jerarquia2": mensaje secundario de apoyo (ej. financiación, cuotas, urgencia).
+- "ctaHeader": texto del botón del header (ej. "COMPRAR", "VER MÁS").
+- "tieneBanner": true SOLO si tiene sentido un banner secundario con otro beneficio/promo complementaria (ej. regalo por compra mínima); si no, false. "bannerTexto"/"ctaBanner" solo si tieneBanner es true.
+- "tieneSkus": true SOLO si el envío promociona productos puntuales (no aplica a comunicaciones institucionales/de marca); si no, false. Si es true, sumar "skusDescripcion" (título del bloque, ej. "SKUS PARTICIPANTES DE LA ACCIÓN X"), "precioFinal" (true/false, si conviene mostrar el precio final en el creativo), "cucarda" (texto corto, ej. "2x1", "20% OFF"), "cantidadSkus" (string, ej. "3"), "ctaSkus" (texto del CTA).`;
+async function generarBriefsIA(){
+if(!activeBrand) return;
+const rows=calRowsNewsletter();
+if(!rows.length) return;
+const btn=document.getElementById('btn-gen-briefs');
+const restoreLabel=rows.some(({r})=>r.brief)?'Regenerar todos ↻':'🪄 Generar briefs con IA →';
+btn.disabled=true;btn.textContent='Generando…';
+const tonoDesc=activeBrand.tonoDesc||'',tonoEj=activeBrand.tonoEj||'',buyer=activeBrand.buyer||'',industria=activeBrand.industria||'';
+const lista=rows.map(({r,idx})=>`${idx}. ${r.elemento} — Asunto: "${r.asunto||''}" — Preheader: "${r.preheader||''}" — Tipo: ${r.tipo||''}`).join('\n');
+const prompt=`Sos un experto en trafficking y armado de briefs de maquetación de newsletters para e-commerce. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
+
+MARCA: ${activeBrand.nombre}
+${industria?`INDUSTRIA: ${industria}\n`:''}${buyer?`BUYER PERSONA: ${buyer}\n`:''}TONO DE VOZ:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+
+Para cada envío de Newsletter de abajo, armá un brief de maquetación para el equipo de diseño, siguiendo esta estructura (la misma que ya usa el equipo):
+${BRIEF_ESTRUCTURA}
+
+ENVÍOS A BRIEFEAR (formato: índice. fecha/nombre — asunto — preheader — tipo):
+${lista}
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"briefs":[{"idx":0,"contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precioFinal":true,"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
+try{
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:6000})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const resText=await res.text();
+let data;
+try{ data=JSON.parse(resText); }
+catch(e){ try{ data=repararJSONTruncado(resText); }catch(e2){ throw new Error('La respuesta del servidor se cortó. Probá de nuevo.'); } }
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido.');
+let parsed;
+try{ parsed=JSON.parse(jsonMatch[0]); }
+catch(e){ try{ parsed=repararJSONTruncado(jsonMatch[0]); }catch(e2){ throw new Error('La respuesta fue muy larga y se cortó. Probá de nuevo.'); } }
+(parsed.briefs||[]).forEach(b=>{
+const idx=+b.idx;
+if(!calRows[idx]) return;
+calRows[idx].brief=normalizarBrief(b);
+});
+renderBriefPage();
+guardarPlanActual();
+}catch(err){
+alert('Error al generar los briefs: '+err.message);
+btn.disabled=false;btn.textContent=restoreLabel;
+}
+}
+async function regenerarBrief(idx){
+const r=calRows[idx];
+if(!r||!activeBrand) return;
+const btn=document.querySelector(`.brief-gen-btn[data-idx="${idx}"]`);
+if(btn){ btn.textContent='Generando…';btn.disabled=true; }
+const tonoDesc=activeBrand.tonoDesc||'',tonoEj=activeBrand.tonoEj||'';
+const prompt=`Sos un experto en trafficking y armado de briefs de maquetación de newsletters para e-commerce. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
+
+MARCA: ${activeBrand.nombre}
+TONO DE VOZ:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+
+ENVÍO: ${r.elemento}
+ASUNTO: ${r.asunto||''}
+PREHEADER: ${r.preheader||''}
+TIPO: ${r.tipo||''}
+
+Armá el brief de maquetación para diseño con esta estructura:
+${BRIEF_ESTRUCTURA}
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":false}`;
+try{
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:1200})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const data=await res.json();
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido.');
+calRows[idx].brief=normalizarBrief(JSON.parse(jsonMatch[0]));
+rerenderBriefCard(idx);
+guardarPlanActual();
+document.getElementById('btn-gen-briefs').textContent='Regenerar todos ↻';
+}catch(err){
+alert('Error al generar el brief: '+err.message);
+if(btn){ btn.textContent=r.brief?'Regenerar ↻':'Generar ↻';btn.disabled=false; }
+}
+}
+function briefATexto(r){
+const b=r.brief;
+if(!b) return '';
+let t=`ENVÍO: ${nombreAccion(r.elemento)} (${fechaDeElemento(r.elemento)})\n\n`;
+t+=`1- CONTEXTO COMERCIAL\n${b.contextoComercial}\n\n`;
+t+=`2- HEADER\n\n* KV: ${b.kv}\n`;
+if(b.headerTexto) t+=`\n* Texto en header\n${b.headerTexto}\n`;
+t+=`\nJerarquía 1: ${b.jerarquia1}\nJerarquía 2: ${b.jerarquia2}\n\n   * CTA header: ${b.ctaHeader}\n`;
+if(b.tieneBanner) t+=`\n\n* BANNER APARTE: ${b.bannerTexto}\n* CTA banner: ${b.ctaBanner}\n`;
+if(b.tieneSkus) t+=`\n\n* ${b.skusDescripcion||'SKUS PARTICIPANTES'}\n\n* Precio final: ${b.precioFinal?'Sí':'No'}\n* Cucarda: ${b.cucarda}\n\n* Cantidad de SKUs: ${b.cantidadSkus}\n* CTA SKUs: ${b.ctaSkus}\n`;
+return t;
+}
+function toggleBriefBloque(idx,campo){
+const r=calRows[idx];
+if(!r||!r.brief) return;
+r.brief[campo]=!r.brief[campo];
+rerenderBriefCard(idx);
+guardarPlanActual();
+}
+function toggleBriefPrecio(idx){
+const r=calRows[idx];
+if(!r||!r.brief) return;
+r.brief.precioFinal=!r.brief.precioFinal;
+rerenderBriefCard(idx);
+guardarPlanActual();
+}
+document.getElementById('brief-wrap').addEventListener('click',e=>{
+const genBtn=e.target.closest('.brief-gen-btn');
+if(genBtn){ regenerarBrief(+genBtn.dataset.idx);return; }
+const cpyBtn=e.target.closest('.brief-copy-btn');
+if(cpyBtn){
+const idx=+cpyBtn.dataset.idx;
+navigator.clipboard.writeText(briefATexto(calRows[idx])).then(()=>{
+cpyBtn.textContent='¡Copiado!';
+setTimeout(()=>{cpyBtn.textContent='Copiar brief';},1800);
+});
+return;
+}
+const togBtn=e.target.closest('.brief-toggle-btn');
+if(togBtn){ toggleBriefBloque(+togBtn.dataset.idx,togBtn.dataset.toggle);return; }
+const precioBtn=e.target.closest('.brief-precio-btn');
+if(precioBtn){ toggleBriefPrecio(+precioBtn.dataset.idx);return; }
+});
+document.getElementById('brief-wrap').addEventListener('change',e=>{
+const field=e.target.closest('.brief-field');
+if(!field) return;
+const idx=+field.dataset.idx,campo=field.dataset.field;
+const r=calRows[idx];
+if(!r||!r.brief) return;
+r.brief[campo]=field.value;
+guardarPlanActual();
+});
+document.getElementById('btn-gen-briefs').addEventListener('click',generarBriefsIA);
+document.getElementById('btn-copy-all-briefs').addEventListener('click',function(){
+const rows=calRowsNewsletter().filter(({r})=>r.brief);
+if(!rows.length){ alert('Todavía no hay briefs generados.');return; }
+const texto=rows.map(({r})=>briefATexto(r)).join('\n\n──────────────────────\n\n');
+navigator.clipboard.writeText(texto).then(()=>{ this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar todos los briefs',2000); });
+});
+document.getElementById('btn-goto-brief').addEventListener('click',()=>{
+hide('resultado1');show('briefPage');
+renderBriefPage();
+window.scrollTo(0,0);
+});
+document.getElementById('btn-back-brief').addEventListener('click',()=>{hide('briefPage');show('resultado1');});
+document.getElementById('btn-new-brief').addEventListener('click',volverAlInicio);
 
 function quitarSegmentoDeFila(idx,kind,seg){
 const r=calRows[idx];
@@ -2195,7 +2447,7 @@ proyMarca='';proyMes='';
 document.getElementById('cal-wrap').innerHTML='';
 hide('analisis-box');
 hide('save-indicator');
-['paso1','resultado1','proyPage','distPage'].forEach(hide);
+['paso1','resultado1','proyPage','distPage','briefPage'].forEach(hide);
 showHome();
 }
 document.getElementById('btn-new-cal').addEventListener('click',volverAlInicio);
