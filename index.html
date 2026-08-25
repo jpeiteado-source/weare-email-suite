@@ -105,9 +105,8 @@ input[type="file"]{display:none;}
 .seg-chip{font-size:11px;padding:3px 6px 3px 10px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt2);background:var(--ds2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
 .seg-chip button{background:none;border:none;color:var(--dt3);cursor:pointer;font-size:13px;line-height:1;padding:0;display:flex;}
 .seg-chip button:hover{color:#f85149;}
-.seg-chip.inc{border-color:rgba(63,185,80,0.3);color:var(--ok);}
-.seg-chip.exc{border-color:rgba(248,81,73,0.3);color:#f85149;}
-.seg-chip.sugerido{border-style:dashed;}
+.seg-chip.conocido{border-color:rgba(63,185,80,0.3);color:var(--ok);}
+.seg-chip.sugerido{border-color:rgba(240,167,66,0.4);color:var(--warn);border-style:dashed;}
 .seg-chip .seg-add-btn{color:var(--or2);}
 .seg-chip .seg-add-btn:hover{color:var(--or);}
 .seg-editor{margin-top:8px;}
@@ -1468,12 +1467,11 @@ function segEnBiblioteca(ref){
 return ((activeBrand&&activeBrand.segmentos)||[]).some(s=>s.categoria===ref.categoria&&s.nombre.toLowerCase()===ref.nombre.toLowerCase());
 }
 function segEditorHTML(lista,kind,idx){
-const cls=kind==='incluir'?'inc':'exc';
 const chips=(lista||[]).map(s=>{
 const ref=parseSegRef(s);
 const nuevo=ref.categoria&&!segEnBiblioteca(ref);
 const addBtn=nuevo?`<button class="seg-add-btn" data-idx="${idx}" data-seg="${esc(s)}" title="Agregar a la biblioteca de la marca">+</button>`:'';
-return `<span class="seg-chip ${cls}${nuevo?' sugerido':''}">${esc(ref.nombre||s)}${addBtn}<button class="seg-x" data-idx="${idx}" data-kind="${kind}" data-seg="${esc(s)}" title="Quitar de esta fila">×</button></span>`;
+return `<span class="seg-chip ${nuevo?'sugerido':'conocido'}">${esc(ref.nombre||s)}${addBtn}<button class="seg-x" data-idx="${idx}" data-kind="${kind}" data-seg="${esc(s)}" title="Quitar de esta fila">×</button></span>`;
 }).join('');
 const disponibles=((activeBrand&&activeBrand.segmentos)||[]).filter(seg=>!(lista||[]).includes(`${seg.categoria}: ${seg.nombre}`));
 let selectHTML='';
