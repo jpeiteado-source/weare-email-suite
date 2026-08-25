@@ -105,6 +105,8 @@ input[type="file"]{display:none;}
 .seg-chip{font-size:11px;padding:3px 6px 3px 10px;border-radius:20px;border:1px solid var(--dbrd);color:var(--dt2);background:var(--ds2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
 .seg-chip button{background:none;border:none;color:var(--dt3);cursor:pointer;font-size:13px;line-height:1;padding:0;display:flex;}
 .seg-chip button:hover{color:#f85149;}
+.seg-chip button.seg-edit-btn{font-size:11px;}
+.seg-chip button.seg-edit-btn:hover{color:var(--or2);}
 .seg-chip.conocido{border-color:rgba(63,185,80,0.3);color:var(--ok);}
 .seg-chip.sugerido{border-color:rgba(240,167,66,0.4);color:var(--warn);border-style:dashed;}
 .seg-chip .seg-add-btn{color:var(--or2);}
@@ -389,6 +391,19 @@ input[type="file"]{display:none;}
 </div>
 </div>
 
+<div class="card hidden" id="bf-seg-card">
+<div class="ct">Bases y segmentos</div>
+<div class="hint" style="margin-bottom:10px">Biblioteca de segmentos de esta marca (ej. "Engagement: Alto", "Compras: no compró hace más de 90 días") — se carga una sola vez y queda disponible en todos los meses. La IA la usa para sugerir a quién incluir/excluir en cada envío, y puede proponer nuevos.</div>
+<div class="g2">
+<select id="pl-seg-cat"></select>
+<input type="text" id="pl-seg-nombre" placeholder="Nombre del segmento…" />
+</div>
+<button class="add-lnk" id="pl-seg-add">+ Agregar segmento</button>
+<button class="add-lnk hidden" id="pl-seg-cancelar" style="color:var(--dt3);margin-left:12px">Cancelar edición</button>
+<div id="pl-seg-list" style="margin-top:10px"></div>
+</div>
+<div class="hint hidden" id="bf-seg-hint" style="margin-bottom:1rem">Guardá la marca primero — después vas a poder cargarle bases y segmentos desde acá (Editar datos de marca).</div>
+
 <div class="err hidden" id="brand-form-error" style="margin-bottom:1rem"></div>
 <button class="btn-or" id="btn-save-brand-form">Guardar marca</button>
 </div>
@@ -406,24 +421,6 @@ input[type="file"]{display:none;}
 <div class="card">
 <div class="ct">Mes a planificar</div>
 <div class="f" style="max-width:220px"><input type="month" id="mes" /></div>
-</div>
-
-<div class="card">
-<button class="acc-card-header acc-toggle" data-target="acc-panel-segmentos">
-<span class="ct" style="margin-bottom:0">Segmentos de audiencia <span style="text-transform:none;letter-spacing:0;font-weight:400;font-size:10px;color:var(--dt3)">(opcional)</span></span>
-<span class="acc-caret">▾</span>
-</button>
-<div class="acc-panel" id="acc-panel-segmentos">
-<div class="acc-panel-inner" style="padding:12px 0 0">
-<div class="hint" style="margin-bottom:10px">Biblioteca de segmentos de esta marca (ej. "Engagement: Alto", "Compras: no compró hace más de 90 días") — se carga una sola vez y queda disponible en todos los meses. La IA la usa para sugerir a quién incluir/excluir en cada envío, y puede proponer nuevos.</div>
-<div class="g2">
-<select id="pl-seg-cat"></select>
-<input type="text" id="pl-seg-nombre" placeholder="Nombre del segmento…" />
-</div>
-<button class="add-lnk" id="pl-seg-add">+ Agregar segmento</button>
-<div id="pl-seg-list" style="margin-top:10px"></div>
-</div>
-</div>
 </div>
 
 <div class="card">
@@ -1287,6 +1284,7 @@ if(res.ok){ activeBrand.segmentos=nuevaLista; return true; }
 }catch(e){}
 return false;
 }
+let plSegEditando=null;
 function renderPlanSegList(){
 const wrap=document.getElementById('pl-seg-list');
 if(!wrap) return;
@@ -1297,28 +1295,54 @@ SEG_CATEGORIAS.forEach(cat=>{
 const items=segmentos.filter(s=>s.categoria===cat);
 if(!items.length) return;
 html+=`<div class="seg-cat-block"><div class="seg-cat-title">${esc(cat)}</div><div class="seg-chips">`;
-items.forEach(s=>{ html+=`<span class="seg-chip">${esc(s.nombre)}<button data-cat="${esc(s.categoria)}" data-nombre="${esc(s.nombre)}">×</button></span>`; });
+items.forEach(s=>{ html+=`<span class="seg-chip">${esc(s.nombre)}<button class="seg-edit-btn" data-cat="${esc(s.categoria)}" data-nombre="${esc(s.nombre)}" title="Editar">✎</button><button data-cat="${esc(s.categoria)}" data-nombre="${esc(s.nombre)}" title="Eliminar">×</button></span>`; });
 html+='</div></div>';
 });
 wrap.innerHTML=html;
-wrap.querySelectorAll('button[data-cat]').forEach(b=>b.addEventListener('click',async()=>{
+wrap.querySelectorAll('button.seg-edit-btn').forEach(b=>b.addEventListener('click',()=>{
+iniciarEdicionSegmento(b.dataset.cat,b.dataset.nombre);
+}));
+wrap.querySelectorAll('button:not(.seg-edit-btn)[data-cat]').forEach(b=>b.addEventListener('click',async()=>{
 b.disabled=true;
+if(plSegEditando&&plSegEditando.categoria===b.dataset.cat&&plSegEditando.nombre===b.dataset.nombre) cancelarEdicionSegmento();
 const nuevaLista=(activeBrand.segmentos||[]).filter(s=>!(s.categoria===b.dataset.cat&&s.nombre===b.dataset.nombre));
 if(await guardarSegmentosBiblioteca(nuevaLista)) renderPlanSegList();
 }));
 }
+function iniciarEdicionSegmento(categoria,nombre){
+plSegEditando={categoria,nombre};
+document.getElementById('pl-seg-cat').value=categoria;
+document.getElementById('pl-seg-nombre').value=nombre;
+document.getElementById('pl-seg-nombre').focus();
+document.getElementById('pl-seg-add').textContent='Guardar cambios';
+show('pl-seg-cancelar');
+}
+function cancelarEdicionSegmento(){
+plSegEditando=null;
+document.getElementById('pl-seg-cat').value='';
+document.getElementById('pl-seg-nombre').value='';
+document.getElementById('pl-seg-add').textContent='+ Agregar segmento';
+hide('pl-seg-cancelar');
+}
+document.getElementById('pl-seg-cancelar').addEventListener('click',cancelarEdicionSegmento);
 document.getElementById('pl-seg-add').addEventListener('click',async()=>{
 const nombreInput=document.getElementById('pl-seg-nombre');
 const nombre=nombreInput.value.trim();
 if(!nombre||!activeBrand) return;
 const categoria=document.getElementById('pl-seg-cat').value;
-const existe=(activeBrand.segmentos||[]).some(s=>s.categoria===categoria&&s.nombre.toLowerCase()===nombre.toLowerCase());
+const existe=(activeBrand.segmentos||[]).some(s=>s.categoria===categoria&&s.nombre.toLowerCase()===nombre.toLowerCase()&&!(plSegEditando&&plSegEditando.categoria===categoria&&plSegEditando.nombre.toLowerCase()===nombre.toLowerCase()));
 if(existe){ nombreInput.value=''; return; }
 const btn=document.getElementById('pl-seg-add');
 btn.disabled=true;
-const ok=await guardarSegmentosBiblioteca([...(activeBrand.segmentos||[]),{categoria,nombre}]);
+let nuevaLista;
+if(plSegEditando){
+nuevaLista=(activeBrand.segmentos||[]).map(s=>(s.categoria===plSegEditando.categoria&&s.nombre===plSegEditando.nombre)?{categoria,nombre}:s);
+}else{
+nuevaLista=[...(activeBrand.segmentos||[]),{categoria,nombre}];
+}
+const ok=await guardarSegmentosBiblioteca(nuevaLista);
 btn.disabled=false;
-if(ok){ nombreInput.value=''; renderPlanSegList(); }
+if(ok){ cancelarEdicionSegmento(); renderPlanSegList(); }
 });
 
 function openBrandForm(mode){
@@ -1333,6 +1357,8 @@ document.getElementById('bf-buyer').value=activeBrand.buyer||'';
 document.getElementById('bf-tono-desc').value=activeBrand.tonoDesc||'';
 document.getElementById('bf-tono-ejemplos').value=activeBrand.tonoEj||'';
 setCanalesIn('bf-canales',activeBrand.canalesActivos||['Newsletter']);
+show('bf-seg-card');hide('bf-seg-hint');
+renderPlanSegList();
 }else{
 nombreInput.value=''; nombreInput.readOnly=false; nombreInput.style.opacity='1';
 document.getElementById('bf-industria').value='';
@@ -1340,6 +1366,7 @@ document.getElementById('bf-buyer').value='';
 document.getElementById('bf-tono-desc').value='';
 document.getElementById('bf-tono-ejemplos').value='';
 setCanalesIn('bf-canales',['Newsletter']);
+hide('bf-seg-card');show('bf-seg-hint');
 }
 brandFormMode=mode;
 window.scrollTo(0,0);
@@ -1388,7 +1415,6 @@ document.getElementById('plan-brand-name').textContent=activeBrand.nombre;
 const now=new Date();
 document.getElementById('mes').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 document.getElementById('notas-mes').value='';
-renderPlanSegList();
 CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
 calRows=[];
 document.getElementById('cal-wrap').innerHTML='';
