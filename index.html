@@ -504,7 +504,7 @@ input[type="file"]{display:none;}
 <button class="btn-ghost" id="btn-copy-cal">Copiar tabla</button>
 <button class="btn-accent" id="btn-goto-asuntos">Asuntos y preheaders →</button>
 <button class="btn-accent hidden" id="btn-goto-proy">📊 Proyección del mes →</button>
-<button class="btn-accent hidden" id="btn-goto-brief">🧩 Briefs de diseño →</button>
+<button class="btn-accent" id="btn-goto-brief">🧩 Briefs de diseño →</button>
 <button class="btn-ghost" id="btn-new-cal">🏠 Volver al inicio</button>
 </div>
 </div>
@@ -1691,7 +1691,8 @@ const enAsuntos=resultadoModo==='asuntos';
 document.getElementById('btn-back-campanas').classList.toggle('hidden',!enAsuntos);
 document.getElementById('btn-goto-asuntos').classList.toggle('hidden',enAsuntos);
 document.getElementById('btn-goto-proy').classList.toggle('hidden',!enAsuntos);
-document.getElementById('btn-goto-brief').classList.toggle('hidden',!enAsuntos);
+// Briefs de diseño no depende del paso (Campañas o Asuntos) — solo necesita el asunto/preheader
+// ya generado por la IA al armar el calendario, así que se puede ir directo sin pasar por Asuntos.
 }
 function rerenderCalRow(idx){
 const card=document.querySelector(`#cal-wrap .cb[data-idx="${idx}"]`);
