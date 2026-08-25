@@ -1856,8 +1856,13 @@ ${inp('Cantidad de SKUs','cantidadSkus',b.cantidadSkus)}
 html+=`<div class="f"><label>SKUs específicos <span style="font-weight:400;color:var(--dt3)">(nombre/código de cada producto a incluir)</span></label><textarea class="brief-field" data-idx="${idx}" data-field="skusEspecificos" style="min-height:64px">${esc(b.skusEspecificos||'')}</textarea></div>
 ${inp('Cucarda','cucarda',b.cucarda)}`;
 }
+const precios=b.precios||[];
 html+=`${inp('CTA SKUs','ctaSkus',b.ctaSkus,' style="max-width:200px"')}
-<button class="cpybtn brief-precio-btn" data-idx="${idx}">Precio final: ${b.precioFinal?'Sí':'No'}</button>`;
+<div class="f"><label>Precio a mostrar</label>
+<div class="tipo-opts">
+${PRECIO_OPTS.map(p=>`<button class="tipo-opt brief-precio-chip${precios.includes(p)?' sel':''}" data-idx="${idx}" data-precio="${esc(p)}">${esc(p)}</button>`).join('')}
+</div>
+</div>`;
 }else{
 html+=`<div style="margin-top:10px"><button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneSkus">+ Agregar SKUs</button></div>`;
 }
@@ -1900,8 +1905,10 @@ const hdrHTML=g.label.startsWith('__sola')?'':`<div class="brief-group-hdr">${es
 return `<div class="brief-group">${hdrHTML}${cardsHTML}</div>`;
 }).join('');
 }
+const PRECIO_OPTS=['Precio final','Precio de oferta','Precio en cuotas','Precio de lista'];
 function normalizarBrief(b){
-return {contextoComercial:b.contextoComercial||'',kv:b.kv||'',headerTexto:b.headerTexto||'',jerarquia1:b.jerarquia1||'',jerarquia2:b.jerarquia2||'',ctaHeader:b.ctaHeader||'',tieneBanner:!!b.tieneBanner,bannerTexto:b.bannerTexto||'',ctaBanner:b.ctaBanner||'',tieneSkus:!!b.tieneSkus,skusModo:b.skusModo==='especificos'?'especificos':'diseno',skusDescripcion:b.skusDescripcion||'',skusEspecificos:b.skusEspecificos||'',precioFinal:!!b.precioFinal,cucarda:b.cucarda||'',cantidadSkus:b.cantidadSkus||'',ctaSkus:b.ctaSkus||'',grupoCampana:b.grupoCampana||''};
+const precios=Array.isArray(b.precios)?b.precios.filter(p=>PRECIO_OPTS.includes(p)):(b.precioFinal?['Precio final']:[]);
+return {contextoComercial:b.contextoComercial||'',kv:b.kv||'',headerTexto:b.headerTexto||'',jerarquia1:b.jerarquia1||'',jerarquia2:b.jerarquia2||'',ctaHeader:b.ctaHeader||'',tieneBanner:!!b.tieneBanner,bannerTexto:b.bannerTexto||'',ctaBanner:b.ctaBanner||'',tieneSkus:!!b.tieneSkus,skusModo:b.skusModo==='especificos'?'especificos':'diseno',skusDescripcion:b.skusDescripcion||'',skusEspecificos:b.skusEspecificos||'',precios,cucarda:b.cucarda||'',cantidadSkus:b.cantidadSkus||'',ctaSkus:b.ctaSkus||'',grupoCampana:b.grupoCampana||''};
 }
 const BRIEF_ESTRUCTURA=`- "contextoComercial": frase corta con el nombre de la acción comercial.
 - "kv": breve descripción del key visual / imagen principal sugerida para el header.
@@ -1910,7 +1917,7 @@ const BRIEF_ESTRUCTURA=`- "contextoComercial": frase corta con el nombre de la a
 - "jerarquia2": mensaje secundario de apoyo (ej. financiación, cuotas, urgencia).
 - "ctaHeader": texto del botón del header (ej. "COMPRAR", "VER MÁS").
 - "tieneBanner": true SOLO si tiene sentido un banner secundario con otro beneficio/promo complementaria (ej. regalo por compra mínima); si no, false. "bannerTexto"/"ctaBanner" solo si tieneBanner es true.
-- "tieneSkus": true SOLO si el envío promociona productos puntuales (no aplica a comunicaciones institucionales/de marca); si no, false. Si es true, sumar "skusDescripcion" (título del bloque, ej. "SKUS PARTICIPANTES DE LA ACCIÓN X"), "precioFinal" (true/false, si conviene mostrar el precio final en el creativo), "cucarda" (texto corto, ej. "2x1", "20% OFF"), "cantidadSkus" (string, ej. "3"), "ctaSkus" (texto del CTA).`;
+- "tieneSkus": true SOLO si el envío promociona productos puntuales (no aplica a comunicaciones institucionales/de marca); si no, false. Si es true, sumar "skusDescripcion" (título del bloque, ej. "SKUS PARTICIPANTES DE LA ACCIÓN X"), "precios" (array con las opciones de precio a mostrar en el creativo, eligiendo entre EXACTAMENTE estos 4 valores: "Precio final", "Precio de oferta", "Precio en cuotas", "Precio de lista" — ej. para un descuento mostrá ["Precio de lista","Precio de oferta"], para una financiación mostrá ["Precio en cuotas"], si no hay nada particular que resaltar usá solo ["Precio final"]), "cucarda" (texto corto, ej. "2x1", "20% OFF"), "cantidadSkus" (string, ej. "3"), "ctaSkus" (texto del CTA).`;
 async function generarBriefsIA(){
 if(!activeBrand) return;
 const rows=calRowsNewsletter();
@@ -1934,7 +1941,7 @@ ENVÍOS A BRIEFEAR (formato: índice. fecha/nombre — asunto — preheader — 
 ${lista}
 
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
-{"briefs":[{"idx":0,"grupoCampana":"...","contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precioFinal":true,"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
+{"briefs":[{"idx":0,"grupoCampana":"...","contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precios":["Precio de oferta","Precio de lista"],"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
 try{
 const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:6000})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
@@ -2006,25 +2013,69 @@ alert('Error al generar el brief: '+err.message);
 if(btn){ btn.textContent=r.brief?'Regenerar ↻':'Generar ↻';btn.disabled=false; }
 }
 }
+function preciosTexto(b){
+return (b.precios&&b.precios.length)?b.precios.join(' + '):'—';
+}
+// Versión texto plano (con **negrita** estilo markdown, para pegar en apps que lo interpretan)
 function briefATexto(r){
 const b=r.brief;
 if(!b) return '';
-let t=`ENVÍO: ${nombreAccion(r.elemento)} (${fechaDeElemento(r.elemento)})\n\n`;
-t+=`1- CONTEXTO COMERCIAL\n${b.contextoComercial}\n\n`;
-t+=`2- HEADER\n\n* KV: ${b.kv}\n`;
-if(b.headerTexto) t+=`\n* Texto en header\n${b.headerTexto}\n`;
-t+=`\nJerarquía 1: ${b.jerarquia1}\nJerarquía 2: ${b.jerarquia2}\n\n   * CTA header: ${b.ctaHeader}\n`;
-if(b.tieneBanner) t+=`\n\n* BANNER APARTE: ${b.bannerTexto}\n* CTA banner: ${b.ctaBanner}\n`;
+let t=`**ENVÍO:** ${nombreAccion(r.elemento)} (${fechaDeElemento(r.elemento)})\n\n`;
+t+=`**1- CONTEXTO COMERCIAL**\n${b.contextoComercial}\n\n`;
+t+=`**2- HEADER**\n\n* **KV:** ${b.kv}\n`;
+if(b.headerTexto) t+=`\n* **Texto en header**\n${b.headerTexto}\n`;
+t+=`\n**Jerarquía 1:** ${b.jerarquia1}\n**Jerarquía 2:** ${b.jerarquia2}\n\n   * **CTA header:** ${b.ctaHeader}\n`;
+if(b.tieneBanner) t+=`\n\n* **BANNER APARTE:** ${b.bannerTexto}\n* **CTA banner:** ${b.ctaBanner}\n`;
 if(b.tieneSkus){
-t+=`\n\n* ${b.skusDescripcion||'SKUS PARTICIPANTES'}\n`;
+t+=`\n\n* **${b.skusDescripcion||'SKUS PARTICIPANTES'}**\n`;
 if(b.skusModo==='especificos'){
-t+=`\n* SKUs específicos (definidos por el equipo):\n${b.skusEspecificos||''}\n`;
+t+=`\n* **SKUs específicos (definidos por el equipo):**\n${b.skusEspecificos||''}\n`;
 }else{
-t+=`\n* Cantidad de SKUs: ${b.cantidadSkus}\n`;
+t+=`\n* **Cantidad de SKUs:** ${b.cantidadSkus}\n`;
 }
-t+=`* Precio final: ${b.precioFinal?'Sí':'No'}\n* Cucarda: ${b.cucarda}\n* CTA SKUs: ${b.ctaSkus}\n`;
+t+=`* **Precio:** ${preciosTexto(b)}\n* **Cucarda:** ${b.cucarda}\n* **CTA SKUs:** ${b.ctaSkus}\n`;
 }
 return t;
+}
+// Versión HTML (negrita real) — se copia junto con la de texto plano para que pegue formateado
+// en apps que soportan rich text (Gmail, Docs, Slack, Notion, etc.) y como texto legible si no.
+function briefATextoHTML(r){
+const b=r.brief;
+if(!b) return '';
+const e=s=>esc(s||'');
+let h=`<p><b>ENVÍO:</b> ${e(nombreAccion(r.elemento))} (${e(fechaDeElemento(r.elemento))})</p>`;
+h+=`<p><b>1- CONTEXTO COMERCIAL</b><br>${e(b.contextoComercial)}</p>`;
+h+=`<p><b>2- HEADER</b></p>`;
+h+=`<p>• <b>KV:</b> ${e(b.kv)}</p>`;
+if(b.headerTexto) h+=`<p>• <b>Texto en header</b><br>${e(b.headerTexto)}</p>`;
+h+=`<p><b>Jerarquía 1:</b> ${e(b.jerarquia1)}<br><b>Jerarquía 2:</b> ${e(b.jerarquia2)}</p>`;
+h+=`<p>&nbsp;&nbsp;&nbsp;• <b>CTA header:</b> ${e(b.ctaHeader)}</p>`;
+if(b.tieneBanner) h+=`<p>• <b>BANNER APARTE:</b> ${e(b.bannerTexto)}<br>• <b>CTA banner:</b> ${e(b.ctaBanner)}</p>`;
+if(b.tieneSkus){
+h+=`<p>• <b>${e(b.skusDescripcion||'SKUS PARTICIPANTES')}</b></p>`;
+if(b.skusModo==='especificos'){
+h+=`<p>• <b>SKUs específicos (definidos por el equipo):</b><br>${e(b.skusEspecificos).replace(/\n/g,'<br>')}</p>`;
+}else{
+h+=`<p>• <b>Cantidad de SKUs:</b> ${e(b.cantidadSkus)}</p>`;
+}
+h+=`<p>• <b>Precio:</b> ${e(preciosTexto(b))}<br>• <b>Cucarda:</b> ${e(b.cucarda)}<br>• <b>CTA SKUs:</b> ${e(b.ctaSkus)}</p>`;
+}
+return h;
+}
+async function copiarBriefRico(texto,html,btn,labelDefault){
+try{
+if(window.ClipboardItem){
+await navigator.clipboard.write([new ClipboardItem({
+'text/plain':new Blob([texto],{type:'text/plain'}),
+'text/html':new Blob([html],{type:'text/html'})
+})]);
+}else{
+await navigator.clipboard.writeText(texto);
+}
+}catch(e){
+try{ await navigator.clipboard.writeText(texto); }catch(e2){ return; }
+}
+if(btn){ btn.textContent='¡Copiado!'; setTimeout(()=>{btn.textContent=labelDefault;},1800); }
 }
 function toggleBriefBloque(idx,campo){
 const r=calRows[idx];
@@ -2033,10 +2084,12 @@ r.brief[campo]=!r.brief[campo];
 rerenderBriefCard(idx);
 guardarPlanActual();
 }
-function toggleBriefPrecio(idx){
+function toggleBriefPrecioChip(idx,valor){
 const r=calRows[idx];
 if(!r||!r.brief) return;
-r.brief.precioFinal=!r.brief.precioFinal;
+r.brief.precios=r.brief.precios||[];
+const i=r.brief.precios.indexOf(valor);
+if(i>=0) r.brief.precios.splice(i,1); else r.brief.precios.push(valor);
 rerenderBriefCard(idx);
 guardarPlanActual();
 }
@@ -2053,18 +2106,15 @@ if(genBtn){ regenerarBrief(+genBtn.dataset.idx);return; }
 const cpyBtn=e.target.closest('.brief-copy-btn');
 if(cpyBtn){
 const idx=+cpyBtn.dataset.idx;
-navigator.clipboard.writeText(briefATexto(calRows[idx])).then(()=>{
-cpyBtn.textContent='¡Copiado!';
-setTimeout(()=>{cpyBtn.textContent='Copiar brief';},1800);
-});
+copiarBriefRico(briefATexto(calRows[idx]),briefATextoHTML(calRows[idx]),cpyBtn,'Copiar brief');
 return;
 }
 const skusModoBtn=e.target.closest('.brief-skusmodo-btn');
 if(skusModoBtn){ setBriefSkusModo(+skusModoBtn.dataset.idx,skusModoBtn.dataset.skusmodo);return; }
 const togBtn=e.target.closest('.brief-toggle-btn');
 if(togBtn){ toggleBriefBloque(+togBtn.dataset.idx,togBtn.dataset.toggle);return; }
-const precioBtn=e.target.closest('.brief-precio-btn');
-if(precioBtn){ toggleBriefPrecio(+precioBtn.dataset.idx);return; }
+const precioChip=e.target.closest('.brief-precio-chip');
+if(precioChip){ toggleBriefPrecioChip(+precioChip.dataset.idx,precioChip.dataset.precio);return; }
 });
 document.getElementById('brief-wrap').addEventListener('change',e=>{
 const field=e.target.closest('.brief-field');
@@ -2080,7 +2130,8 @@ document.getElementById('btn-copy-all-briefs').addEventListener('click',function
 const rows=calRowsNewsletter().filter(({r})=>r.brief);
 if(!rows.length){ alert('Todavía no hay briefs generados.');return; }
 const texto=rows.map(({r})=>briefATexto(r)).join('\n\n──────────────────────\n\n');
-navigator.clipboard.writeText(texto).then(()=>{ this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar todos los briefs',2000); });
+const html=rows.map(({r})=>briefATextoHTML(r)).join('<hr>');
+copiarBriefRico(texto,html,this,'Copiar todos los briefs');
 });
 document.getElementById('btn-goto-brief').addEventListener('click',()=>{
 hide('resultado1');show('briefPage');
