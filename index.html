@@ -117,6 +117,9 @@ input[type="file"]{display:none;}
 .seg-add-select{width:auto;max-width:100%;margin-top:6px;font-size:11px;padding:4px 9px;background:var(--ds2);border:1px dashed var(--dbrd2);border-radius:20px;color:var(--dt3);}
 .warn-line{font-size:11px;color:var(--warn);margin-top:8px;display:flex;align-items:flex-start;gap:5px;}
 .cb{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);overflow:hidden;margin-bottom:10px;}
+.brief-group{margin-bottom:20px;padding:12px;border:1px dashed var(--dbrd2);border-radius:var(--r);}
+.brief-group-hdr{font-size:11px;font-weight:600;color:var(--or2);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;padding-left:2px;}
+.brief-group .cb:last-child{margin-bottom:0;}
 .ch{background:var(--ds2);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--dbrd);}
 .cn{font-size:13px;font-weight:500;}
 .cmeta{display:flex;gap:8px;align-items:center;}
@@ -1812,15 +1815,25 @@ ${inp('CTA banner','ctaBanner',b.ctaBanner,' style="max-width:200px"')}`;
 html+=`<button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneBanner">+ Agregar banner aparte</button>`;
 }
 if(b.tieneSkus){
+const modoDiseno=b.skusModo!=='especificos';
 html+=`<div class="f" style="border-top:1px solid var(--dbrd);padding-top:10px;margin-top:10px">
 <label>SKUs participantes <button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneSkus" style="margin-left:8px">Quitar</button></label>
-<input type="text" class="brief-field" data-idx="${idx}" data-field="skusDescripcion" value="${esc(b.skusDescripcion||'')}">
 </div>
-<div class="g2">
+<div class="tipo-opts" style="margin-top:-4px;margin-bottom:10px">
+<button class="tipo-opt brief-skusmodo-btn${modoDiseno?' sel':''}" data-idx="${idx}" data-skusmodo="diseno">Diseño elige los productos</button>
+<button class="tipo-opt brief-skusmodo-btn${!modoDiseno?' sel':''}" data-idx="${idx}" data-skusmodo="especificos">Definimos productos específicos</button>
+</div>
+${inp('Descripción del bloque','skusDescripcion',b.skusDescripcion)}`;
+if(modoDiseno){
+html+=`<div class="g2">
 ${inp('Cucarda','cucarda',b.cucarda)}
 ${inp('Cantidad de SKUs','cantidadSkus',b.cantidadSkus)}
-</div>
-${inp('CTA SKUs','ctaSkus',b.ctaSkus,' style="max-width:200px"')}
+</div>`;
+}else{
+html+=`<div class="f"><label>SKUs específicos <span style="font-weight:400;color:var(--dt3)">(nombre/código de cada producto a incluir)</span></label><textarea class="brief-field" data-idx="${idx}" data-field="skusEspecificos" style="min-height:64px">${esc(b.skusEspecificos||'')}</textarea></div>
+${inp('Cucarda','cucarda',b.cucarda)}`;
+}
+html+=`${inp('CTA SKUs','ctaSkus',b.ctaSkus,' style="max-width:200px"')}
 <button class="cpybtn brief-precio-btn" data-idx="${idx}">Precio final: ${b.precioFinal?'Sí':'No'}</button>`;
 }else{
 html+=`<div style="margin-top:10px"><button class="cpybtn brief-toggle-btn" data-idx="${idx}" data-toggle="tieneSkus">+ Agregar SKUs</button></div>`;
@@ -1833,6 +1846,16 @@ function rerenderBriefCard(idx){
 const card=document.querySelector(`#brief-wrap .cb[data-idx="${idx}"]`);
 if(!card) return;
 card.innerHTML=briefCardHTML(calRows[idx],idx);
+}
+function agruparBriefsPorCampana(rows){
+const grupos=[];
+const idxPorLabel=new Map();
+rows.forEach(({r,idx})=>{
+const label=(r.brief&&r.brief.grupoCampana)?r.brief.grupoCampana:('__sola'+idx);
+if(!idxPorLabel.has(label)){ idxPorLabel.set(label,grupos.length); grupos.push({label,items:[]}); }
+grupos[idxPorLabel.get(label)].items.push({r,idx});
+});
+return grupos;
 }
 function renderBriefPage(){
 const rows=calRowsNewsletter();
@@ -1847,10 +1870,15 @@ return;
 genBtn.classList.remove('hidden');copyAllBtn.classList.remove('hidden');
 genBtn.disabled=false;
 genBtn.textContent=rows.some(({r})=>r.brief)?'Regenerar todos ↻':'🪄 Generar briefs con IA →';
-wrap.innerHTML=rows.map(({r,idx})=>`<div class="cb" data-idx="${idx}">${briefCardHTML(r,idx)}</div>`).join('');
+const grupos=agruparBriefsPorCampana(rows);
+wrap.innerHTML=grupos.map(g=>{
+const cardsHTML=g.items.map(({r,idx})=>`<div class="cb" data-idx="${idx}">${briefCardHTML(r,idx)}</div>`).join('');
+const hdrHTML=g.label.startsWith('__sola')?'':`<div class="brief-group-hdr">${esc(g.label)}</div>`;
+return `<div class="brief-group">${hdrHTML}${cardsHTML}</div>`;
+}).join('');
 }
 function normalizarBrief(b){
-return {contextoComercial:b.contextoComercial||'',kv:b.kv||'',headerTexto:b.headerTexto||'',jerarquia1:b.jerarquia1||'',jerarquia2:b.jerarquia2||'',ctaHeader:b.ctaHeader||'',tieneBanner:!!b.tieneBanner,bannerTexto:b.bannerTexto||'',ctaBanner:b.ctaBanner||'',tieneSkus:!!b.tieneSkus,skusDescripcion:b.skusDescripcion||'',precioFinal:!!b.precioFinal,cucarda:b.cucarda||'',cantidadSkus:b.cantidadSkus||'',ctaSkus:b.ctaSkus||''};
+return {contextoComercial:b.contextoComercial||'',kv:b.kv||'',headerTexto:b.headerTexto||'',jerarquia1:b.jerarquia1||'',jerarquia2:b.jerarquia2||'',ctaHeader:b.ctaHeader||'',tieneBanner:!!b.tieneBanner,bannerTexto:b.bannerTexto||'',ctaBanner:b.ctaBanner||'',tieneSkus:!!b.tieneSkus,skusModo:b.skusModo==='especificos'?'especificos':'diseno',skusDescripcion:b.skusDescripcion||'',skusEspecificos:b.skusEspecificos||'',precioFinal:!!b.precioFinal,cucarda:b.cucarda||'',cantidadSkus:b.cantidadSkus||'',ctaSkus:b.ctaSkus||'',grupoCampana:b.grupoCampana||''};
 }
 const BRIEF_ESTRUCTURA=`- "contextoComercial": frase corta con el nombre de la acción comercial.
 - "kv": breve descripción del key visual / imagen principal sugerida para el header.
@@ -1876,13 +1904,14 @@ ${industria?`INDUSTRIA: ${industria}\n`:''}${buyer?`BUYER PERSONA: ${buyer}\n`:'
 ${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
 
 Para cada envío de Newsletter de abajo, armá un brief de maquetación para el equipo de diseño, siguiendo esta estructura (la misma que ya usa el equipo):
+- "grupoCampana": nombre corto (2-5 palabras) de la acción comercial a la que pertenece este envío, para agrupar visualmente los distintos touchpoints (inicio, recordatorio, cierre) de una misma campaña. IMPORTANTE: usá EXACTAMENTE el mismo texto en "grupoCampana" para todos los envíos que sean touchpoints de la misma acción comercial, aunque el asunto o el nombre completo de cada envío varíe entre el inicio, el recordatorio y el cierre (ej. "COMPRA +200K GC $25K DE REGALO" y "CIERRE COMPRA +200K GC $25K DE REGALO" van con el mismo "grupoCampana").
 ${BRIEF_ESTRUCTURA}
 
 ENVÍOS A BRIEFEAR (formato: índice. fecha/nombre — asunto — preheader — tipo):
 ${lista}
 
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
-{"briefs":[{"idx":0,"contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precioFinal":true,"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
+{"briefs":[{"idx":0,"grupoCampana":"...","contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precioFinal":true,"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
 try{
 const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:6000})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
@@ -1899,7 +1928,12 @@ catch(e){ try{ parsed=repararJSONTruncado(jsonMatch[0]); }catch(e2){ throw new E
 (parsed.briefs||[]).forEach(b=>{
 const idx=+b.idx;
 if(!calRows[idx]) return;
-calRows[idx].brief=normalizarBrief(b);
+const prevSkusModo=(calRows[idx].brief&&calRows[idx].brief.skusModo)||'diseno';
+const prevSkusEspecificos=(calRows[idx].brief&&calRows[idx].brief.skusEspecificos)||'';
+const nuevo=normalizarBrief(b);
+nuevo.skusModo=prevSkusModo;
+nuevo.skusEspecificos=prevSkusEspecificos;
+calRows[idx].brief=nuevo;
 });
 renderBriefPage();
 guardarPlanActual();
@@ -1937,7 +1971,10 @@ const data=await res.json();
 const txt=data.content.map(i=>i.text||'').join('');
 const jsonMatch=txt.match(/\{[\s\S]*\}/);
 if(!jsonMatch) throw new Error('La IA no devolvió un formato válido.');
-calRows[idx].brief=normalizarBrief(JSON.parse(jsonMatch[0]));
+const prevBrief=r.brief;
+const nuevo=normalizarBrief(JSON.parse(jsonMatch[0]));
+if(prevBrief){ nuevo.grupoCampana=prevBrief.grupoCampana||''; nuevo.skusModo=prevBrief.skusModo||'diseno'; nuevo.skusEspecificos=prevBrief.skusEspecificos||''; }
+calRows[idx].brief=nuevo;
 rerenderBriefCard(idx);
 guardarPlanActual();
 document.getElementById('btn-gen-briefs').textContent='Regenerar todos ↻';
@@ -1955,7 +1992,15 @@ t+=`2- HEADER\n\n* KV: ${b.kv}\n`;
 if(b.headerTexto) t+=`\n* Texto en header\n${b.headerTexto}\n`;
 t+=`\nJerarquía 1: ${b.jerarquia1}\nJerarquía 2: ${b.jerarquia2}\n\n   * CTA header: ${b.ctaHeader}\n`;
 if(b.tieneBanner) t+=`\n\n* BANNER APARTE: ${b.bannerTexto}\n* CTA banner: ${b.ctaBanner}\n`;
-if(b.tieneSkus) t+=`\n\n* ${b.skusDescripcion||'SKUS PARTICIPANTES'}\n\n* Precio final: ${b.precioFinal?'Sí':'No'}\n* Cucarda: ${b.cucarda}\n\n* Cantidad de SKUs: ${b.cantidadSkus}\n* CTA SKUs: ${b.ctaSkus}\n`;
+if(b.tieneSkus){
+t+=`\n\n* ${b.skusDescripcion||'SKUS PARTICIPANTES'}\n`;
+if(b.skusModo==='especificos'){
+t+=`\n* SKUs específicos (definidos por el equipo):\n${b.skusEspecificos||''}\n`;
+}else{
+t+=`\n* Cantidad de SKUs: ${b.cantidadSkus}\n`;
+}
+t+=`* Precio final: ${b.precioFinal?'Sí':'No'}\n* Cucarda: ${b.cucarda}\n* CTA SKUs: ${b.ctaSkus}\n`;
+}
 return t;
 }
 function toggleBriefBloque(idx,campo){
@@ -1972,6 +2017,13 @@ r.brief.precioFinal=!r.brief.precioFinal;
 rerenderBriefCard(idx);
 guardarPlanActual();
 }
+function setBriefSkusModo(idx,modo){
+const r=calRows[idx];
+if(!r||!r.brief) return;
+r.brief.skusModo=modo==='especificos'?'especificos':'diseno';
+rerenderBriefCard(idx);
+guardarPlanActual();
+}
 document.getElementById('brief-wrap').addEventListener('click',e=>{
 const genBtn=e.target.closest('.brief-gen-btn');
 if(genBtn){ regenerarBrief(+genBtn.dataset.idx);return; }
@@ -1984,6 +2036,8 @@ setTimeout(()=>{cpyBtn.textContent='Copiar brief';},1800);
 });
 return;
 }
+const skusModoBtn=e.target.closest('.brief-skusmodo-btn');
+if(skusModoBtn){ setBriefSkusModo(+skusModoBtn.dataset.idx,skusModoBtn.dataset.skusmodo);return; }
 const togBtn=e.target.closest('.brief-toggle-btn');
 if(togBtn){ toggleBriefBloque(+togBtn.dataset.idx,togBtn.dataset.toggle);return; }
 const precioBtn=e.target.closest('.brief-precio-btn');
