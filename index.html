@@ -242,15 +242,19 @@ input[type="file"]{display:none;}
 
 <div class="card hidden" id="brand-actions-card">
 <div class="ct">Marca seleccionada: <span id="brand-actions-name" style="color:var(--dt);text-transform:none;letter-spacing:0;font-weight:500"></span></div>
-<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-<button class="btn-or" id="btn-goto-plan" style="width:auto;padding:10px 18px">Generar calendario →</button>
-<button class="btn-ghost" id="btn-edit-brand">Editar datos de marca</button>
-<button class="btn-ghost" id="btn-del-brand-home" style="color:#f85149">Eliminar marca</button>
+<button class="btn-or" id="btn-goto-plan" style="margin-top:10px">Generar calendario →</button>
+<div style="display:flex;justify-content:space-between;margin-top:8px">
+<button class="add-lnk" id="btn-edit-brand" style="margin-top:0">Editar datos de marca</button>
+<button class="add-lnk" id="btn-del-brand-home" style="margin-top:0;color:#f85149">Eliminar marca</button>
 </div>
-<div class="hint" style="margin-top:16px;margin-bottom:8px">Ir directo a la proyección de un mes (tenga o no calendario generado):</div>
+
+<div style="border-top:1px solid var(--dbrd);margin:18px 0 14px"></div>
+
+<div class="ct">¿Ya tenés un calendario armado?</div>
+<div class="hint" style="margin-bottom:10px">No hace falta generarlo de nuevo — vas directo a la proyección de ese mes.</div>
 <div class="brand-select-wrap">
 <input type="month" id="proy-direct-month" />
-<button class="btn-accent" id="proy-direct-btn">📊 Ir a Proyección →</button>
+<button class="btn-ghost" id="proy-direct-btn">📊 Ir a Proyección →</button>
 </div>
 </div>
 </div>
