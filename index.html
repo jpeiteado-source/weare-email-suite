@@ -213,9 +213,10 @@ input[type="file"]{display:none;}
 
 <!-- HOME / SELECCIÓN DE MARCA -->
 <div id="homeScreen" class="hidden">
-<div style="display:flex;gap:8px;margin-bottom:1rem">
+<div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
 <button class="btn-accent home-tab-btn" data-tab="marcas">Tus marcas</button>
 <button class="btn-ghost home-tab-btn" data-tab="asuntos">✏️ Generador de asuntos</button>
+<button class="btn-ghost home-tab-btn" data-tab="calendario">📅 Calendario</button>
 </div>
 
 <div id="home-tab-marcas">
@@ -280,6 +281,53 @@ input[type="file"]{display:none;}
 <button class="btn-or" id="qa-gen-btn" style="margin-top:14px">Generar →</button>
 </div>
 <div id="qa-resultado"></div>
+</div>
+
+<div id="home-tab-calendario" class="hidden">
+<div class="card">
+<div class="ct">Marca</div>
+<select id="cal-marca"><option value="">— Seleccioná una marca —</option></select>
+</div>
+
+<div class="card">
+<div class="ct">Empezar de cero</div>
+<div class="hint" style="margin-bottom:12px">Vas directo al formulario de planificación para armar el calendario con la IA, como siempre.</div>
+<button class="btn-or" id="cal-ir-btn">Ir a planificación →</button>
+</div>
+
+<div class="card">
+<div class="ct">Ya tengo el calendario armado</div>
+<div class="hint" style="margin-bottom:12px">Traé un calendario que ya armaste en otro lado (Excel, texto pegado, o una captura/foto) y lo interpretamos con IA. Después vas directo a poder editarlo o pasar a Proyección.</div>
+<div class="f" style="max-width:220px"><label>Mes</label><input type="month" id="ic-month" /></div>
+<div class="f">
+<label>Método</label>
+<div class="tipo-opts" id="ic-metodo">
+<button class="tipo-opt sel" data-val="texto">Pegar texto</button>
+<button class="tipo-opt" data-val="csv">Subir CSV</button>
+<button class="tipo-opt" data-val="imagen">Subir imagen</button>
+</div>
+</div>
+<div id="ic-panel-texto">
+<div class="f"><textarea id="ic-texto-input" style="min-height:100px" placeholder="Pegá las filas copiadas de tu planilla (fecha, canal, acción, asunto, etc.) — el formato de columnas puede variar, lo interpretamos igual."></textarea></div>
+</div>
+<div id="ic-panel-csv" class="hidden">
+<div class="f">
+<input type="file" id="ic-csv-file" accept=".csv" />
+<button class="btn-ghost" id="ic-csv-pick-btn">Elegir archivo CSV</button>
+<span class="hint" id="ic-csv-filename" style="margin-left:8px"></span>
+</div>
+</div>
+<div id="ic-panel-imagen" class="hidden">
+<div class="f">
+<input type="file" id="ic-imagen-file" accept="image/png,image/jpeg,image/webp,image/gif" />
+<button class="btn-ghost" id="ic-imagen-pick-btn">Elegir imagen</button>
+<span class="hint" id="ic-imagen-filename" style="margin-left:8px"></span>
+</div>
+<div class="hint">Puede tardar un poco más que con texto.</div>
+</div>
+<div class="err hidden" id="ic-error" style="margin-top:10px"></div>
+<button class="btn-or" id="ic-interpretar-btn" style="margin-top:14px">Interpretar calendario →</button>
+</div>
 </div>
 </div>
 
@@ -857,9 +905,10 @@ const activa=b.dataset.tab===tab;
 b.classList.toggle('btn-accent',activa);
 b.classList.toggle('btn-ghost',!activa);
 });
-hide('home-tab-marcas');hide('home-tab-asuntos');
+hide('home-tab-marcas');hide('home-tab-asuntos');hide('home-tab-calendario');
 show('home-tab-'+tab);
 if(tab==='asuntos') poblarQaMarcas();
+if(tab==='calendario') poblarCalMarcas();
 }
 document.querySelectorAll('.home-tab-btn').forEach(btn=>btn.addEventListener('click',()=>irATabHome(btn.dataset.tab)));
 
@@ -945,6 +994,189 @@ btn.textContent=orig;
 btn.disabled=false;
 }
 document.getElementById('qa-gen-btn').addEventListener('click',function(){ generarAsuntoRapido(this); });
+
+// ── CALENDARIO — ACCESO RÁPIDO E IMPORTACIÓN ─────────────────────────────────────
+function poblarCalMarcas(){
+const sel=document.getElementById('cal-marca');
+const current=sel.value;
+sel.innerHTML='<option value="">— Seleccioná una marca —</option>'+brandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
+if(current) sel.value=current;
+if(!document.getElementById('ic-month').value){
+const now=new Date();
+document.getElementById('ic-month').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+}
+}
+
+// Camino A — empezar de cero
+document.getElementById('cal-ir-btn').addEventListener('click',()=>{
+const nombre=document.getElementById('cal-marca').value;
+if(!nombre){ alert('Seleccioná una marca.'); return; }
+activeBrand=brandsCache.find(b=>b.nombre===nombre);
+if(!activeBrand) return;
+showPlanScreen();
+});
+
+// Camino B — ya tengo el calendario armado (texto / CSV / imagen)
+let icMetodo='texto',icCsvFile=null,icImagenFile=null;
+document.getElementById('ic-metodo').addEventListener('click',e=>{
+const btn=e.target.closest('.tipo-opt');
+if(!btn) return;
+document.querySelectorAll('#ic-metodo .tipo-opt').forEach(b=>b.classList.remove('sel'));
+btn.classList.add('sel');
+icMetodo=btn.dataset.val;
+['texto','csv','imagen'].forEach(m=>{ if(m===icMetodo) show('ic-panel-'+m); else hide('ic-panel-'+m); });
+});
+document.getElementById('ic-csv-pick-btn').addEventListener('click',()=>document.getElementById('ic-csv-file').click());
+document.getElementById('ic-csv-file').addEventListener('change',function(){
+icCsvFile=this.files[0]||null;
+document.getElementById('ic-csv-filename').textContent=icCsvFile?icCsvFile.name:'';
+});
+document.getElementById('ic-imagen-pick-btn').addEventListener('click',()=>document.getElementById('ic-imagen-file').click());
+document.getElementById('ic-imagen-file').addEventListener('change',function(){
+const f=this.files[0]||null;
+const tiposValidos=['image/png','image/jpeg','image/webp','image/gif'];
+if(f&&!tiposValidos.includes(f.type)){
+alert('Formato de imagen no soportado. Usá PNG, JPEG, WebP o GIF.');
+this.value='';
+icImagenFile=null;
+document.getElementById('ic-imagen-filename').textContent='';
+return;
+}
+icImagenFile=f;
+document.getElementById('ic-imagen-filename').textContent=icImagenFile?icImagenFile.name:'';
+});
+
+function fileToText(file){
+return new Promise((resolve,reject)=>{
+const r=new FileReader();
+r.onload=()=>resolve(r.result);
+r.onerror=reject;
+r.readAsText(file);
+});
+}
+function redimensionarImagen(file,maxLado){
+return new Promise((resolve,reject)=>{
+const img=new Image();
+const url=URL.createObjectURL(file);
+img.onload=()=>{
+URL.revokeObjectURL(url);
+let {width,height}=img;
+if(width>maxLado||height>maxLado){
+if(width>height){ height=Math.round(height*(maxLado/width)); width=maxLado; }
+else{ width=Math.round(width*(maxLado/height)); height=maxLado; }
+}
+const canvas=document.createElement('canvas');
+canvas.width=width;canvas.height=height;
+canvas.getContext('2d').drawImage(img,0,0,width,height);
+canvas.toBlob(blob=>{
+if(!blob){ reject(new Error('No se pudo procesar la imagen.')); return; }
+const r=new FileReader();
+r.onload=()=>resolve(r.result.split(',')[1]);
+r.onerror=reject;
+r.readAsDataURL(blob);
+},'image/jpeg',0.85);
+};
+img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen.')); };
+img.src=url;
+});
+}
+function buildExtraccionPrompt(brand,mesNombre,rawText){
+return `Sos un experto en email marketing y CRM para e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
+
+MARCA: ${brand.nombre}
+MES DE REFERENCIA (para completar años/meses faltantes en las fechas de origen): ${mesNombre}
+CANALES POSIBLES: Newsletter, Notificación Push, WhatsApp
+
+DATOS A INTERPRETAR${rawText?' (formato y columnas variables, interpretalos con flexibilidad)':' (es una imagen de un calendario o planilla)'}:
+${rawText?`"""\n${rawText}\n"""`:'(ver imagen adjunta)'}
+
+TAREA: Para cada envío/fila reconocible, devolvé un objeto con esta forma exacta:
+- "elemento": "DD/MM - NOMBRE ACCIÓN EN MAYÚSCULAS" — DD y MM SIEMPRE con 2 dígitos (ej. "01/06", nunca "1/6")
+- "canal": uno de "Newsletter" | "Notificación Push" | "WhatsApp" (inferilo si no es explícito; si es ambiguo, "Newsletter")
+- "hora": "HH:MM" si está disponible en el origen, si no "10:00"
+- según canal: Newsletter → "asunto"+"preheader"; Push → "titulo"+"mensaje"; WhatsApp → "mensaje" (dejar "" si el origen no distingue)
+- "tipo": tu mejor estimación de entre [${TIPOS.join(', ')}]
+- "incluir"/"excluir": arrays de strings, vacíos [] salvo que el origen indique explícitamente segmentos de audiencia
+- NO incluyas "categoria", "momento" ni "reactivacion" en la respuesta — omitilos directamente, no los inventes
+- Si una fila del origen no tiene datos suficientes para reconstruirla, saltéala
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"analisis":"máximo 3 líneas: cuántas filas se interpretaron y qué no se pudo reconocer","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","incluir":[],"excluir":[],"asunto":"...","preheader":"..."}]}`;
+}
+function validarIcInputs(){
+if(icMetodo==='texto') return document.getElementById('ic-texto-input').value.trim().length>0;
+if(icMetodo==='csv') return !!icCsvFile;
+if(icMetodo==='imagen') return !!icImagenFile;
+return false;
+}
+document.getElementById('ic-interpretar-btn').addEventListener('click',async function(){
+const errEl=document.getElementById('ic-error');
+hide('ic-error');
+const nombre=document.getElementById('cal-marca').value;
+if(!nombre){ errEl.textContent='Seleccioná una marca.'; show('ic-error'); return; }
+const brand=brandsCache.find(b=>b.nombre===nombre);
+if(!brand){ errEl.textContent='No se pudo cargar esa marca.'; show('ic-error'); return; }
+const month=document.getElementById('ic-month').value;
+if(!month){ errEl.textContent='Elegí un mes.'; show('ic-error'); return; }
+if(!validarIcInputs()){ errEl.textContent='Pegá texto, o elegí un archivo CSV o una imagen, según el método elegido.'; show('ic-error'); return; }
+const [yr,mo]=month.split('-');
+const mesNombre=new Date(+yr,+mo-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
+const btn=this;
+const orig=btn.textContent;
+btn.textContent='Interpretando…';btn.disabled=true;
+try{
+let messages;
+if(icMetodo==='imagen'){
+const base64=await redimensionarImagen(icImagenFile,1568);
+const promptTexto=buildExtraccionPrompt(brand,mesNombre,'');
+messages=[{role:'user',content:[
+{type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},
+{type:'text',text:promptTexto}
+]}];
+}else{
+const rawText=icMetodo==='csv'?await fileToText(icCsvFile):document.getElementById('ic-texto-input').value.trim();
+if(!rawText.trim()) throw new Error('El archivo/texto está vacío.');
+messages=[{role:'user',content:buildExtraccionPrompt(brand,mesNombre,rawText)}];
+}
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,max_tokens:8000})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const resText=await res.text();
+let data;
+try{ data=JSON.parse(resText); }
+catch(e){
+try{ data=repararJSONTruncado(resText); }
+catch(e2){ throw new Error('La respuesta del servidor se cortó o llegó incompleta. Probá de nuevo.'); }
+}
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Probá de nuevo, o con menos filas.');
+let parsed;
+try{ parsed=JSON.parse(jsonMatch[0]); }
+catch(e){
+try{ parsed=repararJSONTruncado(jsonMatch[0]); }
+catch(e2){ throw new Error('La respuesta fue muy larga y se cortó. Probá de nuevo, o con menos filas.'); }
+}
+const filas=parsed.filas||[];
+if(!filas.length) throw new Error('No se pudo reconocer ningún envío en lo que cargaste. Revisá el formato y probá de nuevo.');
+CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
+document.getElementById('notas-mes').value='';
+calRows=filas;
+detectarSolapamientos(calRows,month);
+document.getElementById('mes').value=month;
+proyMarca=nombre;proyMes=month;
+['homeScreen','brandFormScreen','paso1'].forEach(hide);
+show('resultado1');
+renderCalTable(calRows);
+if(parsed.analisis){ document.getElementById('analisis-box').textContent=parsed.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
+apiFetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+nombre,month,notas:'',canales:brand.canalesActivos||[],accionesCat,filas:calRows,analisis:parsed.analisis||'Calendario importado.'
+})}).then(r=>{ if(r.ok) showSavedIndicator(); }).catch(()=>{});
+window.scrollTo(0,0);
+}catch(err){
+errEl.textContent=err.message;show('ic-error');
+}
+btn.textContent=orig;btn.disabled=false;
+});
 
 let legacyBrandsCache=[];
 async function loadLegacyBrands(){
