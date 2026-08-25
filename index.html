@@ -1906,9 +1906,12 @@ const hdrHTML=g.label.startsWith('__sola')?'':`<div class="brief-group-hdr">${es
 return `<div class="brief-group">${hdrHTML}${cardsHTML}</div>`;
 }).join('');
 }
-const PRECIO_OPTS=['Precio final','Precio de oferta','Precio en cuotas','Precio de lista'];
+const PRECIO_OPTS=['Precio de oferta','Precio en cuotas','Precio de lista','Precio de lista tachado'];
 function normalizarBrief(b){
-const precios=Array.isArray(b.precios)?b.precios.filter(p=>PRECIO_OPTS.includes(p)):(b.precioFinal?['Precio final']:[]);
+// "Precio final" se unificó con "Precio de oferta" — migra briefs viejos (array o el booleano previo) sin perder el dato.
+let precios;
+if(Array.isArray(b.precios)) precios=[...new Set(b.precios.map(p=>p==='Precio final'?'Precio de oferta':p).filter(p=>PRECIO_OPTS.includes(p)))];
+else precios=b.precioFinal?['Precio de oferta']:[];
 return {contextoComercial:b.contextoComercial||'',kv:b.kv||'',headerTexto:b.headerTexto||'',jerarquia1:b.jerarquia1||'',jerarquia2:b.jerarquia2||'',ctaHeader:b.ctaHeader||'',tieneBanner:!!b.tieneBanner,bannerTexto:b.bannerTexto||'',ctaBanner:b.ctaBanner||'',tieneSkus:!!b.tieneSkus,skusModo:b.skusModo==='especificos'?'especificos':'diseno',skusDescripcion:b.skusDescripcion||'',skusEspecificos:b.skusEspecificos||'',precios,cucarda:b.cucarda||'',cantidadSkus:b.cantidadSkus||'',ctaSkus:b.ctaSkus||'',grupoCampana:b.grupoCampana||''};
 }
 const BRIEF_ESTRUCTURA=`- "contextoComercial": frase corta con el nombre de la acción comercial.
@@ -1918,7 +1921,7 @@ const BRIEF_ESTRUCTURA=`- "contextoComercial": frase corta con el nombre de la a
 - "jerarquia2": mensaje secundario de apoyo (ej. financiación, cuotas, urgencia).
 - "ctaHeader": texto del botón del header (ej. "COMPRAR", "VER MÁS").
 - "tieneBanner": true SOLO si tiene sentido un banner secundario con otro beneficio/promo complementaria (ej. regalo por compra mínima); si no, false. "bannerTexto"/"ctaBanner" solo si tieneBanner es true.
-- "tieneSkus": true SOLO si el envío promociona productos puntuales (no aplica a comunicaciones institucionales/de marca); si no, false. Si es true, sumar "skusDescripcion" (título del bloque, ej. "SKUS PARTICIPANTES DE LA ACCIÓN X"), "precios" (array con las opciones de precio a mostrar en el creativo, eligiendo entre EXACTAMENTE estos 4 valores: "Precio final", "Precio de oferta", "Precio en cuotas", "Precio de lista" — ej. para un descuento mostrá ["Precio de lista","Precio de oferta"], para una financiación mostrá ["Precio en cuotas"], si no hay nada particular que resaltar usá solo ["Precio final"]), "cucarda" (texto corto, ej. "2x1", "20% OFF"), "cantidadSkus" (string, ej. "3"), "ctaSkus" (texto del CTA).`;
+- "tieneSkus": true SOLO si el envío promociona productos puntuales (no aplica a comunicaciones institucionales/de marca); si no, false. Si es true, sumar "skusDescripcion" (título del bloque, ej. "SKUS PARTICIPANTES DE LA ACCIÓN X"), "precios" (array con las opciones de precio a mostrar en el creativo, eligiendo entre EXACTAMENTE estos 4 valores: "Precio de oferta", "Precio en cuotas", "Precio de lista", "Precio de lista tachado" — ej. para un descuento mostrá ["Precio de lista tachado","Precio de oferta"], para una financiación mostrá ["Precio en cuotas"], si no hay nada particular que resaltar usá solo ["Precio de oferta"]), "cucarda" (texto corto, ej. "2x1", "20% OFF"), "cantidadSkus" (string, ej. "3"), "ctaSkus" (texto del CTA).`;
 async function generarBriefsIA(){
 if(!activeBrand) return;
 const rows=calRowsNewsletter();
@@ -1942,7 +1945,7 @@ ENVÍOS A BRIEFEAR (formato: índice. fecha/nombre — asunto — preheader — 
 ${lista}
 
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
-{"briefs":[{"idx":0,"grupoCampana":"...","contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precios":["Precio de oferta","Precio de lista"],"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
+{"briefs":[{"idx":0,"grupoCampana":"...","contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":true,"skusDescripcion":"...","precios":["Precio de lista tachado","Precio de oferta"],"cucarda":"...","cantidadSkus":"3","ctaSkus":"..."}]}`;
 try{
 const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:6000})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
