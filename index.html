@@ -147,6 +147,15 @@ input[type="file"]{display:none;}
 .diff-up{color:var(--ok);}
 .diff-dn{color:#f85149;}
 .diff-eq{color:var(--dt3);}
+.home-tab-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;}
+.home-tab-card{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);padding:1.1rem 1rem;text-align:left;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.home-tab-card:hover{border-color:var(--dbrd2);}
+.home-tab-card.active{background:var(--org);border-color:var(--orb);}
+.home-tab-card-icon{font-size:22px;margin-bottom:6px;}
+.home-tab-card-title{font-size:14px;font-weight:500;color:var(--dt);margin-bottom:3px;}
+.home-tab-card.active .home-tab-card-title{color:var(--or2);}
+.home-tab-card-sub{font-size:11px;color:var(--dt3);line-height:1.4;}
+@media(max-width:560px){.home-tab-cards{grid-template-columns:1fr;}}
 .brand-select-wrap{display:flex;gap:8px;align-items:center;}
 .brand-select-wrap select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;}
 .brand-select-wrap select:focus{border-color:var(--or);}
@@ -212,10 +221,22 @@ input[type="file"]{display:none;}
 
 <!-- HOME / SELECCIÓN DE MARCA -->
 <div id="homeScreen" class="hidden">
-<div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
-<button class="btn-accent home-tab-btn" data-tab="marcas">Tus marcas</button>
-<button class="btn-ghost home-tab-btn" data-tab="asuntos">✏️ Generador de asuntos</button>
-<button class="btn-ghost home-tab-btn" data-tab="calendario">📅 Calendario</button>
+<div class="home-tab-cards">
+<button class="home-tab-card active home-tab-btn" data-tab="marcas">
+<div class="home-tab-card-icon">🏷️</div>
+<div class="home-tab-card-title">Tus marcas</div>
+<div class="home-tab-card-sub">Elegí una marca para trabajar</div>
+</button>
+<button class="home-tab-card home-tab-btn" data-tab="asuntos">
+<div class="home-tab-card-icon">✏️</div>
+<div class="home-tab-card-title">Generador de asuntos</div>
+<div class="home-tab-card-sub">Un asunto puntual, sin armar un calendario completo</div>
+</button>
+<button class="home-tab-card home-tab-btn" data-tab="calendario">
+<div class="home-tab-card-icon">📅</div>
+<div class="home-tab-card-title">Calendario</div>
+<div class="home-tab-card-sub">Empezar de cero, o cargar uno que ya tenés armado</div>
+</button>
 </div>
 
 <div id="home-tab-marcas">
@@ -906,9 +927,7 @@ document.getElementById('brand-actions-card').scrollIntoView({behavior:'smooth',
 // ── SOLAPAS DE HOME ──────────────────────────────────────────────────────────────
 function irATabHome(tab){
 document.querySelectorAll('.home-tab-btn').forEach(b=>{
-const activa=b.dataset.tab===tab;
-b.classList.toggle('btn-accent',activa);
-b.classList.toggle('btn-ghost',!activa);
+b.classList.toggle('active',b.dataset.tab===tab);
 });
 hide('home-tab-marcas');hide('home-tab-asuntos');hide('home-tab-calendario');
 show('home-tab-'+tab);
