@@ -162,6 +162,9 @@ input[type="file"]{display:none;}
 .home-tab-card-sub{font-size:11px;color:var(--dt3);line-height:1.4;}
 @media(max-width:560px){.home-tab-cards{grid-template-columns:1fr;}}
 .brand-select-wrap{display:flex;gap:8px;align-items:center;}
+.cal-list-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--dbrd);}
+.cal-list-row:last-child{border-bottom:none;}
+.cal-list-mes{font-size:13px;color:var(--dt);}
 .brand-select-wrap select{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--dt);background:var(--ds2);border:1px solid var(--dbrd);border-radius:6px;padding:8px 11px;outline:none;}
 .brand-select-wrap select:focus{border-color:var(--or);}
 .hidden{display:none!important;}
@@ -276,12 +279,9 @@ input[type="file"]{display:none;}
 
 <div style="border-top:1px solid var(--dbrd);margin:18px 0 14px"></div>
 
-<div class="ct">¿Ya tenés un calendario armado?</div>
-<div class="hint" style="margin-bottom:10px">No hace falta generarlo de nuevo — vas directo a la proyección de ese mes.</div>
-<div class="brand-select-wrap">
-<input type="month" id="proy-direct-month" />
-<button class="btn-ghost" id="proy-direct-btn">📊 Ir a Proyección →</button>
-</div>
+<div class="ct">Calendarios generados</div>
+<div class="hint" style="margin-bottom:10px">Elegí un mes para ver el calendario, sacar los briefs de diseño o ir directo a la proyección.</div>
+<div id="cal-list-wrap"></div>
 </div>
 </div>
 
@@ -947,7 +947,7 @@ activeBrand=b;
 document.getElementById('brand-select').value=nombre;
 document.getElementById('brand-actions-name').textContent=b.nombre;
 show('brand-actions-card');
-await poblarMesesGuardados();
+await cargarListaCalendarios(b.nombre);
 document.getElementById('brand-actions-card').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
@@ -1457,18 +1457,34 @@ document.getElementById('btn-change-brand').addEventListener('click',()=>showHom
 document.getElementById('btn-home-paso1').addEventListener('click',()=>showHome());
 
 // ── ACCESO DIRECTO A PROYECCIÓN (con o sin calendario generado) ────────────────
-function poblarMesesGuardados(){
-const input=document.getElementById('proy-direct-month');
-if(!input.value){
-const now=new Date();
-input.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-}
+async function cargarListaCalendarios(nombre){
+const wrap=document.getElementById('cal-list-wrap');
+wrap.innerHTML='<div class="hint">Cargando…</div>';
+try{
+const res=await apiFetch('/api/plans?nombre='+encodeURIComponent(nombre));
+if(!res.ok) throw new Error();
+const data=await res.json();
+const months=data.months||[];
+if(!months.length){ wrap.innerHTML='<div class="hint">Todavía no generaste ningún calendario para esta marca.</div>'; return; }
+wrap.innerHTML=months.map(m=>{
+const [yyyy,mm]=m.split('-');
+let nombreMes=new Date(+yyyy,+mm-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
+nombreMes=nombreMes.charAt(0).toUpperCase()+nombreMes.slice(1);
+return `<div class="cal-list-row">
+<span class="cal-list-mes">${esc(nombreMes)}</span>
+<div style="display:flex;gap:6px;align-items:center">
+<button class="add-lnk cal-list-proy" data-month="${m}" style="margin-top:0">Proyección</button>
+<button class="btn-ghost cal-list-ver" data-month="${m}">Ver calendario →</button>
+</div>
+</div>`;
+}).join('');
+}catch(e){ wrap.innerHTML='<div class="hint">No se pudo cargar la lista de calendarios.</div>'; }
 }
 
-async function cargarPlanDirecto(nombre,month){
-const btn=document.getElementById('proy-direct-btn');
-const orig=btn.textContent;
-btn.textContent='Cargando…';btn.disabled=true;
+async function cargarPlanDirecto(nombre,month,destino){
+destino=destino||'proy';
+const wrap=document.getElementById('cal-list-wrap');
+if(wrap) wrap.style.opacity='0.5';
 try{
 const planRes=await apiFetch(`/api/plans?nombre=${encodeURIComponent(nombre)}&month=${month}`);
 if(planRes.ok){
@@ -1478,6 +1494,7 @@ loadAccionesCat(plan.accionesCat||{});
 calRows=plan.filas||[];
 detectarSolapamientos(calRows,month);
 resultadoModo='campanas';
+editandoIdx=-1;
 renderCalTable(calRows);
 if(plan.analisis){ document.getElementById('analisis-box').textContent=plan.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
 }else{
@@ -1490,20 +1507,26 @@ hide('analisis-box');
 }
 document.getElementById('mes').value=month;
 proyMarca=nombre;proyMes=month;
+if(destino==='cal'){
+['homeScreen','brandFormScreen','paso1'].forEach(hide);
+show('resultado1');
+}else{
 ['homeScreen','brandFormScreen','paso1','resultado1'].forEach(hide);
 show('proyPage');
 loadProyeccion();
+}
 window.scrollTo(0,0);
 }catch(e){
-alert('No se pudo acceder a la proyección de ese mes.');
+alert('No se pudo cargar el calendario de ese mes.');
 }
-btn.textContent=orig;btn.disabled=false;
+if(wrap) wrap.style.opacity='';
 }
-document.getElementById('proy-direct-btn').addEventListener('click',()=>{
-const month=document.getElementById('proy-direct-month').value;
-if(!activeBrand){ alert('Seleccioná una marca primero.'); return; }
-if(!month){ alert('Elegí un mes.'); return; }
-cargarPlanDirecto(activeBrand.nombre,month);
+document.getElementById('cal-list-wrap').addEventListener('click',e=>{
+if(!activeBrand) return;
+const verBtn=e.target.closest('.cal-list-ver');
+if(verBtn){ cargarPlanDirecto(activeBrand.nombre,verBtn.dataset.month,'cal');return; }
+const proyBtn=e.target.closest('.cal-list-proy');
+if(proyBtn){ cargarPlanDirecto(activeBrand.nombre,proyBtn.dataset.month,'proy');return; }
 });
 
 // ── REGLAS DE COPY COMPARTIDAS (calendario + regenerar fila) ───────────────────
