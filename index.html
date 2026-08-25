@@ -475,8 +475,10 @@ input[type="file"]{display:none;}
 <div id="analisis-box" class="info-box hidden"></div>
 <div class="cal-wrap" id="cal-wrap"></div>
 <div style="margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn-ghost hidden" id="btn-back-campanas">← Campañas y segmentos</button>
 <button class="btn-ghost" id="btn-copy-cal">Copiar tabla</button>
-<button class="btn-accent" id="btn-goto-proy">📊 Proyección del mes →</button>
+<button class="btn-accent" id="btn-goto-asuntos">Asuntos y preheaders →</button>
+<button class="btn-accent hidden" id="btn-goto-proy">📊 Proyección del mes →</button>
 <button class="btn-ghost" id="btn-new-cal">🏠 Volver al inicio</button>
 </div>
 </div>
@@ -1165,6 +1167,7 @@ document.getElementById('mes').value=month;
 proyMarca=nombre;proyMes=month;
 ['homeScreen','brandFormScreen','paso1'].forEach(hide);
 show('resultado1');
+resultadoModo='campanas';
 renderCalTable(calRows);
 if(parsed.analisis){ document.getElementById('analisis-box').textContent=parsed.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
 apiFetch('/api/plans',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
@@ -1395,12 +1398,14 @@ document.getElementById('notas-mes').value=plan.notas||'';
 loadAccionesCat(plan.accionesCat||{});
 calRows=plan.filas||[];
 detectarSolapamientos(calRows,month);
+resultadoModo='campanas';
 renderCalTable(calRows);
 if(plan.analisis){ document.getElementById('analisis-box').textContent=plan.analisis; show('analisis-box'); }else{ hide('analisis-box'); }
 }else{
 document.getElementById('notas-mes').value='';
 CATS.forEach(c=>{accionesCat[c.key]=[];addAccCat(c.key);});
 calRows=[];
+resultadoModo='campanas';
 renderCalTable(calRows);
 hide('analisis-box');
 }
@@ -1486,9 +1491,11 @@ selectHTML=`<select class="seg-add-select" data-idx="${idx}" data-kind="${kind}"
 if(!chips&&!selectHTML) return '';
 return `<div class="seg-editor"><div class="seg-editor-lbl">${kind==='incluir'?'Incluir':'Excluir'}</div><div class="seg-chips">${chips}</div>${selectHTML}</div>`;
 }
+let resultadoModo='campanas';
 function calRowCardHTML(r,idx){
 const bc=r.canal&&r.canal.includes('Push')?'b-push':r.canal&&r.canal.includes('WhatsApp')?'b-wa':'b-nl';
-const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${r.tipo===t?' sel':''}" data-val="${t}" data-idx="${idx}">${t}</button>`).join('');
+const header=`<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>`;
+if(resultadoModo==='asuntos'){
 let fieldsHTML='';
 if(r.canal&&r.canal.includes('Push')){
 const tl=(r.titulo||'').length,ml=(r.mensaje||'').length;
@@ -1504,17 +1511,22 @@ const indef=(r.asunto||'').includes('A DEFINIR');
 fieldsHTML=`<div class="rl"><div class="rlbl">Asunto</div><div class="rval${indef?' indef':''}">${esc(r.asunto||'')}</div><div class="chars"><span class="${sl>45?'warn':'good'}">${sl}/45</span></div></div>
 <div class="rl"><div class="rlbl">Preheader</div><div class="rval pre${indef?' indef':''}">${esc(r.preheader||'')}</div><div class="chars"><span class="${pl>80?'warn':'good'}">${pl}/80</span></div></div>`;
 }
+return `${header}
+<div class="cbody">
+${fieldsHTML}
+<div class="crow" style="gap:8px"><button class="cpybtn" data-idx="${idx}">Copiar</button><button class="btn-ghost regen-btn" data-idx="${idx}">Regenerar ↻</button></div>
+</div>`;
+}
+const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${r.tipo===t?' sel':''}" data-val="${t}" data-idx="${idx}">${t}</button>`).join('');
 const incHTML=segEditorHTML(r.incluir,'incluir',idx);
 const excHTML=segEditorHTML(r.excluir,'excluir',idx);
 const audienciaHTML=(incHTML||excHTML)?`<div class="rl"><div class="rlbl">Audiencia</div>${incHTML}${excHTML}</div>`:'';
 const solapHTML=r.solapamientoTexto?`<div class="warn-line">⚠️ ${esc(r.solapamientoTexto)}</div>`:'';
-return `<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>
+return `${header}
 <div class="cbody">
 <div class="tipo-opts">${chipsHTML}</div>
-${fieldsHTML}
 ${audienciaHTML}
 ${solapHTML}
-<div class="crow" style="gap:8px"><button class="cpybtn" data-idx="${idx}">Copiar</button><button class="btn-ghost regen-btn" data-idx="${idx}">Regenerar ↻</button></div>
 </div>`;
 }
 function nombreAccion(elemento){
@@ -1561,6 +1573,13 @@ g.rows.forEach(r=>{ r.solapamientoTexto=texto; });
 }
 function renderCalTable(rows){
 document.getElementById('cal-wrap').innerHTML=rows.map((r,idx)=>`<div class="cb" data-idx="${idx}">${calRowCardHTML(r,idx)}</div>`).join('');
+actualizarBotonesResultado();
+}
+function actualizarBotonesResultado(){
+const enAsuntos=resultadoModo==='asuntos';
+document.getElementById('btn-back-campanas').classList.toggle('hidden',!enAsuntos);
+document.getElementById('btn-goto-asuntos').classList.toggle('hidden',enAsuntos);
+document.getElementById('btn-goto-proy').classList.toggle('hidden',!enAsuntos);
 }
 function rerenderCalRow(idx){
 const card=document.querySelector(`#cal-wrap .cb[data-idx="${idx}"]`);
@@ -1753,6 +1772,7 @@ catch(e2){ throw new Error('La respuesta fue muy larga y se cortó. Probá gener
 }
 calRows=parsed.filas||[];
 detectarSolapamientos(calRows,mes);
+resultadoModo='campanas';
 renderCalTable(calRows);
 if(parsed.analisis){document.getElementById('analisis-box').textContent=parsed.analisis;show('analisis-box');}
 
@@ -1777,6 +1797,16 @@ return [fechaDeElemento(r.elemento),r.canal||'',nombreAccion(r.elemento),'','','
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
 });
 document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');});
+document.getElementById('btn-goto-asuntos').addEventListener('click',()=>{
+resultadoModo='asuntos';
+renderCalTable(calRows);
+window.scrollTo(0,0);
+});
+document.getElementById('btn-back-campanas').addEventListener('click',()=>{
+resultadoModo='campanas';
+renderCalTable(calRows);
+window.scrollTo(0,0);
+});
 
 // ── PROYECCIÓN DEL MES ───────────────────────────────────────────────────────────
 let proyMarca='',proyMes='';
