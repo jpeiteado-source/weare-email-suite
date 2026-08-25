@@ -1496,6 +1496,7 @@ function calRowCardHTML(r,idx){
 const bc=r.canal&&r.canal.includes('Push')?'b-push':r.canal&&r.canal.includes('WhatsApp')?'b-wa':'b-nl';
 const header=`<div class="ch"><span class="cn">${esc(r.elemento||'')}</span><div class="cmeta"><span class="cdate">${esc(r.hora||'')}</span><span class="badge ${bc}">${esc(r.canal||'')}</span></div></div>`;
 if(resultadoModo==='asuntos'){
+const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${r.tipo===t?' sel':''}" data-val="${t}" data-idx="${idx}">${t}</button>`).join('');
 let fieldsHTML='';
 if(r.canal&&r.canal.includes('Push')){
 const tl=(r.titulo||'').length,ml=(r.mensaje||'').length;
@@ -1513,18 +1514,17 @@ fieldsHTML=`<div class="rl"><div class="rlbl">Asunto</div><div class="rval${inde
 }
 return `${header}
 <div class="cbody">
+<div class="tipo-opts">${chipsHTML}</div>
 ${fieldsHTML}
 <div class="crow" style="gap:8px"><button class="cpybtn" data-idx="${idx}">Copiar</button><button class="btn-ghost regen-btn" data-idx="${idx}">Regenerar ↻</button></div>
 </div>`;
 }
-const chipsHTML=TIPOS.map(t=>`<button class="tipo-opt${r.tipo===t?' sel':''}" data-val="${t}" data-idx="${idx}">${t}</button>`).join('');
 const incHTML=segEditorHTML(r.incluir,'incluir',idx);
 const excHTML=segEditorHTML(r.excluir,'excluir',idx);
 const audienciaHTML=(incHTML||excHTML)?`<div class="rl"><div class="rlbl">Audiencia</div>${incHTML}${excHTML}</div>`:'';
 const solapHTML=r.solapamientoTexto?`<div class="warn-line">⚠️ ${esc(r.solapamientoTexto)}</div>`:'';
 return `${header}
 <div class="cbody">
-<div class="tipo-opts">${chipsHTML}</div>
 ${audienciaHTML}
 ${solapHTML}
 </div>`;
