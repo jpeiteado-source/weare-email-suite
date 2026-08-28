@@ -574,6 +574,7 @@ input[type="file"]{display:none;}
 <button class="btn-ghost" id="btn-new-dist">🏠 Volver al inicio</button>
 </div>
 </div>
+<div id="dist-auto-summary" class="info-box hidden" style="margin-bottom:1rem"></div>
 <div id="dist-wrap"></div>
 <div class="hint" style="margin-top:10px">El reparto pondera por categoría y momento de cada acción (inicio, cierre, recordatorio, microevento, financiación activa ese día, cierre de mes) — es un punto de partida, no una predicción exacta.</div>
 <div style="margin-top:1rem">
@@ -2506,17 +2507,29 @@ const canales=[...new Set(g.rows.map(r=>r.canal))].join(', ');
 const obj=g.rows.find(r=>r.objetivoFacturacion!=null);
 return {fecha:g.fecha,elemento:key,canales,objetivoFacturacion:obj?obj.objetivoFacturacion:0,objetivoOrdenes:obj?obj.objetivoOrdenes:0,peso:obj?obj.pesoDistribucion:0,ajuste:obj?obj.ajusteIA:null,incluir:obj?obj.incluir:[],excluir:obj?obj.excluir:[]};
 });
+const summaryBox=document.getElementById('dist-auto-summary');
 if(autoInfo&&autoInfo.pct>0&&mesYYYYMM){
 const [yyyy,mm]=mesYYYYMM.split('-').map(Number);
 const totalDias=new Date(yyyy,mm,0).getDate();
 const factDia=autoInfo.facturacion/totalDias;
-const ordDia=autoInfo.ordenes/totalDias;
 const pesoDia=Math.round((autoInfo.pct/totalDias)*100)/100;
+// El % es sobre órdenes, no sobre facturación — repartir las órdenes redondeadas día a día
+// (ej. 6.2/30) redondeaba cada día a 0 y el total del mes terminaba mostrando 0 órdenes.
+// En cambio, se reparten las órdenes ENTERAS en días espaciados a lo largo del mes.
+const ordenesRedondeadas=Math.round(autoInfo.ordenes);
+const diasConOrden=new Set();
+for(let i=0;i<ordenesRedondeadas;i++){
+diasConOrden.add(Math.min(totalDias,Math.round(1+(i*totalDias)/Math.max(1,ordenesRedondeadas))));
+}
 for(let d=1;d<=totalDias;d++){
 const dd=String(d).padStart(2,'0'),mmS=String(mm).padStart(2,'0');
-items.push({fecha:new Date(yyyy,mm-1,d),elemento:`${dd}/${mmS} - AUTOMATIZACIONES`,canales:'—',objetivoFacturacion:factDia,objetivoOrdenes:ordDia,peso:pesoDia,ajuste:null,incluir:[],excluir:[]});
+items.push({fecha:new Date(yyyy,mm-1,d),elemento:`${dd}/${mmS} - AUTOMATIZACIONES`,canales:'—',objetivoFacturacion:factDia,objetivoOrdenes:diasConOrden.has(d)?1:0,peso:pesoDia,ajuste:null,incluir:[],excluir:[]});
 }
+if(summaryBox){
+summaryBox.textContent=`🤖 Automatizaciones: ${fmtMoney(autoInfo.facturacion)} · ${ordenesRedondeadas} órdenes (${autoInfo.pct}% del mes)`;
+summaryBox.classList.remove('hidden');
 }
+}else if(summaryBox){ summaryBox.classList.add('hidden'); }
 items.sort((a,b)=>(a.fecha&&b.fecha)?a.fecha-b.fecha:0);
 distList=items;
 const wrap=document.getElementById('dist-wrap');
