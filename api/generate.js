@@ -6,7 +6,7 @@ import { requireUser } from './_lib/auth.js';
 // salida { content:[{type:'text', text}] }) — así no hace falta tocar index.html.
 
 const SYSTEM = 'Respondés siempre en español. Cuando el usuario pide JSON, respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin markdown, sin bloques de código.';
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.6-flash';
 
 // Traduce mensajes estilo Anthropic (role:'user'|'assistant', content: string o
 // array de bloques {type:'text'|'image', ...}) al formato de Gemini (contents[]
