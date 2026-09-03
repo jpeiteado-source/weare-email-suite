@@ -48,23 +48,28 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing prompt or messages' });
   }
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: toGeminiContents(finalMessages),
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          generationConfig: { maxOutputTokens: max_tokens || 4000 }
-        })
-      }
-    );
+  const body = JSON.stringify({
+    contents: toGeminiContents(finalMessages),
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    generationConfig: { maxOutputTokens: max_tokens || 4000 }
+  });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err.error?.message || 'Error de API', _debug: req.body.debug ? err : undefined });
+  // El nivel gratuito de Gemini devuelve "modelo con alta demanda" (429/503) con
+  // bastante frecuencia — es transitorio, así que reintentamos un par de veces
+  // con espera antes de rendirnos, en vez de que el usuario tenga que reintentar a mano.
+  const MAX_INTENTOS = 3;
+  try {
+    let response, err;
+    for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+      response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      if (response.ok) break;
+      err = await response.json().catch(() => ({}));
+      const reintentable = response.status === 429 || response.status === 503;
+      if (!reintentable || intento === MAX_INTENTOS) {
+        return res.status(response.status).json({ error: err.error?.message || 'Error de API', _debug: req.body.debug ? err : undefined });
+      }
+      await new Promise(r => setTimeout(r, 1500 * intento));
     }
 
     const data = await response.json();
