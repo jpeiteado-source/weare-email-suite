@@ -57,12 +57,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: toGeminiContents(finalMessages),
           systemInstruction: { parts: [{ text: SYSTEM }] },
-          // thinkingBudget:0 — este modelo piensa antes de responder por default,
-          // gastando parte del maxOutputTokens en razonamiento interno antes de
-          // escribir la respuesta visible. Para copy de marketing no hace falta
-          // razonamiento, así que lo desactivamos para no comernos el presupuesto
-          // de tokens y devolver la respuesta cortada/vacía.
-          generationConfig: { maxOutputTokens: max_tokens || 4000, thinkingConfig: { thinkingBudget: 0 } }
+          generationConfig: { maxOutputTokens: max_tokens || 4000 }
         })
       }
     );
