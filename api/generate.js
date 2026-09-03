@@ -57,7 +57,12 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           contents: toGeminiContents(finalMessages),
           systemInstruction: { parts: [{ text: SYSTEM }] },
-          generationConfig: { maxOutputTokens: max_tokens || 4000 }
+          // thinkingLevel:'low' — este modelo piensa antes de responder por default,
+          // gastando parte del maxOutputTokens en razonamiento interno antes de
+          // escribir la respuesta visible. Para copy de marketing no hace falta
+          // razonamiento profundo, así que lo dejamos al mínimo para no comerse
+          // el presupuesto de tokens y devolver la respuesta cortada/vacía.
+          generationConfig: { maxOutputTokens: max_tokens || 4000, thinkingLevel: 'low' }
         })
       }
     );
@@ -74,11 +79,11 @@ export default async function handler(req, res) {
     if (!text) {
       // Bloqueo de seguridad, corte por longitud sin contenido, etc.
       const reason = candidate?.finishReason || 'sin respuesta';
-      return res.status(200).json({ content: [{ type: 'text', text: '' }], _finishReason: reason });
+      return res.status(200).json({ content: [{ type: 'text', text: '' }], _finishReason: reason, _debug: req.body.debug ? data : undefined });
     }
 
     // Misma forma que ya esperaba el resto de la app (formato Anthropic).
-    return res.status(200).json({ content: [{ type: 'text', text }] });
+    return res.status(200).json({ content: [{ type: 'text', text }], _debug: req.body.debug ? data : undefined });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
