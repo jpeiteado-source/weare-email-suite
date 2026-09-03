@@ -1,5 +1,34 @@
 import { requireUser } from './_lib/auth.js';
 
+// Este endpoint corre sobre la API gratuita de Google Gemini (en vez de Anthropic),
+// pero mantiene EXACTAMENTE el mismo contrato de entrada/salida que ya esperaba el
+// resto de la app (formato Anthropic: entrada { prompt } o { messages, max_tokens },
+// salida { content:[{type:'text', text}] }) — así no hace falta tocar index.html.
+
+const SYSTEM = 'Respondés siempre en español. Cuando el usuario pide JSON, respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin markdown, sin bloques de código.';
+const MODEL = 'gemini-2.5-flash';
+
+// Traduce mensajes estilo Anthropic (role:'user'|'assistant', content: string o
+// array de bloques {type:'text'|'image', ...}) al formato de Gemini (contents[]
+// con role:'user'|'model' y parts[]).
+function toGeminiContents(msgs) {
+  return msgs.map(m => {
+    const role = m.role === 'assistant' ? 'model' : 'user';
+    let parts;
+    if (typeof m.content === 'string') {
+      parts = [{ text: m.content }];
+    } else {
+      parts = (m.content || []).map(block => {
+        if (block.type === 'image') {
+          return { inlineData: { mimeType: block.source.media_type, data: block.source.data } };
+        }
+        return { text: block.text || '' };
+      });
+    }
+    return { role, parts };
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -10,7 +39,7 @@ export default async function handler(req, res) {
 
   const { prompt, messages, max_tokens } = req.body;
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key no configurada en el servidor' });
 
   // Soporta tanto { prompt } como { messages, max_tokens }
@@ -20,28 +49,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: max_tokens || 4000,
-        system: 'Respondés siempre en español. Cuando el usuario pide JSON, respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin markdown, sin bloques de código.',
-        messages: finalMessages
-      })
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: toGeminiContents(finalMessages),
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          generationConfig: { maxOutputTokens: max_tokens || 4000 }
+        })
+      }
+    );
 
     if (!response.ok) {
-      const err = await response.json();
+      const err = await response.json().catch(() => ({}));
       return res.status(response.status).json({ error: err.error?.message || 'Error de API' });
     }
 
     const data = await response.json();
-    return res.status(200).json(data);
+    const candidate = data.candidates && data.candidates[0];
+    const text = (candidate?.content?.parts || []).map(p => p.text || '').join('');
+
+    if (!text) {
+      // Bloqueo de seguridad, corte por longitud sin contenido, etc.
+      const reason = candidate?.finishReason || 'sin respuesta';
+      return res.status(200).json({ content: [{ type: 'text', text: '' }], _finishReason: reason });
+    }
+
+    // Misma forma que ya esperaba el resto de la app (formato Anthropic).
+    return res.status(200).json({ content: [{ type: 'text', text }] });
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
