@@ -367,13 +367,6 @@ input[type="file"]{display:none;}
 
 <div id="home-tab-briefs" class="hidden">
 <div class="card">
-<div class="ct">Briefs de diseño</div>
-<div class="hint" style="margin-bottom:12px">Accedé directo a los briefs de un calendario ya armado, sin pasar por Campañas ni Asuntos.</div>
-<div class="f"><label>Marca</label><select id="briefs-marca"><option value="">— Seleccioná una marca —</option></select></div>
-<div id="briefs-list-wrap" style="margin-top:1rem"></div>
-</div>
-
-<div class="card">
 <div class="ct">Crear brief unitario</div>
 <div class="hint" style="margin-bottom:12px">Armá un brief puntual con IA, sin necesidad de tener un calendario generado — igual que el generador rápido de asuntos.</div>
 <div class="f"><label>Marca</label><select id="briefu-marca"><option value="">— Seleccioná una marca —</option></select></div>
@@ -381,6 +374,13 @@ input[type="file"]{display:none;}
 <div class="f"><label>Consideraciones <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><textarea id="briefu-consideraciones" placeholder="Ej: Es una campaña de productos puntuales, mostrar 4 SKUs con 20% OFF."></textarea></div>
 <button class="btn-or" id="briefu-gen-btn">Generar brief →</button>
 <div class="cal-wrap" id="briefu-resultado" style="margin-top:1rem"></div>
+</div>
+
+<div class="card">
+<div class="ct">Briefs generados</div>
+<div class="hint" style="margin-bottom:12px">Accedé directo a los briefs de un calendario ya armado, sin pasar por Campañas ni Asuntos.</div>
+<div class="f"><label>Marca</label><select id="briefs-marca"><option value="">— Seleccioná una marca —</option></select></div>
+<div id="briefs-list-wrap" style="margin-top:1rem"></div>
 </div>
 </div>
 
@@ -2177,6 +2177,7 @@ FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
 const orig=btn.textContent;
 btn.textContent='Generando…';btn.disabled=true;
 const resWrap=document.getElementById('briefu-resultado');
+resWrap.innerHTML='<div class="spin-wrap"><div class="spinner"></div><div class="stxt">Armando el brief… puede tardar hasta 1 minuto si el modelo gratuito está con demanda alta.</div></div>';
 try{
 const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:4000})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
