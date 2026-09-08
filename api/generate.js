@@ -56,20 +56,42 @@ export default async function handler(req, res) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
 
   // El nivel gratuito de Gemini devuelve "modelo con alta demanda" (429/503) con
-  // bastante frecuencia — es transitorio, así que reintentamos un par de veces
-  // con espera antes de rendirnos, en vez de que el usuario tenga que reintentar a mano.
-  const MAX_INTENTOS = 3;
+  // bastante frecuencia, y a veces directamente tarda mucho en responder sin
+  // llegar a fallar. Le ponemos un tope de tiempo a CADA intento (con AbortController)
+  // para que ningún llamado individual se cuelgue y se coma todo el presupuesto de la
+  // función — así 2 intentos (con margen) siempre entran bien por debajo del límite
+  // de Vercel, en vez de terminar en un 504 opaco sin ningún mensaje útil.
+  const MAX_INTENTOS = 2;
+  const TIMEOUT_POR_INTENTO_MS = 25000;
   try {
     let response, err;
     for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
-      response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_POR_INTENTO_MS);
+      let fetchError = null;
+      try {
+        response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: controller.signal });
+      } catch (e) {
+        fetchError = e;
+      } finally {
+        clearTimeout(timer);
+      }
+
+      if (fetchError) {
+        if (intento === MAX_INTENTOS) {
+          return res.status(504).json({ error: 'El modelo tardó demasiado en responder. Probá de nuevo en un momento.' });
+        }
+        await new Promise(r => setTimeout(r, 800));
+        continue;
+      }
+
       if (response.ok) break;
       err = await response.json().catch(() => ({}));
       const reintentable = response.status === 429 || response.status === 503;
       if (!reintentable || intento === MAX_INTENTOS) {
         return res.status(response.status).json({ error: err.error?.message || 'Error de API', _debug: req.body.debug ? err : undefined });
       }
-      await new Promise(r => setTimeout(r, 1500 * intento));
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     const data = await response.json();
