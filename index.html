@@ -152,7 +152,7 @@ input[type="file"]{display:none;}
 .diff-up{color:var(--ok);}
 .diff-dn{color:#f85149;}
 .diff-eq{color:var(--dt3);}
-.home-tab-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem;}
+.home-tab-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
 .home-tab-card{background:var(--ds);border:1px solid var(--dbrd);border-radius:var(--r);padding:1.1rem 1rem;text-align:left;cursor:pointer;font-family:inherit;transition:all 0.15s;}
 .home-tab-card:hover{border-color:var(--dbrd2);}
 .home-tab-card.active{background:var(--org);border-color:var(--orb);}
@@ -244,6 +244,11 @@ input[type="file"]{display:none;}
 <div class="home-tab-card-icon">📅</div>
 <div class="home-tab-card-title">Calendario</div>
 <div class="home-tab-card-sub">Empezar de cero, o cargar uno que ya tenés armado</div>
+</button>
+<button class="home-tab-card home-tab-btn" data-tab="briefs">
+<div class="home-tab-card-icon">🧩</div>
+<div class="home-tab-card-title">Briefs de diseño</div>
+<div class="home-tab-card-sub">Accedé directo a los briefs de un calendario ya armado</div>
 </button>
 </div>
 
@@ -357,6 +362,15 @@ input[type="file"]{display:none;}
 <div class="err hidden" id="ic-error" style="margin-top:10px"></div>
 <button class="btn-or" id="ic-interpretar-btn" style="margin-top:14px">Interpretar calendario →</button>
 </div>
+</div>
+</div>
+
+<div id="home-tab-briefs" class="hidden">
+<div class="card">
+<div class="ct">Briefs de diseño</div>
+<div class="hint" style="margin-bottom:12px">Accedé directo a los briefs de un calendario ya armado, sin pasar por Campañas ni Asuntos.</div>
+<div class="f"><label>Marca</label><select id="briefs-marca"><option value="">— Seleccioná una marca —</option></select></div>
+<div id="briefs-list-wrap" style="margin-top:1rem"></div>
 </div>
 </div>
 
@@ -957,10 +971,11 @@ function irATabHome(tab){
 document.querySelectorAll('.home-tab-btn').forEach(b=>{
 b.classList.toggle('active',b.dataset.tab===tab);
 });
-hide('home-tab-marcas');hide('home-tab-asuntos');hide('home-tab-calendario');
+hide('home-tab-marcas');hide('home-tab-asuntos');hide('home-tab-calendario');hide('home-tab-briefs');
 show('home-tab-'+tab);
 if(tab==='asuntos') poblarQaMarcas();
 if(tab==='calendario') poblarCalMarcas();
+if(tab==='briefs') poblarBriefsMarcas();
 }
 document.querySelectorAll('.home-tab-btn').forEach(btn=>btn.addEventListener('click',()=>irATabHome(btn.dataset.tab)));
 
@@ -1458,8 +1473,10 @@ document.getElementById('btn-change-brand').addEventListener('click',()=>showHom
 document.getElementById('btn-home-paso1').addEventListener('click',()=>showHome());
 
 // ── ACCESO DIRECTO A PROYECCIÓN (con o sin calendario generado) ────────────────
-async function cargarListaCalendarios(nombre){
-const wrap=document.getElementById('cal-list-wrap');
+async function cargarListaCalendarios(nombre,wrapId,modo){
+wrapId=wrapId||'cal-list-wrap';
+modo=modo||'full';
+const wrap=document.getElementById(wrapId);
 wrap.innerHTML='<div class="hint">Cargando…</div>';
 try{
 const res=await apiFetch('/api/plans?nombre='+encodeURIComponent(nombre));
@@ -1471,16 +1488,37 @@ wrap.innerHTML=months.map(m=>{
 const [yyyy,mm]=m.split('-');
 let nombreMes=new Date(+yyyy,+mm-1,1).toLocaleString('es-AR',{month:'long',year:'numeric'});
 nombreMes=nombreMes.charAt(0).toUpperCase()+nombreMes.slice(1);
+const acciones=modo==='brief'
+?`<button class="btn-accent cal-list-brief" data-month="${m}">🧩 Ver briefs →</button>`
+:`<button class="add-lnk cal-list-proy" data-month="${m}" style="margin-top:0">Proyección</button>
+<button class="btn-ghost cal-list-ver" data-month="${m}">Ver calendario →</button>`;
 return `<div class="cal-list-row">
 <span class="cal-list-mes">${esc(nombreMes)}</span>
 <div style="display:flex;gap:6px;align-items:center">
-<button class="add-lnk cal-list-proy" data-month="${m}" style="margin-top:0">Proyección</button>
-<button class="btn-ghost cal-list-ver" data-month="${m}">Ver calendario →</button>
+${acciones}
 </div>
 </div>`;
 }).join('');
 }catch(e){ wrap.innerHTML='<div class="hint">No se pudo cargar la lista de calendarios.</div>'; }
 }
+function poblarBriefsMarcas(){
+const sel=document.getElementById('briefs-marca');
+const current=sel.value;
+sel.innerHTML='<option value="">— Seleccioná una marca —</option>'+brandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
+if(current) sel.value=current;
+}
+document.getElementById('briefs-marca').addEventListener('change',function(){
+const nombre=this.value;
+if(!nombre){ document.getElementById('briefs-list-wrap').innerHTML=''; return; }
+activeBrand=brandsCache.find(b=>b.nombre===nombre);
+if(!activeBrand) return;
+cargarListaCalendarios(nombre,'briefs-list-wrap','brief');
+});
+document.getElementById('briefs-list-wrap').addEventListener('click',e=>{
+if(!activeBrand) return;
+const briefBtn=e.target.closest('.cal-list-brief');
+if(briefBtn){ cargarPlanDirecto(activeBrand.nombre,briefBtn.dataset.month,'brief');return; }
+});
 
 async function cargarPlanDirecto(nombre,month,destino){
 destino=destino||'proy';
@@ -1511,6 +1549,10 @@ proyMarca=nombre;proyMes=month;
 if(destino==='cal'){
 ['homeScreen','brandFormScreen','paso1'].forEach(hide);
 show('resultado1');
+}else if(destino==='brief'){
+['homeScreen','brandFormScreen','paso1','resultado1'].forEach(hide);
+show('briefPage');
+renderBriefPage();
 }else{
 ['homeScreen','brandFormScreen','paso1','resultado1'].forEach(hide);
 show('proyPage');
