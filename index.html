@@ -380,7 +380,7 @@ input[type="file"]{display:none;}
 <div class="f"><label>Nombre / tema de la acción</label><input type="text" id="briefu-accion" placeholder="Ej: Liquidación de invierno, Envío gratis, Cyber Monday..." /></div>
 <div class="f"><label>Consideraciones <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><textarea id="briefu-consideraciones" placeholder="Ej: Es una campaña de productos puntuales, mostrar 4 SKUs con 20% OFF."></textarea></div>
 <button class="btn-or" id="briefu-gen-btn">Generar brief →</button>
-<div id="briefu-resultado" style="margin-top:1rem"></div>
+<div class="cal-wrap" id="briefu-resultado" style="margin-top:1rem"></div>
 </div>
 </div>
 
@@ -2141,29 +2141,17 @@ try{ await navigator.clipboard.writeText(texto); }catch(e2){ return; }
 if(btn){ btn.textContent='¡Copiado!'; setTimeout(()=>{btn.textContent=labelDefault;},1800); }
 }
 
-// ── BRIEF UNITARIO (sin calendario, análogo al generador rápido de asuntos) ──────
-function briefUnitarioResultadoHTML(b){
-let html=`<div class="rl"><div class="rlbl">Contexto comercial</div><div class="rval">${esc(b.contextoComercial)}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">KV</div><div class="rval pre">${esc(b.kv)}</div></div>`;
-if(b.headerTexto) html+=`<div class="rl"><div class="rlbl">Texto en header</div><div class="rval">${esc(b.headerTexto)}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">Jerarquía 1</div><div class="rval">${esc(b.jerarquia1)}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">Jerarquía 2</div><div class="rval">${esc(b.jerarquia2)}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">CTA header</div><div class="rval">${esc(b.ctaHeader)}</div></div>`;
-if(b.tieneBanner){
-html+=`<div class="rl"><div class="rlbl">Banner aparte</div><div class="rval pre">${esc(b.bannerTexto)}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">CTA banner</div><div class="rval">${esc(b.ctaBanner)}</div></div>`;
-}
-if(b.tieneSkus){
-html+=`<div class="rl"><div class="rlbl">${esc(b.skusDescripcion||'SKUs participantes')}</div>`;
-html+=b.skusModo==='especificos'?`<div class="rval pre">${esc(b.skusEspecificos)}</div>`:`<div class="rval">Cantidad: ${esc(b.cantidadSkus)}</div>`;
-html+=`</div>`;
-html+=`<div class="rl"><div class="rlbl">Precio</div><div class="rval">${esc(preciosTexto(b))}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">Cucarda</div><div class="rval">${esc(b.cucarda)}</div></div>`;
-html+=`<div class="rl"><div class="rlbl">CTA SKUs</div><div class="rval">${esc(b.ctaSkus)}</div></div>`;
-}
-return html;
-}
+// ── BRIEF UNITARIO (sin calendario) — reusa la misma tarjeta interactiva completa
+// (briefCardHTML) que ya usan los briefs del calendario: campos editables, toggles
+// de banner/SKUs, chips de precio, regenerar y copiar. La "fila" es un objeto suelto
+// (no calRows, para no mezclarse con ningún plan real guardado), identificada con
+// idx='u' en vez de un número.
 let briefUnitarioActual=null;
+function rerenderBriefUnitario(){
+const card=document.querySelector('#briefu-resultado .cb[data-idx="u"]');
+if(!card||!briefUnitarioActual) return;
+card.innerHTML=briefCardHTML(briefUnitarioActual,'u');
+}
 async function generarBriefUnitario(btn){
 const nombreMarca=document.getElementById('briefu-marca').value;
 if(!nombreMarca){ alert('Seleccioná una marca.'); return; }
@@ -2198,16 +2186,8 @@ const jsonMatch=txt.match(/\{[\s\S]*\}/);
 if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
 let parsed;
 try{ parsed=JSON.parse(jsonMatch[0]); }catch(e){ parsed=repararJSONTruncado(jsonMatch[0]); }
-const brief=normalizarBrief(parsed);
-briefUnitarioActual={elemento:accion,brief};
-resWrap.innerHTML=`<div class="card">
-<div class="ct" style="margin-bottom:0.8rem">Resultado</div>
-${briefUnitarioResultadoHTML(brief)}
-<div class="crow" style="gap:8px;margin-top:12px"><button class="cpybtn" id="briefu-copy-btn">Copiar brief</button></div>
-</div>`;
-document.getElementById('briefu-copy-btn').addEventListener('click',function(){
-copiarBriefRico(briefATexto(briefUnitarioActual),briefATextoHTML(briefUnitarioActual),this,'Copiar brief');
-});
+briefUnitarioActual={elemento:accion,hora:'',brief:normalizarBrief(parsed)};
+resWrap.innerHTML=`<div class="cb" data-idx="u">${briefCardHTML(briefUnitarioActual,'u')}</div>`;
 btn.textContent='Regenerar ↻';
 }catch(err){
 resWrap.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
@@ -2216,6 +2196,33 @@ btn.textContent=orig;
 btn.disabled=false;
 }
 document.getElementById('briefu-gen-btn').addEventListener('click',function(){ generarBriefUnitario(this); });
+document.getElementById('briefu-resultado').addEventListener('click',e=>{
+if(!briefUnitarioActual) return;
+const genBtn=e.target.closest('.brief-gen-btn');
+if(genBtn){ generarBriefUnitario(document.getElementById('briefu-gen-btn'));return; }
+const cpyBtn=e.target.closest('.brief-copy-btn');
+if(cpyBtn){
+copiarBriefRico(briefATexto(briefUnitarioActual),briefATextoHTML(briefUnitarioActual),cpyBtn,'Copiar brief');
+return;
+}
+const skusModoBtn=e.target.closest('.brief-skusmodo-btn');
+if(skusModoBtn){ briefUnitarioActual.brief.skusModo=skusModoBtn.dataset.skusmodo==='especificos'?'especificos':'diseno'; rerenderBriefUnitario();return; }
+const togBtn=e.target.closest('.brief-toggle-btn');
+if(togBtn){ briefUnitarioActual.brief[togBtn.dataset.toggle]=!briefUnitarioActual.brief[togBtn.dataset.toggle]; rerenderBriefUnitario();return; }
+const precioChip=e.target.closest('.brief-precio-chip');
+if(precioChip){
+const precios=briefUnitarioActual.brief.precios||(briefUnitarioActual.brief.precios=[]);
+const i=precios.indexOf(precioChip.dataset.precio);
+if(i>=0) precios.splice(i,1); else precios.push(precioChip.dataset.precio);
+rerenderBriefUnitario();
+return;
+}
+});
+document.getElementById('briefu-resultado').addEventListener('change',e=>{
+const field=e.target.closest('.brief-field');
+if(!field||!briefUnitarioActual) return;
+briefUnitarioActual.brief[field.dataset.field]=field.value;
+});
 
 function toggleBriefBloque(idx,campo){
 const r=calRows[idx];
