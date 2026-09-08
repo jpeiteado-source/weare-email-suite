@@ -8,6 +8,11 @@ import { requireUser } from './_lib/auth.js';
 const SYSTEM = 'Respondés siempre en español. Cuando el usuario pide JSON, respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin markdown, sin bloques de código.';
 const MODEL = 'gemini-3.6-flash';
 
+// Mensaje amigable para cuando el nivel gratuito de Gemini está saturado (429/503) o
+// tarda demasiado — se muestra tal cual en el frontend, sin la palabra "Error" ni jerga
+// técnica, porque es una condición transitoria y esperable del nivel gratuito, no un bug.
+const MENSAJE_ALTA_DEMANDA = 'El generador de IA está con mucha demanda en este momento. Volvé a intentarlo en unos minutos.';
+
 // Traduce mensajes estilo Anthropic (role:'user'|'assistant', content: string o
 // array de bloques {type:'text'|'image', ...}) al formato de Gemini (contents[]
 // con role:'user'|'model' y parts[]).
@@ -79,7 +84,7 @@ export default async function handler(req, res) {
 
       if (fetchError) {
         if (intento === MAX_INTENTOS) {
-          return res.status(504).json({ error: 'El modelo tardó demasiado en responder. Probá de nuevo en un momento.' });
+          return res.status(504).json({ error: MENSAJE_ALTA_DEMANDA });
         }
         await new Promise(r => setTimeout(r, 800));
         continue;
@@ -89,7 +94,8 @@ export default async function handler(req, res) {
       err = await response.json().catch(() => ({}));
       const reintentable = response.status === 429 || response.status === 503;
       if (!reintentable || intento === MAX_INTENTOS) {
-        return res.status(response.status).json({ error: err.error?.message || 'Error de API', _debug: req.body.debug ? err : undefined });
+        const mensaje = reintentable ? MENSAJE_ALTA_DEMANDA : (err.error?.message || 'No se pudo generar. Probá de nuevo en un momento.');
+        return res.status(response.status).json({ error: mensaje, _debug: req.body.debug ? err : undefined });
       }
       await new Promise(r => setTimeout(r, 1000));
     }
@@ -108,6 +114,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ content: [{ type: 'text', text }], _debug: req.body.debug ? data : undefined });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo generar en este momento. Probá de nuevo en un momento.', _debug: req.body.debug ? err.message : undefined });
   }
 }

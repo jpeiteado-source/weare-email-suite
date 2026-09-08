@@ -1065,7 +1065,7 @@ navigator.clipboard.writeText(r.texto).then(()=>{this.textContent='¡Copiado!';t
 });
 btn.textContent='Regenerar ↻';
 }catch(err){
-resWrap.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+resWrap.innerHTML=`<div class="err">${esc(err.message)}</div>`;
 btn.textContent=orig;
 }
 btn.disabled=false;
@@ -1794,7 +1794,7 @@ if(!jsonMatch) throw new Error('La IA no devolvió un formato válido.');
 Object.assign(calRows[idx],JSON.parse(jsonMatch[0]));
 rerenderCalRow(idx);
 }catch(err){
-alert('Error al regenerar: '+err.message);
+alert(err.message);
 if(btn){ btn.textContent='Regenerar ↻'; btn.disabled=false; }
 }
 }
@@ -2029,7 +2029,7 @@ calRows[idx].brief=nuevo;
 renderBriefPage();
 guardarPlanActual();
 }catch(err){
-alert('Error al generar los briefs: '+err.message);
+alert(err.message);
 btn.disabled=false;btn.textContent=restoreLabel;
 }
 }
@@ -2070,7 +2070,7 @@ rerenderBriefCard(idx);
 guardarPlanActual();
 document.getElementById('btn-gen-briefs').textContent='Regenerar todos ↻';
 }catch(err){
-alert('Error al generar el brief: '+err.message);
+alert(err.message);
 if(btn){ btn.textContent=r.brief?'Regenerar ↻':'Generar ↻';btn.disabled=false; }
 }
 }
@@ -2191,7 +2191,7 @@ briefUnitarioActual={elemento:accion,hora:'',brief:normalizarBrief(parsed)};
 resWrap.innerHTML=`<div class="cb" data-idx="u">${briefCardHTML(briefUnitarioActual,'u')}</div>`;
 btn.textContent='Regenerar ↻';
 }catch(err){
-resWrap.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+resWrap.innerHTML=`<div class="err">${esc(err.message)}</div>`;
 btn.textContent=orig;
 }
 btn.disabled=false;
@@ -2420,7 +2420,7 @@ guardarPlanActual(parsed.analisis||'');
 }catch(err){
 const esErrorTecnico=/^(Unexpected token|Unexpected end of JSON|Expected)/.test(err.message||'');
 const msg=esErrorTecnico?'La respuesta fue muy larga y se cortó. Probá generar de nuevo, o con menos acciones cargadas.':err.message;
-document.getElementById('cal-wrap').innerHTML=`<div class="err"><strong>Error:</strong> ${esc(msg)}</div>`;
+document.getElementById('cal-wrap').innerHTML=`<div class="err">${esc(msg)}</div>`;
 }
 }
 document.getElementById('btn-cal').addEventListener('click',()=>generarCalendario());
