@@ -372,6 +372,16 @@ input[type="file"]{display:none;}
 <div class="f"><label>Marca</label><select id="briefs-marca"><option value="">— Seleccioná una marca —</option></select></div>
 <div id="briefs-list-wrap" style="margin-top:1rem"></div>
 </div>
+
+<div class="card">
+<div class="ct">Crear brief unitario</div>
+<div class="hint" style="margin-bottom:12px">Armá un brief puntual con IA, sin necesidad de tener un calendario generado — igual que el generador rápido de asuntos.</div>
+<div class="f"><label>Marca</label><select id="briefu-marca"><option value="">— Seleccioná una marca —</option></select></div>
+<div class="f"><label>Nombre / tema de la acción</label><input type="text" id="briefu-accion" placeholder="Ej: Liquidación de invierno, Envío gratis, Cyber Monday..." /></div>
+<div class="f"><label>Consideraciones <span style="color:var(--dt3);font-size:11px">(opcional)</span></label><textarea id="briefu-consideraciones" placeholder="Ej: Es una campaña de productos puntuales, mostrar 4 SKUs con 20% OFF."></textarea></div>
+<button class="btn-or" id="briefu-gen-btn">Generar brief →</button>
+<div id="briefu-resultado" style="margin-top:1rem"></div>
+</div>
 </div>
 
 <!-- AGREGAR / EDITAR MARCA -->
@@ -1502,10 +1512,11 @@ ${acciones}
 }catch(e){ wrap.innerHTML='<div class="hint">No se pudo cargar la lista de calendarios.</div>'; }
 }
 function poblarBriefsMarcas(){
+const opts='<option value="">— Seleccioná una marca —</option>'+brandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
 const sel=document.getElementById('briefs-marca');
-const current=sel.value;
-sel.innerHTML='<option value="">— Seleccioná una marca —</option>'+brandsCache.map(b=>`<option value="${esc(b.nombre)}">${esc(b.nombre)}</option>`).join('');
-if(current) sel.value=current;
+const current=sel.value; sel.innerHTML=opts; if(current) sel.value=current;
+const selU=document.getElementById('briefu-marca');
+const currentU=selU.value; selU.innerHTML=opts; if(currentU) selU.value=currentU;
 }
 document.getElementById('briefs-marca').addEventListener('change',function(){
 const nombre=this.value;
@@ -2070,7 +2081,8 @@ return (b.precios&&b.precios.length)?b.precios.join(' + '):'—';
 function briefATexto(r){
 const b=r.brief;
 if(!b) return '';
-let t=`**ENVÍO:** ${nombreAccion(r.elemento)} (${fechaDeElemento(r.elemento)})\n\n`;
+const fecha=fechaDeElemento(r.elemento);
+let t=`**ENVÍO:** ${nombreAccion(r.elemento)}${fecha?` (${fecha})`:''}\n\n`;
 t+=`**1- CONTEXTO COMERCIAL**\n${b.contextoComercial}\n\n`;
 t+=`**2- HEADER**\n\n* **KV:** ${b.kv}\n`;
 if(b.headerTexto) t+=`\n* **Texto en header**\n${b.headerTexto}\n`;
@@ -2093,7 +2105,8 @@ function briefATextoHTML(r){
 const b=r.brief;
 if(!b) return '';
 const e=s=>esc(s||'');
-let h=`<p><b>ENVÍO:</b> ${e(nombreAccion(r.elemento))} (${e(fechaDeElemento(r.elemento))})</p>`;
+const fechaH=fechaDeElemento(r.elemento);
+let h=`<p><b>ENVÍO:</b> ${e(nombreAccion(r.elemento))}${fechaH?` (${e(fechaH)})`:''}</p>`;
 h+=`<p><b>1- CONTEXTO COMERCIAL</b><br>${e(b.contextoComercial)}</p>`;
 h+=`<p><b>2- HEADER</b></p>`;
 h+=`<p>• <b>KV:</b> ${e(b.kv)}</p>`;
@@ -2127,6 +2140,83 @@ try{ await navigator.clipboard.writeText(texto); }catch(e2){ return; }
 }
 if(btn){ btn.textContent='¡Copiado!'; setTimeout(()=>{btn.textContent=labelDefault;},1800); }
 }
+
+// ── BRIEF UNITARIO (sin calendario, análogo al generador rápido de asuntos) ──────
+function briefUnitarioResultadoHTML(b){
+let html=`<div class="rl"><div class="rlbl">Contexto comercial</div><div class="rval">${esc(b.contextoComercial)}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">KV</div><div class="rval pre">${esc(b.kv)}</div></div>`;
+if(b.headerTexto) html+=`<div class="rl"><div class="rlbl">Texto en header</div><div class="rval">${esc(b.headerTexto)}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">Jerarquía 1</div><div class="rval">${esc(b.jerarquia1)}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">Jerarquía 2</div><div class="rval">${esc(b.jerarquia2)}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">CTA header</div><div class="rval">${esc(b.ctaHeader)}</div></div>`;
+if(b.tieneBanner){
+html+=`<div class="rl"><div class="rlbl">Banner aparte</div><div class="rval pre">${esc(b.bannerTexto)}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">CTA banner</div><div class="rval">${esc(b.ctaBanner)}</div></div>`;
+}
+if(b.tieneSkus){
+html+=`<div class="rl"><div class="rlbl">${esc(b.skusDescripcion||'SKUs participantes')}</div>`;
+html+=b.skusModo==='especificos'?`<div class="rval pre">${esc(b.skusEspecificos)}</div>`:`<div class="rval">Cantidad: ${esc(b.cantidadSkus)}</div>`;
+html+=`</div>`;
+html+=`<div class="rl"><div class="rlbl">Precio</div><div class="rval">${esc(preciosTexto(b))}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">Cucarda</div><div class="rval">${esc(b.cucarda)}</div></div>`;
+html+=`<div class="rl"><div class="rlbl">CTA SKUs</div><div class="rval">${esc(b.ctaSkus)}</div></div>`;
+}
+return html;
+}
+let briefUnitarioActual=null;
+async function generarBriefUnitario(btn){
+const nombreMarca=document.getElementById('briefu-marca').value;
+if(!nombreMarca){ alert('Seleccioná una marca.'); return; }
+const brand=brandsCache.find(b=>b.nombre===nombreMarca);
+if(!brand){ alert('No se pudo cargar esa marca.'); return; }
+const accion=document.getElementById('briefu-accion').value.trim();
+if(!accion){ alert('Escribí un nombre o tema para la acción.'); return; }
+const consideraciones=document.getElementById('briefu-consideraciones').value.trim();
+const tonoDesc=brand.tonoDesc||'',tonoEj=brand.tonoEj||'';
+const prompt=`Sos un experto en trafficking y armado de briefs de maquetación de newsletters para e-commerce. Respondés SIEMPRE en español y SIEMPRE en JSON puro, sin texto adicional ni markdown.
+
+MARCA: ${brand.nombre}
+TONO DE VOZ:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+
+ACCIÓN: ${accion}
+${consideraciones?`\nCONSIDERACIONES (tenelas en cuenta al armar el brief):\n${consideraciones}\n`:''}
+Armá el brief de maquetación para diseño con esta estructura:
+${BRIEF_ESTRUCTURA}
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
+{"contextoComercial":"...","kv":"...","headerTexto":"","jerarquia1":"...","jerarquia2":"...","ctaHeader":"...","tieneBanner":false,"tieneSkus":false}`;
+const orig=btn.textContent;
+btn.textContent='Generando…';btn.disabled=true;
+const resWrap=document.getElementById('briefu-resultado');
+try{
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:4000})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const data=await res.json();
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+let parsed;
+try{ parsed=JSON.parse(jsonMatch[0]); }catch(e){ parsed=repararJSONTruncado(jsonMatch[0]); }
+const brief=normalizarBrief(parsed);
+briefUnitarioActual={elemento:accion,brief};
+resWrap.innerHTML=`<div class="card">
+<div class="ct" style="margin-bottom:0.8rem">Resultado</div>
+${briefUnitarioResultadoHTML(brief)}
+<div class="crow" style="gap:8px;margin-top:12px"><button class="cpybtn" id="briefu-copy-btn">Copiar brief</button></div>
+</div>`;
+document.getElementById('briefu-copy-btn').addEventListener('click',function(){
+copiarBriefRico(briefATexto(briefUnitarioActual),briefATextoHTML(briefUnitarioActual),this,'Copiar brief');
+});
+btn.textContent='Regenerar ↻';
+}catch(err){
+resWrap.innerHTML=`<div class="err"><strong>Error:</strong> ${esc(err.message)}</div>`;
+btn.textContent=orig;
+}
+btn.disabled=false;
+}
+document.getElementById('briefu-gen-btn').addEventListener('click',function(){ generarBriefUnitario(this); });
+
 function toggleBriefBloque(idx,campo){
 const r=calRows[idx];
 if(!r||!r.brief) return;
