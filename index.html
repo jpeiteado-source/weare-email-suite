@@ -1561,6 +1561,7 @@ if(destino==='cal'){
 ['homeScreen','brandFormScreen','paso1'].forEach(hide);
 show('resultado1');
 }else if(destino==='brief'){
+await asegurarCopyGenerado();
 ['homeScreen','brandFormScreen','paso1','resultado1'].forEach(hide);
 show('briefPage');
 renderBriefPage();
@@ -2281,7 +2282,8 @@ const texto=rows.map(({r})=>briefATexto(r)).join('\n\n────────�
 const html=rows.map(({r})=>briefATextoHTML(r)).join('<hr>');
 copiarBriefRico(texto,html,this,'Copiar todos los briefs');
 });
-document.getElementById('btn-goto-brief').addEventListener('click',()=>{
+document.getElementById('btn-goto-brief').addEventListener('click',async function(){
+if(!(await asegurarCopyGenerado(this))) return;
 hide('resultado1');show('briefPage');
 renderBriefPage();
 window.scrollTo(0,0);
@@ -2347,7 +2349,7 @@ const segmentosTexto=buildSegmentosTexto(segmentos);
 
 let historial='';
 try{
-const hres=await apiFetch('/api/plans?nombre='+encodeURIComponent(marca)+'&months=3');
+const hres=await apiFetch('/api/plans?nombre='+encodeURIComponent(marca)+'&months=1');
 if(hres.ok){ const hd=await hres.json(); historial=buildHistorialTexto(hd.plans||[]); }
 }catch(e){}
 
@@ -2360,7 +2362,7 @@ ${industria?`INDUSTRIA: ${industria}\n`:''}${buyer?`BUYER PERSONA: ${buyer}\n`:'
 TONO DE VOZ DE LA MARCA:
 ${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
 ${notas?`\nNOTAS Y CONSIDERACIONES ESPECIALES DEL MES (tener en cuenta al armar el calendario):\n${notas}\n`:''}
-${historial?`\nHISTORIAL DE MESES ANTERIORES (solo para evitar repetir temas/asuntos idénticos y dar continuidad — NO tomar como acciones del mes actual):\n${historial}\n`:''}
+${historial?`\nHISTORIAL DEL MES ANTERIOR (solo para evitar repetir temas idénticos y dar continuidad — NO tomar como acciones del mes actual):\n${historial}\n`:''}
 ${segmentosTexto?`\nSEGMENTOS DE AUDIENCIA YA DEFINIDOS PARA ESTA MARCA (usalos cuando corresponda en vez de inventar de cero):\n${segmentosTexto}\n`:''}
 ${sugerenciaExtra?`\nSUGERENCIA/CORRECCIÓN DEL ANALISTA SOBRE LA VERSIÓN ANTERIOR DE ESTE CALENDARIO (tenela en cuenta por sobre todo lo demás al rearmar el calendario completo):\n${sugerenciaExtra}\n`:''}
 ACCIONES COMERCIALES DEL MES (cargadas manualmente, organizadas por categoría):
@@ -2383,14 +2385,13 @@ CRITERIO EDITORIAL:
 - Para cada fila, indicá también "categoria" (comunicacionAO / accionComercial / financiacion / microevento, según de qué bloque de ACCIONES COMERCIALES salió — respectivamente Comunicación AO / Acción Comercial / Financiación / Microevento) y "momento": "inicio" si es el primer día de una acción con rango de fechas, "cierre" si es el último día de ese rango, "recordatorio" si es un día intermedio de una acción en curso, o "puntual" si la acción es de un solo día
 - Si la fila corresponde a una acción de reactivación de base inactiva, agregá "reactivacion":true (si no aplica, omitir el campo)
 - Para cada fila, sugerí "incluir" y "excluir": arrays de segmentos de audiencia a los que conviene (o no) mandarle ese envío. Categorías posibles: ${SEG_CATEGORIAS.join(', ')}. PRIORIZÁ usar los segmentos ya definidos arriba — cuando uno de ellos aplique, COPIALO TEXTUALMENTE, carácter por carácter, tal cual aparece arriba (mismas mayúsculas, abreviaturas y formato). NO lo resumas ni lo reescribas con otro nombre más "prolijo": si arriba dice "Engagement: ENG. ALTO", el string tiene que ser exactamente "Engagement: ENG. ALTO" — nunca "Engagement: Alto" ni "Alto" a secas, porque el sistema compara texto exacto para reconocer que ya existe. Analizá cuál de ellos aplica a cada envío según su tipo, categoría y momento, y aplicalos activamente en la mayoría de las filas; dejá los arrays vacíos solo cuando de verdad ningún segmento de la biblioteca tenga sentido para ese envío puntual. Solo si hace falta un segmento que NO está en la lista de arriba, ahí sí proponé uno nuevo, con formato "Categoría: nombre" (ej. "Compras: no compró hace más de 90 días"), para que el analista lo pueda sumar a la biblioteca
-- Cada fila es UN envío por UN canal. Según el canal, incluí los campos correspondientes: Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"
+- Cada fila es UN envío por UN canal. NO redactes el copy todavía (nada de "asunto", "preheader", "titulo" ni "mensaje") — eso se genera en un paso aparte, más liviano; acá solo definís la estructura del calendario (fecha, canal, horario, tipo, categoría, momento y audiencia)
 
-${buildCopyRules(canales)}
 FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown:
-{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":["Engagement: Alto"],"excluir":["Segmento de valor (RFM): Perdidos"],"asunto":"texto del asunto","preheader":"texto del preheader"},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":[],"excluir":[],"titulo":"texto del título","mensaje":"texto del mensaje"}]}`;
+{"analisis":"máximo 4 líneas de análisis del mes","filas":[{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Newsletter","hora":"10:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":["Engagement: Alto"],"excluir":["Segmento de valor (RFM): Perdidos"]},{"elemento":"01/06 - NOMBRE ACCIÓN EN MAYÚSCULAS","canal":"Notificación Push","hora":"11:00","tipo":"Urgencia / tiempo limitado","categoria":"accionComercial","momento":"inicio","incluir":[],"excluir":[]}]}`;
 
 try{
-const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:16000})});
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:instrucciones}],max_tokens:8000})});
 if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
 const resText=await res.text();
 let data;
@@ -2423,6 +2424,75 @@ const msg=esErrorTecnico?'La respuesta fue muy larga y se cortó. Probá generar
 document.getElementById('cal-wrap').innerHTML=`<div class="err">${esc(msg)}</div>`;
 }
 }
+
+// ── COPY DEL CALENDARIO (paso aparte, más liviano) ───────────────────────────────
+// generarCalendario ya no redacta asunto/preheader/título/mensaje — solo arma la
+// estructura (fecha, canal, tipo, categoría, audiencia), que es mucho más rápido y
+// liviano. El copy se redacta recién acá, cuando hace falta (al entrar a "Asuntos y
+// preheaders" o a "Briefs de diseño"), en un segundo llamado más chico.
+function filaNecesitaCopy(r){
+if(r.canal&&r.canal.includes('Push')) return !r.titulo&&!r.mensaje;
+if(r.canal&&r.canal.includes('WhatsApp')) return !r.mensaje;
+return !r.asunto&&!r.preheader;
+}
+async function generarCopyCalendario(){
+const pendientes=calRows.map((r,idx)=>({r,idx})).filter(({r})=>filaNecesitaCopy(r));
+if(!pendientes.length) return;
+const marca=activeBrand?activeBrand.nombre:'';
+const tonoDesc=activeBrand?activeBrand.tonoDesc||'':'';
+const tonoEj=activeBrand?activeBrand.tonoEj||'':'';
+const canales=activeBrand?activeBrand.canalesActivos||[]:[];
+const lista=pendientes.map(({r,idx})=>`${idx}. ${r.elemento} — Canal: ${r.canal} — Tipo: ${r.tipo||''}${r.categoria?` — Categoría: ${r.categoria}`:''}${r.momento?` — Momento: ${r.momento}`:''}`).join('\n');
+const prompt=`Sos un analista de Email Marketing y CRM especializado en e-commerce argentino. Respondés SIEMPRE en español y SIEMPRE en JSON puro sin texto adicional ni markdown.
+
+MARCA: ${marca}
+TONO DE VOZ DE LA MARCA:
+${tonoDesc}${tonoEj?`\n\nEJEMPLOS DE COMUNICACIONES PREVIAS:\n${tonoEj}`:''}
+
+Ya está definida la estructura del calendario del mes (fecha, canal, tipo, categoría y momento de cada envío). Ahora redactá el copy de cada uno.
+
+${buildCopyRules(canales)}
+ENVÍOS A REDACTAR (formato: índice. fecha/nombre — canal — tipo — categoría — momento):
+${lista}
+
+FORMATO DE RESPUESTA — JSON puro, sin texto antes ni después, sin markdown. Un objeto por envío, con el mismo índice, y solo los campos de copy según el canal (Newsletter → "asunto"+"preheader"; Notificación Push → "titulo"+"mensaje"; WhatsApp → "mensaje"):
+{"copys":[{"idx":0,"asunto":"texto del asunto","preheader":"texto del preheader"}]}`;
+const res=await apiFetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt}],max_tokens:8000})});
+if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error||`Error ${res.status}`);}
+const resText=await res.text();
+let data;
+try{ data=JSON.parse(resText); }
+catch(e){ try{ data=repararJSONTruncado(resText); }catch(e2){ throw new Error('La respuesta del servidor se cortó o llegó incompleta. Probá de nuevo.'); } }
+const txt=data.content.map(i=>i.text||'').join('');
+const jsonMatch=txt.match(/\{[\s\S]*\}/);
+if(!jsonMatch) throw new Error('La IA no devolvió un formato válido. Intentá de nuevo.');
+let parsed;
+try{ parsed=JSON.parse(jsonMatch[0]); }
+catch(e){ try{ parsed=repararJSONTruncado(jsonMatch[0]); }catch(e2){ throw new Error('La respuesta fue muy larga y se cortó. Probá de nuevo.'); } }
+(parsed.copys||[]).forEach(c=>{
+const idx=+c.idx;
+if(!calRows[idx]) return;
+const {idx:_omit,...campos}=c;
+Object.assign(calRows[idx],campos);
+});
+guardarPlanActual();
+}
+// Se llama antes de mostrar Asuntos/Briefs: si falta copy, lo genera con spinner en
+// el botón que se haya clickeado. Devuelve false si falló (para cortar la navegación).
+async function asegurarCopyGenerado(btn){
+if(!calRows.some(filaNecesitaCopy)) return true;
+const orig=btn?btn.textContent:'';
+if(btn){ btn.textContent='Redactando asuntos…';btn.disabled=true; }
+try{
+await generarCopyCalendario();
+return true;
+}catch(err){
+alert('No se pudo redactar el copy: '+err.message);
+return false;
+}finally{
+if(btn){ btn.textContent=orig;btn.disabled=false; }
+}
+}
 document.getElementById('btn-cal').addEventListener('click',()=>generarCalendario());
 document.getElementById('btn-regen-feedback').addEventListener('click',()=>{
 const inp=document.getElementById('cal-feedback');
@@ -2441,7 +2511,8 @@ return [fechaDeElemento(r.elemento),r.canal||'',nombreAccion(r.elemento),'','','
 navigator.clipboard.writeText(rows.map(r=>r.join('\t')).join('\n')).then(()=>{this.textContent='¡Copiado!';setTimeout(()=>this.textContent='Copiar tabla',2000);});
 });
 document.getElementById('btn-edit-cal').addEventListener('click',()=>{show('paso1');hide('resultado1');});
-document.getElementById('btn-goto-asuntos').addEventListener('click',()=>{
+document.getElementById('btn-goto-asuntos').addEventListener('click',async function(){
+if(!(await asegurarCopyGenerado(this))) return;
 resultadoModo='asuntos';
 renderCalTable(calRows);
 window.scrollTo(0,0);

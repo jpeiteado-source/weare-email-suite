@@ -64,10 +64,19 @@ export default async function handler(req, res) {
   // bastante frecuencia, y a veces directamente tarda mucho en responder sin
   // llegar a fallar. Le ponemos un tope de tiempo a CADA intento (con AbortController)
   // para que ningún llamado individual se cuelgue y se coma todo el presupuesto de la
-  // función — así 2 intentos (con margen) siempre entran bien por debajo del límite
-  // de Vercel, en vez de terminar en un 504 opaco sin ningún mensaje útil.
-  const MAX_INTENTOS = 2;
-  const TIMEOUT_POR_INTENTO_MS = 25000;
+  // función, en vez de terminar en un 504 opaco sin ningún mensaje útil.
+  //
+  // Las generaciones grandes (calendario completo, briefs en lote, importar
+  // calendario — todas piden 16000 tokens) necesitan bastante más tiempo real para
+  // terminar aunque NO haya ningún problema de demanda. Con el mismo tope corto que
+  // usan los llamados chicos (asunto rápido, un brief individual), se las estaba
+  // cortando a mitad de camino y quedaban SIEMPRE fallando — no por saturación, sino
+  // porque nunca les dábamos tiempo suficiente para completar ni un solo intento.
+  // Por eso acá se les da un único intento con casi todo el presupuesto de la función,
+  // en vez de repartirlo en varios intentos cortos que ninguno alcanza a terminar.
+  const esGrande = (max_tokens || 4000) > 6000;
+  const MAX_INTENTOS = esGrande ? 1 : 2;
+  const TIMEOUT_POR_INTENTO_MS = esGrande ? 55000 : 25000;
   try {
     let response, err;
     for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
