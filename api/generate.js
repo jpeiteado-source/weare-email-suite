@@ -6,7 +6,11 @@ import { requireUser } from './_lib/auth.js';
 // salida { content:[{type:'text', text}] }) — así no hace falta tocar index.html.
 
 const SYSTEM = 'Respondés siempre en español. Cuando el usuario pide JSON, respondés ÚNICAMENTE con JSON válido, sin texto antes ni después, sin markdown, sin bloques de código.';
-const MODEL = 'gemini-3.6-flash';
+// Flash-Lite en vez de Flash completo: la cuota gratuita diaria de Flash-Lite es
+// mucho mayor (~500 pedidos/día vs. ~20 de Flash), y para generar JSON estructurado
+// siguiendo instrucciones claras (calendario, copys, briefs) el nivel de calidad
+// que da Flash-Lite alcanza de sobra.
+const MODEL = 'gemini-3.5-flash-lite';
 
 // Mensaje amigable para cuando el nivel gratuito de Gemini está saturado (429/503) o
 // tarda demasiado — se muestra tal cual en el frontend, sin la palabra "Error" ni jerga
